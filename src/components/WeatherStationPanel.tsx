@@ -88,7 +88,7 @@ export default function WeatherStationPanel({
   const primary = variant === 'ayto' ? 'text-[#1B3668]' : 'text-slate-800';
 
   return (
-    <div className={`rounded-xl border ${border} p-4`}>
+    <div className={`rounded-xl border ${border} bg-white text-slate-800 p-4`}>
       <h3 className={`font-semibold mb-3 ${primary}`}>📡 Miniestaciones locales</h3>
       {loading && (
         <div className="flex items-center gap-2 text-sm text-slate-400">

@@ -906,16 +906,24 @@ src/types/weather.ts        ← ZoneEstimation type
 
 ### 12.3 Zonas Definidas
 
+Las zonas se han revisado contra OpenStreetMap/Overpass. Se han eliminado nombres funcionales no verificados como `Vega del Guadalentín`, `El Altiplano Norte`, `Campos del Este`, `Sierra de Huéscar` o `Cerro del Castellón`. Las coordenadas proceden de OSM y las altitudes de Open-Meteo Elevation.
+
 | Zona | Tipo | Lat | Lon | Alt (m) | Dist (km) |
 |------|:----:|:---:|:---:|:-------:|:---------:|
-| Casco urbano | URBAN | 37.8094 | -2.5392 | 953 | 0 |
-| Vega del Guadalentín | VEGA | 37.7950 | -2.5350 | 920 | 1.6 |
-| El Altiplano Norte | SECANO | 37.8350 | -2.5100 | 1000 | 3.8 |
-| Sierra de Huéscar | MONTE | 37.8450 | -2.5800 | 1150 | 5.3 |
-| Entorno Pantano San Clemente | RESERVOIR | 37.8608 | -2.6497 | 1095 | 11.3 |
-| La Encarnación | VEGA | 37.7850 | -2.5000 | 940 | 4.4 |
-| Campos del Este | SECANO | 37.8100 | -2.4900 | 970 | 4.3 |
-| Cerro del Castellón | MONTE | 37.8220 | -2.5600 | 1050 | 2.3 |
+| Casco urbano | URBAN | 37.8094 | -2.5392 | 960 | 0.0 |
+| Barrio de la Cruz | URBAN | 37.8110 | -2.5285 | 935 | 1.0 |
+| Barrio del Carmen | URBAN | 37.8040 | -2.5292 | 935 | 1.1 |
+| Barrio de las Santas | URBAN | 37.8129 | -2.5277 | 933 | 1.1 |
+| Barrio del Barón | URBAN | 37.8173 | -2.5269 | 940 | 1.4 |
+| Barrio Nuevo | URBAN | 37.8078 | -2.5284 | 935 | 1.0 |
+| Barrio Nuevo de San Clemente | URBAN | 37.8154 | -2.5253 | 963 | 1.4 |
+| Fuencaliente | VEGA | 37.7994 | -2.5408 | 927 | 1.1 |
+| Los Llanos | SECANO | 37.8048 | -2.5971 | 958 | 5.1 |
+| La Parra | SECANO | 37.8478 | -2.6596 | 1024 | 11.4 |
+| Duda | SECANO | 37.8356 | -2.6705 | 1007 | 11.9 |
+| Canal de San Clemente | RESERVOIR | 37.8922 | -2.6416 | 1079 | 12.8 |
+| Cerro Lancha | MONTE | 37.9046 | -2.5626 | 1294 | 10.8 |
+| La Losa | MONTE | 37.9706 | -2.6153 | 1469 | 19.2 |
 
 ### 12.4 Tipos de Zona y Ajustes
 
@@ -961,22 +969,15 @@ riego_mm = max(0, (T - 5) × 0.08 × factor_necesidad_tipo)
 
 Solo se calcula cuando `frostRisk = "none"` y `HR < 50%`.
 
-### 12.8 Resultados Típicos
+### 12.8 Criterio de Precisión Toponímica
 
-Ejemplo nocturno de verano (AEMET 24.9°C corregido → 25.2°C fusión Huéscar):
+Para evitar nombres artificiales, las zonas locales deben cumplir al menos uno de estos criterios:
 
-```
-Casco urbano:       24.1°C  32% HR  adj +1.2°C  riego 1.5mm
-Vega Guadalentín:   21.8°C  51% HR  adj -1.5°C
-Altiplano Norte:    21.4°C  34% HR  adj -0.5°C  riego 2mm
-Sierra de Huéscar:  20.5°C  51% HR  adj -1.0°C
-Pantano S. Clemente: 21.0°C 53% HR  adj -0.3°C
-La Encarnación:     21.0°C  53% HR  adj -1.5°C
-Campos del Este:    21.7°C  37% HR  adj -0.5°C  riego 2mm
-Cerro del Castellón: 21.3°C 46% HR  adj -1.0°C  riego 0.9mm
-```
+- Aparecer en OSM como `place=neighbourhood`, `place=hamlet` o `place=locality` dentro del término de Huéscar.
+- Ser el núcleo urbano principal de Huéscar.
+- Ser un elemento hidrográfico o de paisaje local ya verificado en OSM/Overpass.
 
-Diferencia térmica máxima: **3.6°C** (casco urbano vs sierra).
+Los nombres de tipo funcional (`zona norte`, `campo este`, `sierra de Huéscar`) solo deben usarse como descripción, no como nombre principal del punto.
 
 ---
 
@@ -1278,7 +1279,7 @@ last_updated TIMESTAMPTZ NOT NULL DEFAULT NOW()
 |----------|-------------|-------|:----:|
 | `GET /api/weather/current` | Dato fusionado actual + nowcast + orografía + radar + rayos | 60s público | No |
 | `GET /api/weather/comarca` | Estimaciones comarcales (7 localidades) | 120s | No |
-| `GET /api/weather/zones` | Zonas locales de Huéscar (8 zonas) | 120s | No |
+| `GET /api/weather/zones` | Zonas locales de Huéscar (14 puntos verificados) | 120s | No |
 | `GET /api/weather/nowcast?lat=&lon=&windDir=` | Nowcasting 0-2h | 8 min | No |
 | `GET /api/weather/radar?lat=&lon=` | Radar AEMET + nowcasting básico | 8 min | No |
 | `GET /api/weather/lightning` | Rayos Blitzortung | 2 min | No |
@@ -1475,7 +1476,7 @@ El modelo microclimático completo (fases 1–9) puede estimar condiciones para:
 |--------|:--------:|---------|
 | Punto global | 1 | Huéscar ciudad (fusión AEMET + OM + miniestaciones) |
 | Localidades comarcales | 7 | Castril, Castilléjar, Galera, Orce, Puebla DF, Hinojosa |
-| Zonas locales | 8 | Casco urbano, vegas, secanos, montes, embalse |
+| Zonas locales | 14 | Barrios, núcleos rurales, parajes, monte y San Clemente |
 | Nowcasting | 2h | 8 intervalos de 15 min + tormentas |
 | Parámetros auto-calibrados | 12 | Embalse, altitud, inversión, viento, orografía |
 | Fuentes de datos | 3 | AEMET 5051X, Open-Meteo, miniestaciones |

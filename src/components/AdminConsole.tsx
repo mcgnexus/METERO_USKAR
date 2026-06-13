@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import WeatherStationPanel from '@/components/WeatherStationPanel';
+import ZonePanel from '@/components/ZonePanel';
 
 interface SourceHealthStatus {
   source: string;
@@ -208,6 +209,11 @@ export default function AdminConsole() {
       {/* Miniestaciones Locales para Admin (con visibilidad completa) */}
       <section className="bg-slate-900 border border-slate-700 rounded-xl p-4 text-slate-100">
         <WeatherStationPanel />
+      </section>
+
+      {/* Zonas locales solo visibles en administración */}
+      <section>
+        <ZonePanel variant="admin" />
       </section>
 
       {/* Uptime */}

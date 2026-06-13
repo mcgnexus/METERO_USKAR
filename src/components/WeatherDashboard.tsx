@@ -7,7 +7,6 @@ import WeatherStationPanel from '@/components/WeatherStationPanel';
 import RadarPanel from '@/components/RadarPanel';
 import NowcastPanel from '@/components/NowcastPanel';
 import ModelTransparencyPanel from '@/components/ModelTransparencyPanel';
-import ZonePanel from '@/components/ZonePanel';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -163,7 +162,7 @@ function LivestockSection({ livestock, variant }: { livestock: LivestockData; va
   };
   const border = cn('border-slate-200', 'border-[#e8e4d8]', variant);
   return (
-    <div className={`rounded-xl border ${border} p-4`}>
+    <div className={`rounded-xl border ${border} bg-white text-slate-800 p-4`}>
       <h3 className="font-semibold mb-3">🐄 Estrés Térmico (ITH)</h3>
       <p className="text-2xl font-bold">{livestock.thi.toFixed(1)}</p>
       <p className={`font-medium ${levelColors[livestock.level] ?? ''}`}>
@@ -194,7 +193,7 @@ function HourlyTable({ hourly, variant }: { hourly: HourlyWeather; variant: 'neu
   }
   const display = rows.slice(-24);
   return (
-      <div className={`rounded-xl border ${border} overflow-hidden`}>
+      <div className={`rounded-xl border ${border} bg-white text-slate-800 overflow-hidden`}>
       <div className={`${headerBg} px-4 py-2`}>
         <p className="font-semibold text-sm">Modelo horario Open-Meteo (últimas 24h)</p>
         <p className="text-[11px] text-slate-500">La temperatura principal es el dato actual fusionado con AEMET; esta tabla muestra la serie horaria del modelo.</p>
@@ -231,7 +230,7 @@ function HourlyTable({ hourly, variant }: { hourly: HourlyWeather; variant: 'neu
 
 function DailyCards({ daily, variant }: { daily: DailyWeather; variant: 'neutral' | 'ayto' }) {
   const border = cn('border-slate-200', 'border-[#e8e4d8]', variant);
-  const cardBg = cn('bg-white', 'bg-white', variant);
+  const cardBg = cn('bg-white text-slate-800', 'bg-white text-slate-800', variant);
   return (
     <div>
       <h3 className="font-semibold mb-3">Pronóstico 7 días</h3>
@@ -354,16 +353,16 @@ function AlertDropdown({ alerts, variant }: { alerts: WeatherAlert[]; variant: '
   );
 }
 
-function LegendBadge({ color, label }: { color: string; label: string }) {
+function LegendBadge({ color, label, onDark = false }: { color: string; label: string; onDark?: boolean }) {
   return (
-    <span className="inline-flex items-center gap-1 text-[10px] text-slate-400">
+    <span className={`inline-flex items-center gap-1 text-[10px] ${onDark ? 'text-slate-200' : 'text-slate-400'}`}>
       <span className={`inline-block w-2 h-2 rounded-full ${color}`} />
       {label}
     </span>
   );
 }
 
-function SourceHealthRow({ health }: { health: SourceHealth[] }) {
+function SourceHealthRow({ health, onDark = false }: { health: SourceHealth[]; onDark?: boolean }) {
   return (
     <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
       {health.map((h, i) => {
@@ -373,17 +372,21 @@ function SourceHealthRow({ health }: { health: SourceHealth[] }) {
           <div key={i} className="flex items-center gap-1.5" title={h.message}>
             <SourceDot status={h.status} />
             <span className="font-medium">{h.source === 'AEMET' ? 'AEMET' : h.source === 'LOCAL_STATIONS' ? 'Miniestaciones' : 'Open-Meteo'}</span>
-            <span className="text-slate-400">({ageStr})</span>
+            <span className={onDark ? 'text-slate-300' : 'text-slate-400'}>({ageStr})</span>
             <span className={`text-[10px] ${
-              h.status === 'OK' ? 'text-green-600' : h.status === 'DEGRADED' ? 'text-amber-600' : 'text-red-500'
+              h.status === 'OK'
+                ? (onDark ? 'text-green-300' : 'text-green-600')
+                : h.status === 'DEGRADED'
+                  ? (onDark ? 'text-amber-300' : 'text-amber-600')
+                  : (onDark ? 'text-red-300' : 'text-red-500')
             }`}>{statusLabel}</span>
           </div>
         );
       })}
-      <span className="text-[10px] text-slate-300 mx-1">|</span>
-      <LegendBadge color="bg-green-500" label="en vivo" />
-      <LegendBadge color="bg-amber-500" label="degradado" />
-      <LegendBadge color="bg-red-500" label="caído" />
+      <span className={`text-[10px] mx-1 ${onDark ? 'text-slate-500' : 'text-slate-300'}`}>|</span>
+      <LegendBadge color="bg-green-500" label="en vivo" onDark={onDark} />
+      <LegendBadge color="bg-amber-500" label="degradado" onDark={onDark} />
+      <LegendBadge color="bg-red-500" label="caído" onDark={onDark} />
     </div>
   );
 }
@@ -392,7 +395,7 @@ export default function WeatherDashboard({ variant = 'neutral', isAdmin = false 
   const { data, error, loading } = useWeatherData('meteo-dashboard');
   const isAyto = variant === 'ayto';
   const border = cn('border-slate-200', 'border-[#e8e4d8]', variant);
-  const cardBg = cn('bg-white', 'bg-white', variant);
+  const cardBg = cn('bg-white text-slate-800', 'bg-white text-slate-800', variant);
   const primary = cn('text-slate-800', 'text-[#1B3668]', variant);
   const primaryBg = cn('bg-slate-800', 'bg-[#1B3668]', variant);
 
@@ -420,7 +423,12 @@ export default function WeatherDashboard({ variant = 'neutral', isAdmin = false 
   const temp = data.current.temperatureC;
   const hour = new Date().getHours();
   const isNight = hour < 7 || hour > 21;
-  const confidenceColor = data.confidencePct > 70 ? 'text-green-600' : data.confidencePct > 50 ? 'text-yellow-600' : 'text-red-600';
+  const isDarkTheme = isNight || code >= 95 || data.radar?.level === "peligro";
+  const confidenceColor = data.confidencePct > 70
+    ? (isDarkTheme ? 'text-green-300' : 'text-green-600')
+    : data.confidencePct > 50
+      ? (isDarkTheme ? 'text-yellow-300' : 'text-yellow-600')
+      : (isDarkTheme ? 'text-red-300' : 'text-red-600');
 
   let bgTheme = "from-slate-50 to-slate-100 border-slate-200";
   let bgEffect = "";
@@ -447,12 +455,12 @@ export default function WeatherDashboard({ variant = 'neutral', isAdmin = false 
 
   return (
     <div className={`space-y-6 p-4 md:p-6 rounded-2xl border bg-gradient-to-b ${bgTheme} ${bgEffect} transition-all duration-700 ${isAyto ? 'font-sans' : ''}`}>
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-current/5 pb-4">
-        <div>
-          <h2 className={`text-3xl font-extrabold tracking-tight ${isNight ? 'text-white' : primary}`}>{data.location}</h2>
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 border-b border-current/5 pb-4">
+        <div className="rounded-xl border border-white/70 bg-white/95 px-4 py-3 text-slate-900 shadow-sm backdrop-blur-sm">
+          <h2 className={`text-3xl font-extrabold tracking-tight ${primary}`}>{data.location}</h2>
           <div className="flex items-center gap-3 mt-1.5">
             <SourceHealthRow health={data.sourceHealth} />
-            <span className={`text-sm font-semibold ${confidenceColor}`}>
+            <span className={`text-sm font-semibold ${data.confidencePct > 70 ? 'text-green-700' : data.confidencePct > 50 ? 'text-yellow-700' : 'text-red-700'}`}>
               {data.confidencePct.toFixed(0)}% confianza
             </span>
           </div>
@@ -507,7 +515,6 @@ export default function WeatherDashboard({ variant = 'neutral', isAdmin = false 
           </div>
           {/* Miniestaciones Locales debajo de la tarjeta principal (del mismo ancho) */}
           <WeatherStationPanel variant={variant} />
-          <ZonePanel variant={variant} />
         </div>
 
         <div className="space-y-4">

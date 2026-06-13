@@ -6,6 +6,7 @@ import type { WeatherPayload, SourceObservation } from '@/types/weather';
 interface Props {
   data: WeatherPayload;
   variant?: 'neutral' | 'ayto';
+  onDark?: boolean;
 }
 
 function sourceLabel(source: SourceObservation): string {
@@ -21,11 +22,11 @@ function qualityDot(score: number): { color: string; label: string } {
   return { color: 'bg-red-500', label: 'Baja' };
 }
 
-export default function ModelTransparencyPanel({ data, variant = 'neutral' }: Props) {
+export default function ModelTransparencyPanel({ data, variant = 'neutral', onDark = false }: Props) {
   const [expanded, setExpanded] = useState(false);
   const isAyto = variant === 'ayto';
-  const accent = isAyto ? 'text-[#1B3668]' : 'text-slate-700';
-  const subText = isAyto ? 'text-slate-500' : 'text-slate-500';
+  const accent = onDark ? 'text-slate-100' : isAyto ? 'text-[#1B3668]' : 'text-slate-700';
+  const subText = onDark ? 'text-slate-300' : 'text-slate-500';
 
   const hasOro = data.orographic && data.orographic.factor !== 1.0;
   const hasReservoir = data.sources.some(
@@ -46,7 +47,7 @@ export default function ModelTransparencyPanel({ data, variant = 'neutral' }: Pr
       </button>
 
       {expanded && (
-        <div className="space-y-3 rounded-lg border border-slate-200 bg-white/70 p-3 text-xs">
+        <div className="space-y-3 rounded-lg border border-slate-200 bg-white/95 p-3 text-xs text-slate-700 shadow-sm">
           {data.sources.map((source) => {
             const qd = qualityDot(source.qualityScore);
             const ageMin = source.dataAgeMinutes;
@@ -105,7 +106,7 @@ export default function ModelTransparencyPanel({ data, variant = 'neutral' }: Pr
           {hasReservoir && (
             <div className="flex items-center gap-2 pt-1 border-t border-slate-100">
               <span className="text-blue-500">💧</span>
-              <span className="text-slate-500">
+              <span className="text-slate-600">
                 Corrección por Pantano de San Clemente (~278 m de AEMET 5051X): retira enfriamiento y exceso de humedad
               </span>
             </div>
@@ -114,7 +115,7 @@ export default function ModelTransparencyPanel({ data, variant = 'neutral' }: Pr
           {hasOro && data.orographic && (
             <div className="flex items-center gap-2 pt-1 border-t border-slate-100">
               <span>🏔️</span>
-              <span className="text-slate-500">
+              <span className="text-slate-600">
                 Orográfico: <span className="font-medium capitalize">{data.orographic.classification}</span>
                 {' '}(factor ×{data.orographic.factor.toFixed(2)}) — {data.orographic.description}
               </span>
@@ -125,11 +126,11 @@ export default function ModelTransparencyPanel({ data, variant = 'neutral' }: Pr
             <div className="flex items-start gap-2 pt-1 border-t border-slate-100">
               <span className="text-slate-400">📊</span>
               <div>
-                <span className="text-slate-500">Confianza: </span>
+                <span className="text-slate-600">Confianza: </span>
                 <span className="font-semibold" style={{ color: data.confidencePct >= 70 ? '#16a34a' : data.confidencePct >= 50 ? '#ca8a04' : '#dc2626' }}>
                   {data.confidencePct.toFixed(0)}%
                 </span>
-                <span className="text-slate-400"> — {data.confidenceExplanation}</span>
+                <span className="text-slate-500"> — {data.confidenceExplanation}</span>
               </div>
             </div>
           )}

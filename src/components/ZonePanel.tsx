@@ -5,7 +5,7 @@ import type { ZoneEstimation } from '@/types/weather';
 import { temperatureColor } from '@/lib/display';
 
 interface Props {
-  variant?: 'neutral' | 'ayto';
+  variant?: 'neutral' | 'ayto' | 'admin';
 }
 
 const TYPE_META: Record<string, { emoji: string; color: string; label: string }> = {
@@ -34,6 +34,13 @@ export default function ZonePanel({ variant = 'neutral' }: Props) {
   const [zones, setZones] = useState<ZoneEstimation[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const isAdmin = variant === 'admin';
+  const shellClass = isAdmin
+    ? 'rounded-xl border border-slate-700 bg-slate-900 p-4 space-y-3 text-slate-100'
+    : 'rounded-xl border border-slate-200 bg-white p-4 space-y-3';
+  const cardClass = isAdmin ? 'bg-slate-800/70' : 'bg-white/60';
+  const titleClass = isAdmin ? 'text-slate-100' : 'text-slate-700';
+  const mutedClass = isAdmin ? 'text-slate-400' : 'text-slate-400';
 
   useEffect(() => {
     async function load() {
@@ -53,11 +60,11 @@ export default function ZonePanel({ variant = 'neutral' }: Props) {
 
   if (loading) {
     return (
-      <div className="rounded-xl border border-slate-200 bg-white p-4">
-        <h3 className="text-sm font-bold text-slate-700 mb-3">Zonas locales de Huéscar</h3>
+      <div className={shellClass}>
+        <h3 className={`text-sm font-bold mb-3 ${titleClass}`}>Zonas locales de Huéscar</h3>
         <div className="animate-pulse space-y-2">
-          <div className="h-16 bg-slate-100 rounded-lg" />
-          <div className="h-16 bg-slate-100 rounded-lg" />
+          <div className={`h-16 rounded-lg ${isAdmin ? 'bg-slate-800' : 'bg-slate-100'}`} />
+          <div className={`h-16 rounded-lg ${isAdmin ? 'bg-slate-800' : 'bg-slate-100'}`} />
         </div>
       </div>
     );
@@ -71,11 +78,11 @@ export default function ZonePanel({ variant = 'neutral' }: Props) {
   const tempRange = maxTemp - minTemp;
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-4 space-y-3">
+    <div className={shellClass}>
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-bold text-slate-700">Zonas locales de Huéscar</h3>
+        <h3 className={`text-sm font-bold ${titleClass}`}>Zonas locales de Huéscar</h3>
         {tempRange > 0 && (
-          <span className="text-[10px] text-slate-400">
+          <span className={`text-[10px] ${mutedClass}`}>
             Δ {tempRange.toFixed(1)}°C entre zonas
           </span>
         )}
@@ -87,14 +94,14 @@ export default function ZonePanel({ variant = 'neutral' }: Props) {
           return (
             <div
               key={zone.name}
-              className={`rounded-lg border ${meta.color} bg-white/60 p-2.5`}
+              className={`rounded-lg border ${meta.color} ${cardClass} p-2.5`}
             >
               <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-1.5 min-w-0">
                   <span className="text-base shrink-0">{meta.emoji}</span>
                   <div className="min-w-0">
-                    <p className="text-xs font-semibold text-slate-700 truncate">{zone.name}</p>
-                    <p className="text-[10px] text-slate-400 truncate">
+                    <p className={`text-xs font-semibold truncate ${isAdmin ? 'text-slate-100' : 'text-slate-700'}`}>{zone.name}</p>
+                    <p className={`text-[10px] truncate ${mutedClass}`}>
                       {meta.label} · {zone.distanceToCenterKm} km · {zone.elevation}m
                     </p>
                   </div>
@@ -103,11 +110,11 @@ export default function ZonePanel({ variant = 'neutral' }: Props) {
                   <p className="text-sm font-bold" style={{ color: temperatureColor(zone.temperatureC) }}>
                     {zone.temperatureC.toFixed(1)}°C
                   </p>
-                  <p className="text-[10px] text-slate-400">{zone.humidityPct}% HR</p>
+                  <p className={`text-[10px] ${mutedClass}`}>{zone.humidityPct}% HR</p>
                 </div>
               </div>
 
-              <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1.5 text-[10px] text-slate-500">
+              <div className={`flex flex-wrap gap-x-3 gap-y-0.5 mt-1.5 text-[10px] ${isAdmin ? 'text-slate-300' : 'text-slate-500'}`}>
                 {zone.zoneTempAdjC !== 0 && (
                   <span>
                     Zona: <span className={zone.zoneTempAdjC > 0 ? 'text-orange-500' : 'text-blue-500'}>

@@ -67,12 +67,18 @@ export const COMARCA_LOCATIONS = [
 export type ZoneType = "URBAN" | "VEGA" | "SECANO" | "MONTE" | "RESERVOIR";
 
 export const HUESCAR_ZONES: { name: string; lat: number; lon: number; elevation: number; type: ZoneType; description: string }[] = [
-  { name: "Casco urbano", lat: 37.8094, lon: -2.5392, elevation: 953, type: "URBAN", description: "Centro de Hu\u00E9scar, isla de calor urbana" },
-  { name: "Vega del Guadalent\u00EDn", lat: 37.7950, lon: -2.5350, elevation: 920, type: "VEGA", description: "Huerta y regad\u00EDo al sur del casco urbano" },
-  { name: "El Altiplano Norte", lat: 37.8350, lon: -2.5100, elevation: 1000, type: "SECANO", description: "Campos de secano y cereal al norte" },
-  { name: "Sierra de Hu\u00E9scar", lat: 37.8450, lon: -2.5800, elevation: 1150, type: "MONTE", description: "Monte mediterr\u00E1neo y pinares" },
-  { name: "Entorno Pantano San Clemente", lat: 37.8608, lon: -2.6497, elevation: 1095, type: "RESERVOIR", description: "Zona de influencia del embalse" },
-  { name: "La Encarnaci\u00F3n", lat: 37.7850, lon: -2.5000, elevation: 940, type: "VEGA", description: "Zona arqueol\u00F3gica y agr\u00EDcola de regad\u00EDo" },
-  { name: "Campos del Este", lat: 37.8100, lon: -2.4900, elevation: 970, type: "SECANO", description: "Secano olivarero y cerealista al este" },
-  { name: "Cerro del Castell\u00F3n", lat: 37.8220, lon: -2.5600, elevation: 1050, type: "MONTE", description: "Elevaci\u00F3n rocosa con matorral" },
+  { name: "Casco urbano", lat: 37.8094, lon: -2.5392, elevation: 960, type: "URBAN", description: "Hu\u00E9scar, n\u00FAcleo urbano principal" },
+  { name: "Barrio de la Cruz", lat: 37.8109934, lon: -2.5285428, elevation: 935, type: "URBAN", description: "Barrio reconocido en OSM como neighbourhood" },
+  { name: "Barrio del Carmen", lat: 37.8040392, lon: -2.5292455, elevation: 935, type: "URBAN", description: "Barrio reconocido en OSM como neighbourhood" },
+  { name: "Barrio de las Santas", lat: 37.8129377, lon: -2.5276842, elevation: 933, type: "URBAN", description: "Barrio reconocido en OSM como neighbourhood" },
+  { name: "Barrio del Bar\u00F3n", lat: 37.8173081, lon: -2.5269069, elevation: 940, type: "URBAN", description: "Barrio reconocido en OSM como neighbourhood" },
+  { name: "Barrio Nuevo", lat: 37.8078456, lon: -2.5283534, elevation: 935, type: "URBAN", description: "N\u00FAcleo reconocido en OSM como hamlet" },
+  { name: "Barrio Nuevo de San Clemente", lat: 37.8153793, lon: -2.5253022, elevation: 963, type: "URBAN", description: "N\u00FAcleo reconocido en OSM como hamlet" },
+  { name: "Fuencaliente", lat: 37.7994343, lon: -2.5407610, elevation: 927, type: "VEGA", description: "Top\u00F3nimo local asociado a zona h\u00FAmeda/manantial" },
+  { name: "Los Llanos", lat: 37.8048318, lon: -2.5971388, elevation: 958, type: "SECANO", description: "Paraje reconocido en OSM como locality" },
+  { name: "La Parra", lat: 37.8478264, lon: -2.6596302, elevation: 1024, type: "SECANO", description: "N\u00FAcleo rural reconocido en OSM como hamlet" },
+  { name: "Duda", lat: 37.8356165, lon: -2.6705498, elevation: 1007, type: "SECANO", description: "N\u00FAcleo rural reconocido en OSM como hamlet" },
+  { name: "Canal de San Clemente", lat: 37.8921535, lon: -2.6416406, elevation: 1079, type: "RESERVOIR", description: "N\u00FAcleo junto al sistema de San Clemente" },
+  { name: "Cerro Lancha", lat: 37.9045796, lon: -2.5626440, elevation: 1294, type: "MONTE", description: "Paraje elevado reconocido en OSM como locality" },
+  { name: "La Losa", lat: 37.9705559, lon: -2.6152501, elevation: 1469, type: "MONTE", description: "Paraje de alta cota reconocido en OSM como locality" },
 ];
