@@ -4,6 +4,10 @@ import { useWeatherData } from '@/hooks/useWeatherData';
 import { weatherEmoji, weatherCodeDescription, windDirection, temperatureColor, dayLabel, frostRiskLabel } from '@/lib/display';
 import { WeatherPayload, SourceHealth, WeatherAlert, LightningData, AgriculturalData, LivestockData, HourlyWeather, DailyWeather } from '@/types/weather';
 import WeatherStationPanel from '@/components/WeatherStationPanel';
+import RadarPanel from '@/components/RadarPanel';
+import NowcastPanel from '@/components/NowcastPanel';
+import ModelTransparencyPanel from '@/components/ModelTransparencyPanel';
+import ZonePanel from '@/components/ZonePanel';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -22,6 +26,7 @@ ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, T
 
 interface Props {
   variant?: 'neutral' | 'ayto';
+  isAdmin?: boolean;
 }
 
 function cn(neutral: string, ayto: string, variant: 'neutral' | 'ayto') {
@@ -70,36 +75,76 @@ function LightningPanel({ lightning }: { lightning: LightningData }) {
 
 function AgriculturalSection({ agri, variant }: { agri: AgriculturalData; variant: 'neutral' | 'ayto' }) {
   const border = cn('border-slate-200', 'border-[#e8e4d8]', variant);
+  
+  const pestRiskColors = {
+    bajo: 'text-green-600 bg-green-50 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase',
+    medio: 'text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase',
+    alto: 'text-red-600 bg-red-50 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase',
+  };
+
   return (
-    <div className={`rounded-xl border ${border} p-4`}>
-      <h3 className="font-semibold mb-3">🌱 Datos Agrícolas</h3>
-      <div className="grid grid-cols-2 gap-3 text-sm">
+    <div className={`rounded-xl border ${border} p-4 bg-white shadow-sm space-y-4`}>
+      <div className="border-b border-slate-100 pb-2">
+        <h3 className="font-semibold text-slate-800 flex items-center gap-1.5">
+          <span>🌱 Panel de Asesoría Agrícola</span>
+        </h3>
+      </div>
+      
+      <div className="grid grid-cols-2 gap-4 text-xs">
         <div>
-          <span className="text-slate-500">ET0 acumulada</span>
-          <p className="font-medium">{agri.et0CumulativeMm.toFixed(1)} mm</p>
+          <span className="text-slate-400 block font-medium">Evapotranspiración (ET0)</span>
+          <p className="font-bold text-slate-700 text-sm">{agri.et0CumulativeMm.toFixed(1)} mm</p>
         </div>
         <div>
-          <span className="text-slate-500">GDD acumulados</span>
-          <p className="font-medium">{agri.gddCumulative.toFixed(0)} °C·día</p>
+          <span className="text-slate-400 block font-medium">Grados Día (GDD)</span>
+          <p className="font-bold text-slate-700 text-sm">{agri.gddCumulative.toFixed(0)} °C·día</p>
         </div>
         <div>
-          <span className="text-slate-500">Horas frío</span>
-          <p className="font-medium">{agri.chillHours.toFixed(0)} h</p>
+          <span className="text-slate-400 block font-medium">Horas Frío (Semana)</span>
+          <p className="font-bold text-slate-700 text-sm">{agri.chillHours.toFixed(0)} h</p>
         </div>
         <div>
-          <span className="text-slate-500">Riesgo helada (48h)</span>
-          <p className={`font-medium ${agri.frostRisk48h === 'alta' || agri.frostRisk48h === 'muy_alta' ? 'text-red-600' : 'text-amber-600'}`}>
+          <span className="text-slate-400 block font-medium">Riesgo Helada (48h)</span>
+          <p className={`font-bold text-sm ${agri.frostRisk48h === 'alta' || agri.frostRisk48h === 'muy_alta' ? 'text-red-600' : 'text-amber-600'}`}>
             {frostRiskLabel(agri.frostRisk48h)}
           </p>
         </div>
       </div>
-      <div className="mt-2 text-sm">
-        <span className="text-slate-500">Trabajabilidad</span>
-        <p className={`font-medium ${agri.workability.workable ? 'text-green-600' : 'text-red-600'}`}>
-          {agri.workability.workable ? 'Apta' : 'No apta'}
+
+      {/* RIEGO INTELIGENTE */}
+      {agri.recommendedIrrigationLitersM2 !== undefined && (
+        <div className="bg-blue-50/50 rounded-lg p-2.5 border border-blue-100 text-xs">
+          <span className="text-blue-500 block font-bold uppercase text-[9px] tracking-wider">💧 Riego Recomendado (Balance Hídrico)</span>
+          <div className="flex items-baseline gap-1 mt-1">
+            <span className="text-base font-bold text-blue-700">{agri.recommendedIrrigationLitersM2.toFixed(1)}</span>
+            <span className="text-blue-600 font-medium">litros/m² esta semana</span>
+          </div>
+          <p className="text-[10px] text-blue-500/80 mt-0.5">Calculado para cultivos locales (olivo/almendro).</p>
+        </div>
+      )}
+
+      {/* RIESGO DE PLAGAS */}
+      {agri.pestRisk && (
+        <div className="bg-slate-50 rounded-lg p-2.5 border border-slate-100 text-xs space-y-1.5">
+          <span className="text-slate-500 block font-bold uppercase text-[9px] tracking-wider">🪲 Alerta de Plagas Comarcales</span>
+          <div className="flex items-center justify-between">
+            <span className="text-slate-600">Repilo (Olivo):</span>
+            <span className={pestRiskColors[agri.pestRisk.repiloRisk]}>{agri.pestRisk.repiloRisk}</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-slate-600">Mosca del Olivo:</span>
+            <span className={pestRiskColors[agri.pestRisk.oliveFlyRisk]}>{agri.pestRisk.oliveFlyRisk}</span>
+          </div>
+        </div>
+      )}
+
+      <div className="text-xs pt-1 border-t border-slate-50">
+        <span className="text-slate-400 block font-medium">Trabajabilidad del Suelo</span>
+        <p className={`font-bold mt-0.5 ${agri.workability.workable ? 'text-green-600' : 'text-red-600'}`}>
+          {agri.workability.workable ? '✓ Condiciones óptimas' : '✗ Labores no recomendadas'}
         </p>
         {agri.workability.reasons.length > 0 && (
-          <ul className="list-disc list-inside text-xs text-slate-500 mt-1">
+          <ul className="list-disc list-inside text-[10px] text-slate-500 mt-1 space-y-0.5">
             {agri.workability.reasons.map((r, i) => <li key={i}>{r}</li>)}
           </ul>
         )}
@@ -149,8 +194,11 @@ function HourlyTable({ hourly, variant }: { hourly: HourlyWeather; variant: 'neu
   }
   const display = rows.slice(-24);
   return (
-    <div className={`rounded-xl border ${border} overflow-hidden`}>
-      <div className={`${headerBg} px-4 py-2 font-semibold text-sm`}>Temperatura horaria (últimas 24h)</div>
+      <div className={`rounded-xl border ${border} overflow-hidden`}>
+      <div className={`${headerBg} px-4 py-2`}>
+        <p className="font-semibold text-sm">Modelo horario Open-Meteo (últimas 24h)</p>
+        <p className="text-[11px] text-slate-500">La temperatura principal es el dato actual fusionado con AEMET; esta tabla muestra la serie horaria del modelo.</p>
+      </div>
       <div className="overflow-x-auto max-h-64 overflow-y-auto">
         <table className="w-full text-xs">
           <thead className={`sticky top-0 ${headerBg}`}>
@@ -324,7 +372,7 @@ function SourceHealthRow({ health }: { health: SourceHealth[] }) {
         return (
           <div key={i} className="flex items-center gap-1.5" title={h.message}>
             <SourceDot status={h.status} />
-            <span className="font-medium">{h.source === 'AEMET' ? 'AEMET' : 'Open-Meteo'}</span>
+            <span className="font-medium">{h.source === 'AEMET' ? 'AEMET' : h.source === 'LOCAL_STATIONS' ? 'Miniestaciones' : 'Open-Meteo'}</span>
             <span className="text-slate-400">({ageStr})</span>
             <span className={`text-[10px] ${
               h.status === 'OK' ? 'text-green-600' : h.status === 'DEGRADED' ? 'text-amber-600' : 'text-red-500'
@@ -340,7 +388,7 @@ function SourceHealthRow({ health }: { health: SourceHealth[] }) {
   );
 }
 
-export default function WeatherDashboard({ variant = 'neutral' }: Props) {
+export default function WeatherDashboard({ variant = 'neutral', isAdmin = false }: Props) {
   const { data, error, loading } = useWeatherData('meteo-dashboard');
   const isAyto = variant === 'ayto';
   const border = cn('border-slate-200', 'border-[#e8e4d8]', variant);
@@ -367,71 +415,109 @@ export default function WeatherDashboard({ variant = 'neutral' }: Props) {
 
   if (!data) return null;
 
+  // 3. Estética Premium: Fondos dinámicos basados en la meteorología actual y hora del día
+  const code = data.current.weatherCode;
+  const temp = data.current.temperatureC;
+  const hour = new Date().getHours();
+  const isNight = hour < 7 || hour > 21;
   const confidenceColor = data.confidencePct > 70 ? 'text-green-600' : data.confidencePct > 50 ? 'text-yellow-600' : 'text-red-600';
 
+  let bgTheme = "from-slate-50 to-slate-100 border-slate-200";
+  let bgEffect = "";
+
+  if (isNight) {
+    bgTheme = "from-indigo-950 via-slate-900 to-zinc-900 text-slate-100 border-indigo-900/40 shadow-indigo-950/20";
+    bgEffect = "bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))]";
+  } else if (code >= 95 || data.radar?.level === "peligro") {
+    // Tormenta o Lluvia inminente
+    bgTheme = "from-zinc-800 via-slate-800 to-zinc-900 text-slate-100 border-zinc-700/50 shadow-slate-900/35 animate-pulse";
+  } else if (code >= 51 && code <= 82) {
+    // Lluvioso/Inestable
+    bgTheme = "from-blue-900/10 via-slate-100 to-blue-50 border-blue-200/60";
+  } else if (temp >= 32) {
+    // Calor extremo
+    bgTheme = "from-orange-50 via-orange-100/30 to-amber-50 border-orange-200/50";
+  } else if (temp <= 2) {
+    // Helada / Frío extremo
+    bgTheme = "from-cyan-50 via-sky-100/20 to-slate-50 border-cyan-200/50";
+  } else {
+    // Templado / Despejado estándar
+    bgTheme = "from-slate-50 to-slate-100 border-slate-200";
+  }
+
   return (
-    <div className={`space-y-6 ${isAyto ? 'font-sans' : ''}`}>
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div className={`space-y-6 p-4 md:p-6 rounded-2xl border bg-gradient-to-b ${bgTheme} ${bgEffect} transition-all duration-700 ${isAyto ? 'font-sans' : ''}`}>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-current/5 pb-4">
         <div>
-          <h2 className={`text-2xl font-bold ${primary}`}>{data.location}</h2>
-          <div className="flex items-center gap-3 mt-1">
+          <h2 className={`text-3xl font-extrabold tracking-tight ${isNight ? 'text-white' : primary}`}>{data.location}</h2>
+          <div className="flex items-center gap-3 mt-1.5">
             <SourceHealthRow health={data.sourceHealth} />
             <span className={`text-sm font-semibold ${confidenceColor}`}>
               {data.confidencePct.toFixed(0)}% confianza
             </span>
           </div>
+          <ModelTransparencyPanel data={data} variant={variant} />
         </div>
         <AlertDropdown alerts={data.alerts} variant={variant} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className={`lg:col-span-2 rounded-xl border ${border} ${cardBg} p-6`}>
-          <div className="flex items-start gap-4">
-            <span className="text-6xl">{weatherEmoji(data.current.weatherCode)}</span>
-            <div>
+        <div className="lg:col-span-2 space-y-4">
+          <div className={`rounded-xl border ${border} ${cardBg} p-6`}>
+            <div className="flex items-start gap-4">
+              <span className="text-6xl">{weatherEmoji(data.current.weatherCode)}</span>
+              <div>
               <p className="text-5xl font-bold" style={{ color: temperatureColor(data.current.temperatureC) }}>
                 {data.current.temperatureC.toFixed(1)}°C
               </p>
+              <p className="text-xs font-medium text-slate-400 mt-1">Dato actual fusionado</p>
               <p className="text-sm text-slate-500 mt-1">{weatherCodeDescription(data.current.weatherCode)}</p>
             </div>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-6">
+              <div>
+                <p className="text-xs text-slate-500">Sensación térmica</p>
+                <p className="font-semibold">{data.current.apparentTemperatureC.toFixed(1)}°C</p>
+              </div>
+              <div>
+                <p className="text-xs text-slate-500">Humedad</p>
+                <p className="font-semibold">{data.current.humidityPct.toFixed(0)}%</p>
+              </div>
+              <div>
+                <p className="text-xs text-slate-500">Precipitación</p>
+                <p className="font-semibold">{data.current.precipitationMm.toFixed(1)} mm</p>
+              </div>
+              <div>
+                <p className="text-xs text-slate-500">Radiación solar</p>
+                <p className="font-semibold">{data.current.solarRadiationWm2.toFixed(0)} W/m²</p>
+              </div>
+              <div>
+                <p className="text-xs text-slate-500">Viento</p>
+                <p className="font-semibold">{data.current.windSpeedKmh.toFixed(0)} km/h {windDirection(data.current.windDirectionDeg)}</p>
+              </div>
+              <div>
+                <p className="text-xs text-slate-500">Ráfagas</p>
+                <p className="font-semibold">{data.current.windGustKmh.toFixed(0)} km/h</p>
+              </div>
+              <div>
+                <p className="text-xs text-slate-500">ET0</p>
+                <p className="font-semibold">{data.current.et0Mm.toFixed(2)} mm</p>
+              </div>
+            </div>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-6">
-            <div>
-              <p className="text-xs text-slate-500">Sensación térmica</p>
-              <p className="font-semibold">{data.current.apparentTemperatureC.toFixed(1)}°C</p>
-            </div>
-            <div>
-              <p className="text-xs text-slate-500">Humedad</p>
-              <p className="font-semibold">{data.current.humidityPct.toFixed(0)}%</p>
-            </div>
-            <div>
-              <p className="text-xs text-slate-500">Precipitación</p>
-              <p className="font-semibold">{data.current.precipitationMm.toFixed(1)} mm</p>
-            </div>
-            <div>
-              <p className="text-xs text-slate-500">Radiación solar</p>
-              <p className="font-semibold">{data.current.solarRadiationWm2.toFixed(0)} W/m²</p>
-            </div>
-            <div>
-              <p className="text-xs text-slate-500">Viento</p>
-              <p className="font-semibold">{data.current.windSpeedKmh.toFixed(0)} km/h {windDirection(data.current.windDirectionDeg)}</p>
-            </div>
-            <div>
-              <p className="text-xs text-slate-500">Ráfagas</p>
-              <p className="font-semibold">{data.current.windGustKmh.toFixed(0)} km/h</p>
-            </div>
-            <div>
-              <p className="text-xs text-slate-500">ET0</p>
-              <p className="font-semibold">{data.current.et0Mm.toFixed(2)} mm</p>
-            </div>
-          </div>
+          {/* Miniestaciones Locales debajo de la tarjeta principal (del mismo ancho) */}
+          <WeatherStationPanel variant={variant} />
+          <ZonePanel variant={variant} />
         </div>
 
         <div className="space-y-4">
+          {data.nowcast && (data.nowcast.level !== 'ninguno' || data.nowcast.stormDetected) && (
+            <NowcastPanel nowcast={data.nowcast} variant={variant} />
+          )}
+          <RadarPanel radar={data.radar} variant={variant} />
           {data.agricultural && <AgriculturalSection agri={data.agricultural} variant={variant} />}
           {data.livestock && <LivestockSection livestock={data.livestock} variant={variant} />}
           {data.lightning && data.lightning.active && <LightningPanel lightning={data.lightning} />}
-          <WeatherStationPanel variant={variant} />
         </div>
       </div>
 

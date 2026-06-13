@@ -1,20 +1,15 @@
 import { NextResponse } from "next/server";
-import { getComarcaEstimations, saveComarcaEstimations } from "@/lib/weatherStore";
 import { fetchComarcaLayer } from "@/services/layerComarca";
 
-const STALE_MS = 60 * 60 * 1000;
-
 export async function GET(): Promise<NextResponse> {
-  const dbEntry = await getComarcaEstimations();
-  if (dbEntry) {
-    const age = Date.now() - new Date(dbEntry.reference_date).getTime();
-    if (age < STALE_MS) {
-      return NextResponse.json(dbEntry.payload);
-    }
+  const data = await fetchComarcaLayer(null, null, null);
+  if (!data) {
+    return NextResponse.json({ error: "No se pudieron obtener las estimaciones comarcales" }, { status: 503 });
   }
-
-  const freshData = await fetchComarcaLayer(null, null, null);
-  const today = new Date().toISOString().split("T")[0];
-  await saveComarcaEstimations(today, { data: freshData });
-  return NextResponse.json({ data: freshData });
+  const response = NextResponse.json(data);
+  response.headers.set(
+    "Cache-Control",
+    "public, max-age=300, s-maxage=600, stale-while-revalidate=900"
+  );
+  return response;
 }

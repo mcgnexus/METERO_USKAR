@@ -5,7 +5,11 @@ const ALGORITHM = "sha256";
 const TOKEN_EXPIRY_MS = 12 * 60 * 60 * 1000;
 
 function getSecret(): string {
-  return process.env.ADMIN_SESSION_SECRET || "fallback-dev-secret-do-not-use-in-prod";
+  const secret = process.env.ADMIN_SESSION_SECRET;
+  if (!secret || secret.length < 32) {
+    throw new Error("ADMIN_SESSION_SECRET must be set and at least 32 characters long");
+  }
+  return secret;
 }
 
 export function generateAdminToken(): string {

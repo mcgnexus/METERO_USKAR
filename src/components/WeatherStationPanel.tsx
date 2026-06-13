@@ -47,7 +47,13 @@ function normalizeStation(raw: any): MiniStation {
   };
 }
 
-export default function WeatherStationPanel({ variant = 'neutral' }: { variant?: 'neutral' | 'ayto' }) {
+export default function WeatherStationPanel({
+  variant = 'neutral',
+  isAdmin = false,
+}: {
+  variant?: 'neutral' | 'ayto';
+  isAdmin?: boolean;
+}) {
   const [stations, setStations] = useState<MiniStation[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -102,7 +108,7 @@ export default function WeatherStationPanel({ variant = 'neutral' }: { variant?:
             <div key={s.id ?? i} className="text-sm border-b border-slate-100 last:border-b-0 pb-2 last:pb-0">
               <div className="flex items-center justify-between">
                 <span className="font-medium text-slate-700 truncate">{s.nombre}</span>
-                {(s.battery !== undefined || s.battery_v !== undefined) && (
+                {isAdmin && (s.battery !== undefined || s.battery_v !== undefined) && (
                   <span className="text-xs font-medium text-green-600">
                     {s.battery_v !== undefined ? `${Number(s.battery_v).toFixed(2)}V` : `${s.battery}%`}
                   </span>
@@ -121,38 +127,38 @@ export default function WeatherStationPanel({ variant = 'neutral' }: { variant?:
                     <span className="font-medium text-slate-700">{s.humidity}%</span>
                   </div>
                 )}
-                {s.precipitation !== undefined && s.precipitation !== null && (
-                  <div>
-                    <span className="block text-[10px] text-slate-400">Precip</span>
-                    <span className="font-medium text-slate-700">{typeof s.precipitation === 'number' ? s.precipitation.toFixed(1) : s.precipitation} mm</span>
-                  </div>
-                )}
-                {s.wind_speed !== undefined && s.wind_speed !== null && (
-                  <div>
-                    <span className="block text-[10px] text-slate-400">Viento</span>
-                    <span className="font-medium text-slate-700">{s.wind_speed} km/h</span>
-                  </div>
-                )}
                 {s.pressure_hpa !== undefined && s.pressure_hpa !== null && (
                   <div>
                     <span className="block text-[10px] text-slate-400">Presión</span>
                     <span className="font-medium text-slate-700">{Number(s.pressure_hpa).toFixed(0)} hPa</span>
                   </div>
                 )}
-                {s.soil_moisture_pct !== undefined && s.soil_moisture_pct !== null && (
+                {isAdmin && s.precipitation !== undefined && s.precipitation !== null && (
+                  <div>
+                    <span className="block text-[10px] text-slate-400">Precip</span>
+                    <span className="font-medium text-slate-700">{typeof s.precipitation === 'number' ? s.precipitation.toFixed(1) : s.precipitation} mm</span>
+                  </div>
+                )}
+                {isAdmin && s.wind_speed !== undefined && s.wind_speed !== null && (
+                  <div>
+                    <span className="block text-[10px] text-slate-400">Viento</span>
+                    <span className="font-medium text-slate-700">{s.wind_speed} km/h</span>
+                  </div>
+                )}
+                {isAdmin && s.soil_moisture_pct !== undefined && s.soil_moisture_pct !== null && (
                   <div>
                     <span className="block text-[10px] text-slate-400">Suelo</span>
                     <span className="font-medium text-slate-700">{Number(s.soil_moisture_pct).toFixed(0)}%</span>
                   </div>
                 )}
-                {s.rssi_dbm !== undefined && s.rssi_dbm !== null && (
+                {isAdmin && s.rssi_dbm !== undefined && s.rssi_dbm !== null && (
                   <div>
                     <span className="block text-[10px] text-slate-400">Señal</span>
                     <span className="font-medium text-slate-700">{s.rssi_dbm} dBm</span>
                   </div>
                 )}
               </div>
-              {s.updated_at && (
+              {isAdmin && s.updated_at && (
                 <p className="text-[10px] text-slate-400 mt-1">
                   {new Date(s.updated_at).toLocaleString('es-ES')}
                 </p>

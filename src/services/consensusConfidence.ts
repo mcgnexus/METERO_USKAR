@@ -83,13 +83,15 @@ export function calculateConsensusConfidence(
     }
   }
 
-  const staleCache = sources.some((s) => s.retrievalStatus === "STALE_CACHE");
-  if (staleCache) {
-    totalPenalty -= 8;
-    penalties.push(`stale_bonus=-8`);
+  // I2 — Reemplazar el stale_bonus que reducía totalPenalty (confuso y podía superar el 92% base)
+  // por una penalización explícita sobre la confianza final: datos obsoletos en caché = -5 puntos,
+  // acotados al mínimo global de 25%.
+  const staleModifier = sources.some((s) => s.retrievalStatus === "STALE_CACHE") ? 5 : 0;
+  if (staleModifier > 0) {
+    penalties.push(`stale_cache_penalty=+${staleModifier}`);
   }
 
-  const confidence = Math.max(25, BASE_CONFIDENCE - totalPenalty);
+  const confidence = Math.max(25, Math.min(92, BASE_CONFIDENCE - totalPenalty - staleModifier));
   const explanation = penalties.length > 0 ? penalties.join("; ") : "no_penalties";
 
   return { confidencePct: Math.round(confidence), explanation };

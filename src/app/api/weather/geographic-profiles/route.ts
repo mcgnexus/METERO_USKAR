@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getLocationProfiles } from "@/lib/weatherStore";
 import { generateGeographicProfiles } from "@/services/geographicProfileService";
+import { verifyCronAuthorization } from "@/services/cronAuth";
 
 export async function GET(): Promise<NextResponse> {
   const profiles = await getLocationProfiles("huescar");
@@ -9,7 +10,7 @@ export async function GET(): Promise<NextResponse> {
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   const auth = request.headers.get("Authorization");
-  if (!auth || auth !== `Bearer ${process.env.CRON_SECRET}`) {
+  if (!verifyCronAuthorization(auth)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

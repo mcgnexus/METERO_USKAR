@@ -48,7 +48,11 @@ async function fetchDataUrl(apiKey: string, observationUrl: string): Promise<str
     setCooldown(RATE_LIMIT_COOLDOWN_TTL_MS);
     return null;
   }
-  if (!response.ok) return null;
+  // M4 — No logar la URL completa para no exponer la API key
+  if (!response.ok) {
+    console.warn(`[AEMET] fetchDataUrl HTTP ${response.status} para ${observationUrl} (api_key omitida)`);
+    return null;
+  }
   const json = await response.json();
   if (!json || !json.datos) return null;
   return json.datos;
@@ -77,14 +81,23 @@ function parseAemetStation(raw: Record<string, unknown>): SourceObservation | nu
 
   if (temperatureC === null) return null;
 
+  const timeStr = String(raw.fint || raw.updated || "");
+
+  // C1 — qualityScore dinámico según la antigüedad real del dato
+  // Empieza en 1.0, va bajando linealmente a partir de 30 min, mínimo 0.3
+  const ageMinutes = timeStr
+    ? Math.max(0, (Date.now() - new Date(timeStr).getTime()) / 60000)
+    : 120; // si no hay timestamp, penalizar
+  const dynamicQualityScore = Math.max(0.3, 1.0 - Math.max(0, ageMinutes - 30) / 200);
+
   return {
     source: "AEMET",
     stationId: effectiveId,
     locationName: "Huéscar",
-    time: String(raw.fint || raw.updated || ""),
+    time: timeStr,
     observationPeriod: "current",
     dataAgeMinutes: 0,
-    qualityScore: 1.0,
+    qualityScore: dynamicQualityScore,
     status: "OK",
     elevationM: parseNumber(raw.alt) ?? undefined,
     rawTemperatureC: temperatureC,
@@ -118,7 +131,9 @@ function buildObservations(rawData: unknown[]): SourceObservation[] {
 function reduceQuality(observations: SourceObservation[]): SourceObservation[] {
   return observations.map((obs) => ({
     ...obs,
-    qualityScore: Math.round((obs.qualityScore - 0.4) * 100) / 100,
+    // I3 — Math.max(0.05,...) evita que qualityScore sea negativo,
+    // lo que produciría pesos negativos en fuseValue()
+    qualityScore: Math.max(0.05, Math.round((obs.qualityScore - 0.4) * 100) / 100),
     dataAgeMinutes: (Date.now() - new Date(obs.time).getTime()) / 60000,
     retrievalStatus: "STALE_CACHE" as const,
   }));

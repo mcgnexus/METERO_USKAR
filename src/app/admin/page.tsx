@@ -35,8 +35,8 @@ export default function AdminPage() {
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
           <h1 className="text-lg font-bold">Consola de Administración</h1>
           <button
-            onClick={() => {
-              document.cookie = 'admin_session=; path=/; max-age=0';
+            onClick={async () => {
+              await fetch('/api/admin/logout', { method: 'POST', cache: 'no-store' });
               router.push('/admin/login');
             }}
             className="text-sm text-slate-400 hover:text-white transition-colors"

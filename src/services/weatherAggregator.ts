@@ -1,6 +1,6 @@
 import { fetchObservationLayer } from "@/services/layerObservation";
-import { fetchComarcaLayer } from "@/services/layerComarca";
 import { getCalibratedTolerances } from "@/services/calibrationService";
+import { computeAgriculturalData } from "@/services/agriculturalService";
 import { HUESCAR_COORDS } from "@/lib/geo";
 import type {
   CurrentWeather,
@@ -14,11 +14,9 @@ import type {
   AgriculturalData,
   LivestockData,
   LightningData,
-  ComarcaEstimation,
 } from "@/types/weather";
 
 const OBSERVATION_TIMEOUT_MS = 15000;
-const COMARCA_TIMEOUT_MS = 20000;
 
 function fetchWithTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
   return Promise.race([
@@ -115,6 +113,11 @@ export async function aggregateWeather(): Promise<WeatherPayload> {
     daily: DailyWeather;
     confidencePct: number;
     confidenceExplanation: string;
+    orographic?: {
+      factor: number;
+      classification: "barlovento" | "sotavento" | "neutro";
+      description: string;
+    };
   } | null = null;
   let layer1Error: string | null = null;
 
@@ -122,20 +125,6 @@ export async function aggregateWeather(): Promise<WeatherPayload> {
     layerResult = await observationPromise;
   } catch (e) {
     layer1Error = e instanceof Error ? e.message : "unknown error";
-  }
-
-  let comarcaLayer: ComarcaEstimation[] | null = null;
-  try {
-    const aemetObs = layerResult?.sources?.find((s) => s.source === "AEMET");
-    const aemetTemp = aemetObs?.temperatureC ?? null;
-    const aemetHum = aemetObs?.humidityPct ?? null;
-    const aemetTime = aemetObs?.time ? new Date(aemetObs.time) : null;
-    comarcaLayer = await fetchWithTimeout(
-      fetchComarcaLayer(aemetTemp, aemetHum, aemetTime),
-      COMARCA_TIMEOUT_MS
-    );
-  } catch {
-    comarcaLayer = null;
   }
 
   if (!layerResult) {
@@ -188,13 +177,11 @@ export async function aggregateWeather(): Promise<WeatherPayload> {
   const gustsKmh = layerResult.current.windGustKmh;
   const et0 = layerResult.current.et0Mm;
 
-  const agricultural: AgriculturalData = {
-    et0CumulativeMm: et0,
-    gddCumulative: computeGDD(tempC),
-    chillHours: 0,
-    frostRisk48h: computeFrostRisk(tempC),
-    workability: computeWorkability(tempC, layerResult.current.precipitationMm, gustsKmh),
-  };
+  const agricultural = computeAgriculturalData(
+    layerResult.hourly,
+    layerResult.daily,
+    tempC
+  );
 
   const thi = computeTHI(tempC, humPct);
   const livestock: LivestockData = {
@@ -243,5 +230,6 @@ export async function aggregateWeather(): Promise<WeatherPayload> {
     lightning,
     agricultural,
     livestock,
+    orographic: layerResult.orographic,
   };
 }

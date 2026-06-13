@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import WeatherStationPanel from '@/components/WeatherStationPanel';
 
 interface SourceHealthStatus {
   source: string;
@@ -59,6 +60,7 @@ export default function AdminConsole() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [confirmRefresh, setConfirmRefresh] = useState(false);
+  const [refreshError, setRefreshError] = useState<string | null>(null);
 
   const fetchOverview = useCallback(async () => {
     try {
@@ -80,11 +82,13 @@ export default function AdminConsole() {
 
   async function handleForceRefresh() {
     setRefreshing(true);
+    setRefreshError(null);
     try {
-      await fetch('/api/admin/refresh', { method: 'POST', cache: 'no-store' });
+      const response = await fetch('/api/admin/force-refresh', { method: 'POST', cache: 'no-store' });
+      if (!response.ok) throw new Error('No se pudo forzar la actualización.');
       await fetchOverview();
-    } catch {
-      // ignore
+    } catch (error) {
+      setRefreshError(error instanceof Error ? error.message : 'No se pudo forzar la actualización.');
     } finally {
       setRefreshing(false);
       setConfirmRefresh(false);
@@ -137,6 +141,7 @@ export default function AdminConsole() {
           </button>
         )}
       </div>
+      {refreshError && <p className="text-sm text-red-400 text-right">{refreshError}</p>}
 
       {/* Source Health */}
       <section>
@@ -198,6 +203,11 @@ export default function AdminConsole() {
             <p className="text-slate-500 text-sm col-span-full">Sin métricas disponibles</p>
           )}
         </div>
+      </section>
+
+      {/* Miniestaciones Locales para Admin (con visibilidad completa) */}
+      <section className="bg-slate-900 border border-slate-700 rounded-xl p-4 text-slate-100">
+        <WeatherStationPanel />
       </section>
 
       {/* Uptime */}

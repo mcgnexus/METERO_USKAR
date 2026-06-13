@@ -30,6 +30,30 @@ export function bearing(lat1: number, lon1: number, lat2: number, lon2: number):
 
 export const HUESCAR_COORDS = { lat: 37.8094, lon: -2.5392, elevation: 953 };
 
+export const HUESCAR_URBAN_CENTER = {
+  name: "Huéscar ciudad",
+  lat: 37.8094,
+  lon: -2.5392,
+  elevation: 953,
+};
+
+export const AEMET_HUESCAR_5051X = {
+  id: "5051X",
+  name: "AEMET 5051X Huéscar",
+  lat: 37.861389,
+  lon: -2.652778,
+  elevation: 1101,
+  nearReservoir: true,
+  reservoirDistanceKm: 0.28,
+};
+
+export const PANTANO_SAN_CLEMENTE = {
+  name: "Pantano de San Clemente",
+  lat: 37.860763009894654,
+  lon: -2.6497118917245626,
+  type: "reservoir",
+};
+
 export const COMARCA_LOCATIONS = [
   { name: "Hu\u00E9scar", lat: 37.8094, lon: -2.5392, elevation: 953 },
   { name: "Castril", lat: 37.7961, lon: -2.7464, elevation: 890 },
@@ -38,4 +62,17 @@ export const COMARCA_LOCATIONS = [
   { name: "Orce", lat: 37.7194, lon: -2.4772, elevation: 925 },
   { name: "Puebla de Don Fadrique", lat: 37.9583, lon: -2.4350, elevation: 1164 },
   { name: "La Hinojosa", lat: 37.7897, lon: -2.4286, elevation: 980 },
+];
+
+export type ZoneType = "URBAN" | "VEGA" | "SECANO" | "MONTE" | "RESERVOIR";
+
+export const HUESCAR_ZONES: { name: string; lat: number; lon: number; elevation: number; type: ZoneType; description: string }[] = [
+  { name: "Casco urbano", lat: 37.8094, lon: -2.5392, elevation: 953, type: "URBAN", description: "Centro de Hu\u00E9scar, isla de calor urbana" },
+  { name: "Vega del Guadalent\u00EDn", lat: 37.7950, lon: -2.5350, elevation: 920, type: "VEGA", description: "Huerta y regad\u00EDo al sur del casco urbano" },
+  { name: "El Altiplano Norte", lat: 37.8350, lon: -2.5100, elevation: 1000, type: "SECANO", description: "Campos de secano y cereal al norte" },
+  { name: "Sierra de Hu\u00E9scar", lat: 37.8450, lon: -2.5800, elevation: 1150, type: "MONTE", description: "Monte mediterr\u00E1neo y pinares" },
+  { name: "Entorno Pantano San Clemente", lat: 37.8608, lon: -2.6497, elevation: 1095, type: "RESERVOIR", description: "Zona de influencia del embalse" },
+  { name: "La Encarnaci\u00F3n", lat: 37.7850, lon: -2.5000, elevation: 940, type: "VEGA", description: "Zona arqueol\u00F3gica y agr\u00EDcola de regad\u00EDo" },
+  { name: "Campos del Este", lat: 37.8100, lon: -2.4900, elevation: 970, type: "SECANO", description: "Secano olivarero y cerealista al este" },
+  { name: "Cerro del Castell\u00F3n", lat: 37.8220, lon: -2.5600, elevation: 1050, type: "MONTE", description: "Elevaci\u00F3n rocosa con matorral" },
 ];
