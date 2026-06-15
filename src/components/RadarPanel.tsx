@@ -3,12 +3,15 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import type { RadarData } from '@/types/weather';
 
-/* ── Coordenadas de Huéscar ── */
-const HUESCAR = { lat: 37.8094, lon: -2.5392 };
+/* ── Coordenadas exactas de Huéscar (Wikipedia: 37°48′34″N 2°32′22″O) ── */
+const HUESCAR = { lat: 37.809444, lon: -2.539444 };
 
 /* ── Bounding box aproximado del radar regional de AEMET (Almería/Granada) ──
    Ajusta estos valores si la imagen de AEMET cubre otra zona.               */
 const BBOX = { minLon: -5.2, maxLon: -0.8, minLat: 36.0, maxLat: 40.5 };
+const BBOX_WIDTH = BBOX.maxLon - BBOX.minLon;   // 4.4
+const BBOX_HEIGHT = BBOX.maxLat - BBOX.minLat;  // 4.5
+const BBOX_ASPECT = BBOX_WIDTH / BBOX_HEIGHT;   // ~0.978
 
 function latLonToPercent(lat: number, lon: number) {
   const x = (lon - BBOX.minLon) / (BBOX.maxLon - BBOX.minLon);
@@ -21,6 +24,14 @@ const HUESCAR_PCT = latLonToPercent(HUESCAR.lat, HUESCAR.lon);
 const MIN_ZOOM = 1;
 const MAX_ZOOM = 6;
 const ZOOM_STEP = 0.4;
+const REFRESH_INTERVAL_MS = 5 * 60 * 1000; // 5 minutos
+
+function timeAgo(isoString: string): string {
+  const diffMin = Math.floor((Date.now() - new Date(isoString).getTime()) / 60000);
+  if (diffMin < 1) return 'Ahora mismo';
+  if (diffMin < 60) return `Hace ${diffMin} min`;
+  return `Hace ${Math.floor(diffMin / 60)} h`;
+}
 
 /* ─────────────────────────────────────────────────────────────────────────── */
 
@@ -36,6 +47,8 @@ export default function RadarPanel({
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [imgError, setImgError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const containerRef    = useRef<HTMLDivElement>(null);
   const dragging        = useRef(false);
@@ -72,6 +85,26 @@ export default function RadarPanel({
     setScale(1);
     setOffset({ x: 0, y: 0 });
   }, []);
+
+  /* ── Auto-refresco de la imagen cada 5 min ── */
+  useEffect(() => {
+    if (!showRadarMap) return;
+    setIsLoading(true);
+    const interval = setInterval(() => setRefreshKey(k => k + 1), REFRESH_INTERVAL_MS);
+    return () => clearInterval(interval);
+  }, [showRadarMap]);
+
+  /* ── Atajos de teclado cuando el mapa está visible ── */
+  useEffect(() => {
+    if (!showRadarMap) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === '+' || e.key === '=') { e.preventDefault(); changeZoom(ZOOM_STEP); }
+      if (e.key === '-') { e.preventDefault(); changeZoom(-ZOOM_STEP); }
+      if (e.key === '0') { e.preventDefault(); resetView(); }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [showRadarMap, changeZoom, resetView]);
 
   /* ── Listeners nativos con passive:false (wheel + touchmove) ── */
   useEffect(() => {
@@ -185,6 +218,7 @@ export default function RadarPanel({
     if (!showRadarMap) {
       resetView();
       setImgError(null);
+      setIsLoading(false);
     }
   }, [showRadarMap, resetView]);
 
@@ -212,8 +246,6 @@ export default function RadarPanel({
     alerta:  'bg-orange-500 text-white',
     peligro: 'bg-red-600 text-white',
   };
-
-  const now = new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
 
   return (
     <div className={`rounded-xl border ${border} p-4 bg-white shadow-sm transition-all duration-300`}>
@@ -269,32 +301,38 @@ export default function RadarPanel({
             <div className="flex items-center justify-between px-3 py-1.5 bg-slate-800 text-white text-[11px]">
               <div className="flex items-center gap-2">
                 <button
+                  type="button"
                   onClick={() => changeZoom(ZOOM_STEP)}
                   className="w-6 h-6 rounded bg-slate-600 hover:bg-slate-500 flex items-center justify-center font-bold text-sm leading-none"
-                  title="Ampliar"
+                  aria-label="Ampliar"
+                  title="Ampliar (+)"
                 >+</button>
                 <button
+                  type="button"
                   onClick={() => changeZoom(-ZOOM_STEP)}
                   className="w-6 h-6 rounded bg-slate-600 hover:bg-slate-500 flex items-center justify-center font-bold text-sm leading-none"
-                  title="Reducir"
+                  aria-label="Reducir"
+                  title="Reducir (-)"
                 >−</button>
                 <button
+                  type="button"
                   onClick={resetView}
                   className="px-2 h-6 rounded bg-slate-600 hover:bg-slate-500 text-[10px] font-semibold"
-                  title="Restablecer vista"
+                  aria-label="Restablecer vista"
+                  title="Restablecer vista (0)"
                 >↺ Reset</button>
                 <span className="text-slate-400">{Math.round(scale * 100)}%</span>
               </div>
               <div className="flex items-center gap-2 text-slate-300">
                 <span>📍 Huéscar</span>
-                <span>🕐 {now}</span>
+                <span>🕐 {timeAgo(radar.lastUpdated)}</span>
               </div>
             </div>
 
             {/* Contenedor del mapa — wheel y touchmove se registran via useEffect */}
             <div
               ref={containerRef}
-              className="relative overflow-hidden bg-slate-900"
+              className="relative overflow-hidden bg-slate-900 sm:h-[400px] lg:h-[480px]"
               style={{ height: '300px', cursor: isDragging ? 'grabbing' : 'grab' }}
               onMouseDown={onMouseDown}
               onMouseMove={onMouseMove}
@@ -303,7 +341,7 @@ export default function RadarPanel({
               onTouchStart={onTouchStart}
               onTouchEnd={onTouchEnd}
             >
-              {/* Capa transformada (imagen + marcador) */}
+              {/* Capa transformada (zoom + pan) */}
               <div
                 style={{
                   transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`,
@@ -314,78 +352,136 @@ export default function RadarPanel({
                   position: 'relative',
                 }}
               >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={radar.radarImageUrl}
-                  alt="Radar regional AEMET"
-                  draggable={false}
-                  style={{ width: '100%', height: '100%', objectFit: 'cover', display: imgError ? 'none' : 'block' }}
-                  onError={() => setImgError('El radar de AEMET no está disponible ahora mismo (límite de peticiones). Inténtalo en 1 minuto.')}
-                  onLoad={() => setImgError(null)}
-                />
-                {imgError && (
-                  <div style={{
-                    position: 'absolute', inset: 0,
-                    display: 'flex', flexDirection: 'column',
-                    alignItems: 'center', justifyContent: 'center',
-                    background: 'rgba(15,23,42,0.85)', color: '#94a3b8',
-                    fontSize: '11px', textAlign: 'center', padding: '16px',
-                    gap: '8px',
-                  }}>
-                    <span style={{ fontSize: '28px' }}>🛰️</span>
-                    <span>{imgError}</span>
-                    <button
-                      onClick={() => { setImgError(null); }}
+                {/* Centrado para mantener aspect ratio correcto */}
+                <div className="absolute inset-0 flex items-center justify-center">
+                  {/* Contenedor con aspect ratio real del radar */}
+                  <div
+                    className="relative max-h-full max-w-full"
+                    style={{ aspectRatio: `${BBOX_ASPECT}` }}
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={`${radar.radarImageUrl}?t=${refreshKey}`}
+                      alt="Radar regional AEMET"
+                      draggable={false}
+                      className="block h-full w-full"
+                      style={{ objectFit: 'contain', display: imgError ? 'none' : 'block' }}
+                      onError={() => {
+                        setIsLoading(false);
+                        setImgError('El radar de AEMET no está disponible ahora mismo (límite de peticiones). Inténtalo en 1 minuto.');
+                      }}
+                      onLoad={() => { setIsLoading(false); setImgError(null); }}
+                    />
+                    {imgError && (
+                      <div style={{
+                        position: 'absolute', inset: 0,
+                        display: 'flex', flexDirection: 'column',
+                        alignItems: 'center', justifyContent: 'center',
+                        background: 'rgba(15,23,42,0.85)', color: '#94a3b8',
+                        fontSize: '11px', textAlign: 'center', padding: '16px',
+                        gap: '8px',
+                      }}>
+                        <span style={{ fontSize: '28px' }}>🛰️</span>
+                        <span>{imgError}</span>
+                        <button
+                          type="button"
+                          onClick={() => { setImgError(null); setRefreshKey(k => k + 1); }}
+                          style={{
+                            marginTop: '4px', fontSize: '10px', fontWeight: 700,
+                            padding: '4px 10px', borderRadius: '6px',
+                            background: '#334155', color: '#e2e8f0', border: 'none', cursor: 'pointer',
+                          }}
+                        >
+                          🔄 Reintentar
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Marcador Huéscar — ahora posicionado sobre el área real de la imagen */}
+                    <div
                       style={{
-                        marginTop: '4px', fontSize: '10px', fontWeight: 700,
-                        padding: '4px 10px', borderRadius: '6px',
-                        background: '#334155', color: '#e2e8f0', border: 'none', cursor: 'pointer',
+                        position: 'absolute',
+                        left: `${HUESCAR_PCT.x * 100}%`,
+                        top: `${HUESCAR_PCT.y * 100}%`,
+                        transform: 'translate(-50%, -100%)',
+                        pointerEvents: 'none',
                       }}
                     >
-                      🔄 Reintentar
-                    </button>
-                  </div>
-                )}
-
-                {/* Marcador Huéscar */}
-                <div
-                  style={{
-                    position: 'absolute',
-                    left: `${HUESCAR_PCT.x * 100}%`,
-                    top: `${HUESCAR_PCT.y * 100}%`,
-                    transform: 'translate(-50%, -100%)',
-                    pointerEvents: 'none',
-                  }}
-                >
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                    <div style={{
-                      background: '#1B3668',
-                      color: 'white',
-                      fontSize: '9px',
-                      fontWeight: 700,
-                      padding: '2px 5px',
-                      borderRadius: '4px',
-                      whiteSpace: 'nowrap',
-                      boxShadow: '0 1px 4px rgba(0,0,0,0.6)',
-                      marginBottom: '2px',
-                    }}>
-                      📍 Huéscar
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                        <div style={{
+                          background: '#1B3668',
+                          color: 'white',
+                          fontSize: '9px',
+                          fontWeight: 700,
+                          padding: '2px 5px',
+                          borderRadius: '4px',
+                          whiteSpace: 'nowrap',
+                          boxShadow: '0 1px 4px rgba(0,0,0,0.6)',
+                          marginBottom: '2px',
+                        }}>
+                          📍 Huéscar
+                        </div>
+                        <div style={{
+                          width: 0, height: 0,
+                          borderLeft:  '5px solid transparent',
+                          borderRight: '5px solid transparent',
+                          borderTop:   '7px solid #1B3668',
+                        }} />
+                      </div>
                     </div>
-                    <div style={{
-                      width: 0, height: 0,
-                      borderLeft:  '5px solid transparent',
-                      borderRight: '5px solid transparent',
-                      borderTop:   '7px solid #1B3668',
-                    }} />
                   </div>
                 </div>
               </div>
+
+              {/* Loading overlay */}
+              {isLoading && !imgError && (
+                <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-slate-900/80">
+                  <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-white" />
+                  <span className="mt-3 text-sm font-medium text-white">Cargando imagen del radar…</span>
+                </div>
+              )}
+            </div>
+
+            {/* Leyenda de colores — escala europea AEMET/CEDRE (dBZ) */}
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 px-3 py-2 bg-slate-800 text-[10px] text-slate-300">
+              <span className="mr-1 font-semibold text-slate-400">dBZ:</span>
+              <span className="flex items-center gap-1">
+                <span className="inline-block h-2.5 w-5 rounded-sm bg-green-300" />
+                <span>10</span>
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="inline-block h-2.5 w-5 rounded-sm bg-green-500" />
+                <span>20</span>
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="inline-block h-2.5 w-5 rounded-sm bg-yellow-400" />
+                <span>30</span>
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="inline-block h-2.5 w-5 rounded-sm bg-orange-400" />
+                <span>40</span>
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="inline-block h-2.5 w-5 rounded-sm bg-orange-600" />
+                <span>50</span>
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="inline-block h-2.5 w-5 rounded-sm bg-red-600" />
+                <span>60</span>
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="inline-block h-2.5 w-5 rounded-sm bg-pink-600" />
+                <span>70</span>
+              </span>
+              <span className="flex items-center gap-1.5 ml-1 text-slate-400">
+                &gt; 75 = Granizo
+              </span>
             </div>
 
             {/* Pie del mapa */}
             <div className="flex items-center justify-between px-3 py-1 bg-slate-800 text-[9px] text-slate-400">
               <span>Radar AEMET · Almería/Granada</span>
-              <span>Actualizado: {now}</span>
+              <span>Fuente: Open-Meteo + AEMET</span>
             </div>
           </div>
         )}
