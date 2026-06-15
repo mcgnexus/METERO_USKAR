@@ -38,8 +38,8 @@ export default function Home() {
             <p className="text-sm text-slate-600">SaaS meteorologico local para Huéscar</p>
           </div>
           <nav className="flex items-center gap-3">
-            <Link href="/meteo" className="cta-primary text-sm">
-              Ver dashboard
+            <Link href="/tiempo" className="cta-primary text-sm">
+              Ver tiempo gratis
             </Link>
           </nav>
         </header>
@@ -57,11 +57,11 @@ export default function Home() {
                   Centraliza observacion, prevision y alertas en una experiencia limpia para publico, ayuntamiento y operativa interna.
                 </p>
                 <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-                  <Link href="/meteo" className="cta-primary">
-                    Abrir vista SaaS
+                  <Link href="/tiempo" className="cta-primary">
+                    Abrir version gratuita
                   </Link>
-                  <Link href="/widget" className="cta-secondary">
-                    Ver widget institucional
+                  <Link href="/meteo" className="cta-secondary">
+                    Ver panel completo
                   </Link>
                 </div>
                 <div className="mt-10 grid gap-3 sm:grid-cols-3">
