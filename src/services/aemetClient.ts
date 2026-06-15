@@ -10,7 +10,7 @@ const AEMET_MAX_ATTEMPTS = parseInt(process.env.AEMET_MAX_ATTEMPTS || "3");
 const AEMET_RETRY_DELAY_MS = parseInt(process.env.AEMET_RETRY_DELAY_MS || "2000");
 
 const CACHE_KEY_OBSERVATIONS = `aemet_observations:${AEMET_OBSERVATION_URL}`;
-const CACHE_FRESH_TTL_MS = 15 * 60 * 1000;
+const CACHE_FRESH_TTL_MS = 5 * 60 * 1000;
 const CACHE_STALE_TTL_MS = 4 * 60 * 60 * 1000;
 const COOLDOWN_KEY = "aemet_cooldown";
 const COOLDOWN_TTL_MS = 5 * 60 * 1000;

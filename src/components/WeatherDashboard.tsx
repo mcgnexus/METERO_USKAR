@@ -106,18 +106,39 @@ function OverviewMetric({
 }
 
 function SourceHealthRow({ health }: { health: SourceHealth[] }) {
+  const nowMs = Date.now();
+
+  function statusLabel(source: SourceHealth): string {
+    if (source.status === 'ERROR') return 'caido';
+    if (source.status === 'DEGRADED') return 'degradado';
+    const ageMin = source.dataAgeMinutes ?? 0;
+    if (ageMin <= 15) return 'en vivo';
+    if (ageMin <= 60) return 'disponible';
+    return 'dato antiguo';
+  }
+
+  function ageDisplay(source: SourceHealth): string {
+    if (source.dataAgeMinutes === undefined) return 'sin edad';
+    const min = Math.round(source.dataAgeMinutes);
+    if (min < 60) return `hace ${min} min`;
+    const h = Math.floor(min / 60);
+    const m = min % 60;
+    return m > 0 ? `hace ${h}h ${m}min` : `hace ${h}h`;
+  }
+
   return (
     <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500">
       {health.map((source) => {
-        const statusLabel = source.status === 'OK' ? 'en vivo' : source.status === 'DEGRADED' ? 'degradado' : 'caido';
-        const ageStr = source.dataAgeMinutes !== undefined ? `${Math.round(source.dataAgeMinutes)} min` : 'sin edad';
         const name = source.source === 'LOCAL_STATIONS' ? 'Miniestaciones' : source.source === 'OPEN_METEO' ? 'Open-Meteo' : 'AEMET';
+        const badge = statusLabel(source);
         return (
           <div key={source.source} className="flex items-center gap-2 rounded-full border border-slate-200 bg-white/80 px-3 py-1.5">
             <SourceDot status={source.status} />
             <span className="font-semibold text-slate-700">{name}</span>
-            <span>{ageStr}</span>
-            <span className="text-[11px]">{statusLabel}</span>
+            <span className="text-slate-400">{ageDisplay(source)}</span>
+            <span className={`text-[11px] ${source.status === 'OK' ? 'text-emerald-600' : source.status === 'DEGRADED' ? 'text-amber-600' : 'text-rose-500'}`}>
+              {badge}
+            </span>
           </div>
         );
       })}

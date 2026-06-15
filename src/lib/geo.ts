@@ -39,7 +39,7 @@ export const HUESCAR_URBAN_CENTER = {
 
 export const AEMET_HUESCAR_5051X = {
   id: "5051X",
-  name: "AEMET 5051X Huéscar",
+  name: "AEMET 5051X Huéscar (automática)",
   lat: 37.861389,
   lon: -2.652778,
   elevation: 1101,
