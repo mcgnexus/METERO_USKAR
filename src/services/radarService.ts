@@ -10,27 +10,14 @@ export async function fetchRadarPrecipitation(lat: number, lon: number): Promise
   const cached = cacheGet<RadarData>(CACHE_KEY);
   if (cached) return cached;
 
-  let radarImageUrl: string | null = null;
+  // La imagen del radar se sirve a través del proxy interno /api/weather/radar/image
+  // que descarga la imagen de AEMET en el servidor y la reenvía al navegador.
+  const radarImageUrl: string = "/api/weather/radar/image";
   let hasPrecipitationNearby = false;
   let level: RadarData["level"] = "ninguno";
   let message = "No se detectan precipitaciones en el radar regional.";
   let minutesToRain: number | null = null;
-
-  // 1. Intentar obtener la última imagen de radar de AEMET
-  if (AEMET_API_KEY) {
-    try {
-      const url = `${RADAR_ENDPOINT}?api_key=${AEMET_API_KEY}`;
-      const response = await fetch(url, { signal: AbortSignal.timeout(8000) });
-      if (response.ok) {
-        const json = await response.json();
-        if (json && json.datos) {
-          radarImageUrl = json.datos; // URL directa de la imagen gráfica de AEMET
-        }
-      }
-    } catch (e) {
-      console.error("[Radar] Error obteniendo radar regional de AEMET:", e);
-    }
-  }
+  let fetchSucceeded = false;
 
   // 2. Obtener pronóstico de lluvias a muy corto plazo (próximas horas) vía Open-Meteo
   try {
@@ -68,6 +55,7 @@ export async function fetchRadarPrecipitation(lat: number, lon: number): Promise
             message = `🌦️ Posibilidad de lluvia débil en ${minutesToRain} minutos.`;
           }
         }
+        fetchSucceeded = true;
       }
     }
   } catch (e) {
@@ -83,6 +71,8 @@ export async function fetchRadarPrecipitation(lat: number, lon: number): Promise
     lastUpdated: new Date().toISOString(),
   };
 
-  cacheSet(CACHE_KEY, result, CACHE_TTL_MS);
+  if (fetchSucceeded) {
+    cacheSet(CACHE_KEY, result, CACHE_TTL_MS);
+  }
   return result;
 }

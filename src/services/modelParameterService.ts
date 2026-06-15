@@ -4,7 +4,7 @@ import {
   saveModelParameter,
   getAllModelParameters,
 } from "@/lib/weatherStore";
-import { cacheGet, cacheSet } from "@/lib/inMemoryCache";
+import { cacheGet, cacheSet, cacheDelete } from "@/lib/inMemoryCache";
 
 const CACHE_KEY = "model_parameters";
 const CACHE_TTL_MS = 6 * 60 * 60 * 1000;
@@ -46,6 +46,24 @@ export async function getModelParameters(): Promise<Record<string, number>> {
 
   cacheSet(CACHE_KEY, merged, CACHE_TTL_MS);
   return merged;
+}
+
+// Parámetros cargados en memoria, accesibles de forma síncrona desde los
+// servicios del modelo microclimático. Se refrescan vía refreshRuntimeParameters()
+// (cron hourly + aggregateWeather) y arrancan con los defaults hasta la primera carga.
+let runtimeParams: Record<string, number> = { ...DEFAULT_PARAMS };
+
+export async function refreshRuntimeParameters(): Promise<void> {
+  try {
+    runtimeParams = await getModelParameters();
+  } catch {
+    // Se mantienen los parámetros anteriores (o defaults si es la primera carga).
+  }
+}
+
+export function getModelParam(key: keyof typeof DEFAULT_PARAMS): number {
+  const value = runtimeParams[key];
+  return typeof value === "number" && Number.isFinite(value) ? value : DEFAULT_PARAMS[key];
 }
 
 export async function tuneParametersFromHistory(): Promise<ParameterTuningResult[]> {
@@ -126,7 +144,8 @@ export async function tuneParametersFromHistory(): Promise<ParameterTuningResult
   }
 
   if (results.length > 0) {
-    cacheSet(CACHE_KEY, null as any, 1);
+    cacheDelete(CACHE_KEY);
+    runtimeParams = await getModelParameters();
   }
 
   return results;

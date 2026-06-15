@@ -2,13 +2,16 @@ import { NextRequest, NextResponse } from "next/server";
 import { fetchNowcast } from "@/services/nowcastService";
 import { fetchLightningData } from "@/services/lightningService";
 import { HUESCAR_COORDS } from "@/lib/geo";
+import { parseCoord } from "@/lib/coords";
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
   const { searchParams } = new URL(request.url);
-  const lat = parseFloat(searchParams.get("lat") || String(HUESCAR_COORDS.lat));
-  const lon = parseFloat(searchParams.get("lon") || String(HUESCAR_COORDS.lon));
+  const lat = parseCoord(searchParams.get("lat"), HUESCAR_COORDS.lat);
+  const lon = parseCoord(searchParams.get("lon"), HUESCAR_COORDS.lon);
   const windDirParam = searchParams.get("windDir");
-  const windDirDeg = windDirParam ? parseFloat(windDirParam) : undefined;
+  const windDirDeg = windDirParam !== null && windDirParam.trim() !== ""
+    ? (Number.isFinite(parseFloat(windDirParam)) ? parseFloat(windDirParam) : undefined)
+    : undefined;
 
   try {
     const lightning = await fetchLightningData(lat, lon).catch(() => null);

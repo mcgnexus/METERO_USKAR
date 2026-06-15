@@ -253,7 +253,7 @@ export type GeoPoint = {
 export type RadarData = {
   hasPrecipitationNearby: boolean;
   level: "ninguno" | "aviso" | "alerta" | "peligro";
-  radarImageUrl: string | null;
+  radarImageUrl: string;
   message: string;
   minutesToRain: number | null;
   lastUpdated: string;

@@ -1,5 +1,6 @@
 import { COMARCA_LOCATIONS } from "@/lib/geo";
 import { cacheGet, cacheSet } from "@/lib/inMemoryCache";
+import { fetchVegetationIndices } from "@/services/sentinelService";
 import type { GeographicProfile } from "@/types/weather";
 
 const PROFILES_CACHE_TTL = 3600_000;
@@ -52,67 +53,12 @@ async function fetchNDVINDWI(
   lat: number,
   lon: number
 ): Promise<{ ndvi: number | null; ndwi: number | null }> {
-  const clientId = process.env.SENTINEL_HUB_CLIENT_ID;
-  const clientSecret = process.env.SENTINEL_HUB_CLIENT_SECRET;
-  if (!clientId || !clientSecret) return { ndvi: null, ndwi: null };
-
-  try {
-    const tokenRes = await fetch(
-      "https://services.sentinel-hub.com/oauth/token",
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: new URLSearchParams({
-          grant_type: "client_credentials",
-          client_id: clientId,
-          client_secret: clientSecret,
-        }),
-      }
-    );
-    if (!tokenRes.ok) return { ndvi: null, ndwi: null };
-    const { access_token } = await tokenRes.json();
-
-    const bbox = `${lon - 0.05},${lat - 0.05},${lon + 0.05},${lat + 0.05}`;
-    const statsUrl = `https://services.sentinel-hub.com/api/v1/statistics`;
-    const body = {
-      input: {
-        bounds: { bbox: [lon - 0.05, lat - 0.05, lon + 0.05, lat + 0.05] },
-        data: [
-          {
-            type: "S2L2A",
-            dataFilter: { maxCloudCoverage: 30 },
-          },
-        ],
-      },
-      aggregation: {
-        timeRange: {
-          from: new Date(Date.now() - 30 * 86400000).toISOString().split("T")[0],
-          to: new Date().toISOString().split("T")[0],
-        },
-        evalscript: `
-          return [index(B04, B08), index(B03, B08)];
-        `,
-        reducer: "mean",
-      },
-    };
-
-    const statsRes = await fetch(statsUrl, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${access_token}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(body),
-    });
-
-    if (!statsRes.ok) return { ndvi: null, ndwi: null };
-    const statsData = await statsRes.json();
-    const data = statsData?.data?.[0]?.outputs?.[0]?.bands?.[0]?.stats?.mean;
-    if (!data || data.length < 2) return { ndvi: null, ndwi: null };
-    return { ndvi: data[0], ndwi: data[1] };
-  } catch {
-    return { ndvi: null, ndwi: null };
-  }
+  // Se delega en sentinelService, que usa el endpoint CDSE moderno y un
+  // evalscript correcto (NDVI = (B08-B04)/(B08+B04)). La implementación
+  // anterior usaba el endpoint legacy services.sentinel-hub.com con un
+  // evalscript que invertía el signo del NDVI y un parseo de respuesta roto.
+  const result = await fetchVegetationIndices(lat, lon);
+  return { ndvi: result.ndvi, ndwi: result.ndwi };
 }
 
 async function saveLocationProfile(profile: GeographicProfile): Promise<void> {

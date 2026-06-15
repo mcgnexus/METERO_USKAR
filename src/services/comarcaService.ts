@@ -86,12 +86,15 @@ export async function fetchComarcaWeather(aemetObs: SourceObservation | null): P
       : (forecast?.precipitationMm ?? 0);
 
     const isNight = new Date().getHours() < 7 || new Date().getHours() >= 21;
+    // Si hay observación AEMET, la temperatura base está anclada a la cota de Huéscar;
+    // si no, la fuente es el pronóstico local (ya a la altitud de la localidad).
+    const sourceElevation = aemetObs ? HUESCAR_COORDS.elevation : location.elevation;
     const corrected = applyMicroclimateCorrections(
       baseTemp,
       baseHum,
       baseWind,
       isNight,
-      location.elevation,
+      sourceElevation,
       location.elevation,
       relief
     );

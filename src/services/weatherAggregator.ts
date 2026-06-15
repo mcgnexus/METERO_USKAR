@@ -1,6 +1,8 @@
 import { fetchObservationLayer } from "@/services/layerObservation";
 import { getCalibratedTolerances } from "@/services/calibrationService";
 import { computeAgriculturalData } from "@/services/agriculturalService";
+import { computeLivestockData } from "@/services/livestockService";
+import { refreshRuntimeParameters } from "@/services/modelParameterService";
 import { HUESCAR_COORDS } from "@/lib/geo";
 import type {
   CurrentWeather,
@@ -12,7 +14,6 @@ import type {
   WeatherPayload,
   WeatherAlert,
   AgriculturalData,
-  LivestockData,
   LightningData,
 } from "@/types/weather";
 
@@ -46,19 +47,6 @@ function computeWorkability(
   if (precipMm > 15) reasons.push("precipitation_above_15mm");
   if (gustsKmh > 70) reasons.push("gusts_above_70kmh");
   return { workable: reasons.length === 0, reasons };
-}
-
-function computeTHI(tempC: number, rhPct: number): number {
-  const e = (rhPct / 100) * 0.611 * Math.exp((17.5 * tempC) / (241 + tempC));
-  return tempC + 0.36 * e + 41.2;
-}
-
-function thiLevel(thi: number): "ninguno" | "leve" | "moderado" | "severo" | "peligroso" {
-  if (thi < 70) return "ninguno";
-  if (thi < 75) return "leve";
-  if (thi < 80) return "moderado";
-  if (thi < 85) return "severo";
-  return "peligroso";
 }
 
 function generateAlerts(
@@ -97,6 +85,7 @@ function generateAlerts(
 }
 
 export async function aggregateWeather(): Promise<WeatherPayload> {
+  await refreshRuntimeParameters();
   const tolerances = await getCalibratedTolerances();
 
   const observationPromise = fetchWithTimeout(
@@ -183,12 +172,7 @@ export async function aggregateWeather(): Promise<WeatherPayload> {
     tempC
   );
 
-  const thi = computeTHI(tempC, humPct);
-  const livestock: LivestockData = {
-    thi: Math.round(thi * 10) / 10,
-    level: thiLevel(thi),
-    affectedLivestock: thi >= 75 ? "bovino,ovino,caprino" : "ninguno",
-  };
+  const livestock = computeLivestockData(tempC, humPct);
 
   const alerts = generateAlerts(tempC, gustsKmh, humPct, et0);
 

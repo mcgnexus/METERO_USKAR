@@ -1,7 +1,10 @@
 import type { LivestockData } from "@/types/weather";
+import { saturationVaporPressure } from "@/lib/dewPoint";
 
 function computeTHI(temperatureC: number, humidityPct: number): number {
-  const e = (humidityPct / 100) * 0.611 * Math.exp((17.5 * temperatureC) / (241 + temperatureC));
+  // Fórmula NRC (1971): THI = T + 0.36 * e + 41.2, con e en kPa.
+  // saturationVaporPressure devuelve hPa, se divide entre 10 para kPa.
+  const e = (humidityPct / 100) * saturationVaporPressure(temperatureC) / 10;
   return temperatureC + 0.36 * e + 41.2;
 }
 

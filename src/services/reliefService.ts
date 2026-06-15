@@ -1,4 +1,5 @@
 import { HUESCAR_URBAN_CENTER } from "@/lib/geo";
+import { getModelParam } from "@/services/modelParameterService";
 
 export type MicroclimateType = "VALLEY" | "PIEDMONT" | "EXPOSED_PLATEAU" | "MIXED_RELIEF";
 
@@ -108,15 +109,15 @@ export function getNightInversion(tempC: number, windKmh: number, isNight: boole
   if (!isNight) return 0;
   if (windKmh > 5) return 0;
 
-  if (relief.microclimate === "VALLEY") return -1.5;
-  return -0.5;
+  if (relief.microclimate === "VALLEY") return getModelParam("night_inversion_valley");
+  return getModelParam("night_inversion_mixed");
 }
 
 export function getWindFactor(relief: ReliefData): number {
   switch (relief.microclimate) {
-    case "EXPOSED_PLATEAU": return 1.2;
+    case "EXPOSED_PLATEAU": return getModelParam("wind_factor_plateau");
     case "PIEDMONT": return 1.0;
-    case "VALLEY": return 0.7;
+    case "VALLEY": return getModelParam("wind_factor_valley");
     case "MIXED_RELIEF": return 0.9;
     default: return 1.0;
   }

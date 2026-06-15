@@ -17,7 +17,7 @@ export async function GET(): Promise<NextResponse> {
     fetchNowcast(
       HUESCAR_COORDS.lat,
       HUESCAR_COORDS.lon,
-      weather.current.windDirectionDeg || undefined,
+      weather.current.windDirectionDeg ?? undefined,
       lightning
     ).catch(() => null),
   ]);

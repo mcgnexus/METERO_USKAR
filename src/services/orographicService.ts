@@ -1,4 +1,5 @@
 import type { ReliefData } from "@/services/reliefService";
+import { getModelParam } from "@/services/modelParameterService";
 
 export interface OrographicResult {
   factor: number;
@@ -37,11 +38,11 @@ export function getOrographicFactor(
   if (diff <= 45) {
     classification = "barlovento";
     const intensity = (1 - diff / 45) * slopeWeight * windSpeedFactor;
-    factor = 1.0 + intensity * 0.4;
+    factor = 1.0 + intensity * getModelParam("orographic_barlovento_max");
   } else if (diff >= 135) {
     classification = "sotavento";
     const intensity = ((diff - 135) / 45) * slopeWeight * windSpeedFactor;
-    factor = 1.0 - intensity * 0.35;
+    factor = 1.0 - intensity * getModelParam("orographic_sotavento_max");
   } else {
     classification = "neutro";
     factor = 1.0;

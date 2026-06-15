@@ -137,12 +137,15 @@ export async function fetchZoneWeather(aemetObs: SourceObservation | null): Prom
       ? (aemetObs.precipitationMm ?? 0) + (anchorObs && forecast ? (forecast.precipitationMm - anchorObs.precipitationMm) : 0)
       : (forecast?.precipitationMm ?? 0);
 
+    // Si hay observación AEMET, la temperatura base está anclada a la cota de Huéscar;
+    // si no, la fuente es el pronóstico local (ya a la altitud de la zona).
+    const sourceElevation = aemetObs ? HUESCAR_COORDS.elevation : zone.elevation;
     const corrected = applyMicroclimateCorrections(
       baseTemp,
       baseHum,
       baseWind,
       isNight,
-      zone.elevation,
+      sourceElevation,
       zone.elevation,
       relief
     );

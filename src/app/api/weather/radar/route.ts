@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { fetchRadarPrecipitation } from "@/services/radarService";
 import { HUESCAR_COORDS } from "@/lib/geo";
+import { parseCoord } from "@/lib/coords";
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
   const { searchParams } = new URL(request.url);
-  const lat = parseFloat(searchParams.get("lat") || String(HUESCAR_COORDS.lat));
-  const lon = parseFloat(searchParams.get("lon") || String(HUESCAR_COORDS.lon));
+  const lat = parseCoord(searchParams.get("lat"), HUESCAR_COORDS.lat);
+  const lon = parseCoord(searchParams.get("lon"), HUESCAR_COORDS.lon);
 
   try {
     const radarData = await fetchRadarPrecipitation(lat, lon);

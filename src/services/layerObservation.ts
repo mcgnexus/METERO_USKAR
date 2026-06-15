@@ -10,6 +10,7 @@ import { applyMicroclimateCorrections } from "@/services/correctionService";
 import { applyOrographicPrecipitation } from "@/services/orographicService";
 import { getStationBiases, applyStationBias, recordStationComparison } from "@/services/stationCalibration";
 import { dewPoint, relativeHumidity } from "@/lib/dewPoint";
+import { getModelParam } from "@/services/modelParameterService";
 import type { CurrentWeather, SourceObservation, SourceHealth, HourlyWeather, ComparisonHourlyWeather, DailyWeather } from "@/types/weather";
 
 const OBSERVATION_LAYER_TIMEOUT_MS = 15000;
@@ -143,10 +144,12 @@ export async function fetchObservationLayer(): Promise<{
       );
       const isDaytime = hourMadrid >= 8 && hourMadrid < 20;
 
-      const reservoirDistanceKm = AEMET_HUESCAR_5051X.reservoirDistanceKm ?? 0.48;
-      const reservoirInfluence = Math.min(1.5, Math.max(0.5, Math.sqrt(0.48 / Math.max(reservoirDistanceKm, 0.05))));
-      const reservoirTempBias = (isDaytime ? -0.5 : -0.2) * reservoirInfluence;
-      const reservoirDewBias = 0.4 * reservoirInfluence;
+      const reservoirDistanceKm = AEMET_HUESCAR_5051X.reservoirDistanceKm ?? 0.28;
+      const reservoirInfluence = Math.min(1.5, Math.max(0.5, Math.sqrt(0.28 / Math.max(reservoirDistanceKm, 0.05))));
+      const reservoirTempBias = (isDaytime
+        ? getModelParam("reservoir_temp_bias_day")
+        : getModelParam("reservoir_temp_bias_night")) * reservoirInfluence;
+      const reservoirDewBias = getModelParam("reservoir_dew_bias") * reservoirInfluence;
 
       const tempAfterReservoir = rawTempVal - reservoirTempBias;
       const tdStation = dewPoint(rawTempVal, rawHumVal);
@@ -351,7 +354,7 @@ export async function fetchObservationLayer(): Promise<{
     }
 
     if (aemetObs && activeFreshStations.length > 0) {
-      Promise.allSettled(
+      await Promise.allSettled(
         activeFreshStations.map((station: any) => {
           const stationId = String(station.node_code ?? station.id ?? "");
           if (!stationId) return Promise.resolve();

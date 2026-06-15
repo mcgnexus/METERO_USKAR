@@ -77,6 +77,7 @@ export async function fetchNowcast(
   let stormDetected = false;
   let stormDistanceKm: number | null = null;
   let stormBearing: string | null = null;
+  let fetchSucceeded = false;
 
   try {
     const url =
@@ -114,12 +115,13 @@ export async function fetchNowcast(
             }
           }
         }
+        fetchSucceeded = true;
       }
     }
   } catch {
   }
 
-  if (lightning && lightning.active && lightning.nearestStrikeKm !== null) {
+  if (lightning && lightning.active && lightning.nearestStrikeKm !== null && lightning.strikes.length > 0) {
     if (lightning.nearestStrikeKm < 30) {
       stormDetected = true;
       stormDistanceKm = lightning.nearestStrikeKm;
@@ -172,6 +174,8 @@ export async function fetchNowcast(
     lastUpdated: new Date().toISOString(),
   };
 
-  cacheSet(CACHE_KEY, result, CACHE_TTL_MS);
+  if (fetchSucceeded) {
+    cacheSet(CACHE_KEY, result, CACHE_TTL_MS);
+  }
   return result;
 }

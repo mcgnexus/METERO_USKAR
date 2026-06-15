@@ -1,6 +1,7 @@
 import { dewPoint, relativeHumidity } from "@/lib/dewPoint";
 import type { ReliefData } from "@/services/reliefService";
 import { getWindFactor, getNightInversion } from "@/services/reliefService";
+import { getModelParam } from "@/services/modelParameterService";
 
 export interface CorrectedValues {
   temperatureC: number;
@@ -30,7 +31,7 @@ export function applyMicroclimateCorrections(
   let correctedWind = windKmh;
 
   if (sourceElevation !== undefined && sourceElevation !== targetElevation) {
-    const altCorr = (sourceElevation - targetElevation) * 0.006;
+    const altCorr = (sourceElevation - targetElevation) * getModelParam("altitude_lapse_rate");
     correctedTemp = tempC + altCorr;
     corrections.altitudeCorrectionC = Math.round(altCorr * 1000) / 1000;
   }
