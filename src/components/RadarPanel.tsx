@@ -332,8 +332,8 @@ export default function RadarPanel({
             {/* Contenedor del mapa — wheel y touchmove se registran via useEffect */}
             <div
               ref={containerRef}
-              className="relative overflow-hidden bg-slate-900 sm:h-[400px] lg:h-[480px]"
-              style={{ height: '300px', cursor: isDragging ? 'grabbing' : 'grab' }}
+              className="relative overflow-hidden bg-slate-900 h-[300px] sm:h-[400px] lg:h-[480px]"
+              style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
               onMouseDown={onMouseDown}
               onMouseMove={onMouseMove}
               onMouseUp={onMouseUp}
