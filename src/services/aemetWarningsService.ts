@@ -2,7 +2,7 @@ import { cacheGet, cacheSet } from "@/lib/inMemoryCache";
 import type { WeatherAlert } from "@/types/weather";
 
 const CACHE_KEY = "aemet_warnings";
-const CACHE_TTL_MS = 300_000;
+const CACHE_TTL_MS = 30 * 60 * 1000;
 const CAP_URL = "https://opendata.aemet.es/opendata/api/avisos_cap/ultimos";
 
 const GRANADA_PROVINCES = ["Granada", "Huescar", "Almanzora", "Valle del Almanzora", "Cazorla"];

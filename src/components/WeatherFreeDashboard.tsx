@@ -11,7 +11,7 @@ import {
   weatherEmoji,
   windDirection,
 } from '@/lib/display';
-import type { DailyWeather, HourlyWeather, WeatherAlert } from '@/types/weather';
+import type { DailyWeather, HourlyWeather, WeatherAlert, WeatherPayload } from '@/types/weather';
 
 function formatHour(iso: string) {
   return new Date(iso).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
@@ -129,6 +129,54 @@ function FreeDailyCards({ daily }: { daily: DailyWeather }) {
   );
 }
 
+function MicroclimateCard({ data }: { data: WeatherPayload }) {
+  const items = [
+    {
+      icon: '⛰️',
+      label: 'Altitud corregida',
+      detail: `${data.elevation.toFixed(0)} m`,
+      caption: 'El dato se ajusta a la altitud real del casco urbano, no a la de la estación (1101 m).',
+    },
+    {
+      icon: '🌊',
+      label: 'Embalse San Clemente',
+      detail: 'A 0.28 km',
+      caption: 'La estación está junto al embalse. Corregimos su influencia en temperatura y humedad.',
+    },
+    {
+      icon: '🌙',
+      label: 'Inversión nocturna',
+      detail: data.current.temperatureC <= 5 ? 'Activa esta noche' : 'Sin inversión ahora',
+      caption: data.current.temperatureC <= 5
+        ? 'El aire frío baja a la vega. Puede haber 4-5°C menos que en el casco urbano.'
+        : 'Temperatura suave. La inversión nocturna no es relevante ahora.',
+    },
+  ];
+
+  return (
+    <section className="surface-card-strong overflow-hidden rounded-[28px]">
+      <div className="bg-[linear-gradient(135deg,#11253f,#1c426c)] px-5 py-4 sm:px-6">
+        <p className="text-xs font-bold uppercase tracking-[0.2em] text-sky-200">Microclima local</p>
+        <h2 className="mt-1 text-lg font-bold text-white">Factores que ninguna app general corrige</h2>
+      </div>
+      <div className="grid gap-4 p-5 sm:grid-cols-3 sm:p-6">
+        {items.map((item) => (
+          <div key={item.label} className="rounded-[20px] border border-slate-100 bg-slate-50 p-4">
+            <div className="flex items-center gap-3">
+              <span className="text-2xl">{item.icon}</span>
+              <div>
+                <p className="text-sm font-bold text-slate-900">{item.label}</p>
+                <p className="text-xs font-semibold text-sky-700">{item.detail}</p>
+              </div>
+            </div>
+            <p className="mt-3 text-xs leading-5 text-slate-600">{item.caption}</p>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 export default function WeatherFreeDashboard() {
   const { data, error, loading, refresh } = useWeatherData('meteo-free-dashboard');
   const shareUrl = typeof window !== 'undefined' ? window.location.href : '';
@@ -230,6 +278,7 @@ export default function WeatherFreeDashboard() {
 
       <FreeHourlyStrip hourly={data.hourly} />
       <FreeDailyCards daily={data.daily} />
+      <MicroclimateCard data={data} />
 
       <section className="grid gap-5 lg:grid-cols-[1fr_0.85fr]">
         <RadarPanel radar={data.radar} variant="neutral" />

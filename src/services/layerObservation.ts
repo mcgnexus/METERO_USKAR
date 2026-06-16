@@ -13,7 +13,7 @@ import { dewPoint, relativeHumidity } from "@/lib/dewPoint";
 import { getModelParam } from "@/services/modelParameterService";
 import type { CurrentWeather, SourceObservation, SourceHealth, HourlyWeather, ComparisonHourlyWeather, DailyWeather } from "@/types/weather";
 
-const OBSERVATION_LAYER_TIMEOUT_MS = 15000;
+const OBSERVATION_LAYER_TIMEOUT_MS = 30000;
 const HUESCAR_ELEVATION = 953;
 
 const AEMET_WEIGHTS = { temp: 0.45, humidity: 0.40, precip: 0.35, wind: 0.35, gusts: 0.35 };

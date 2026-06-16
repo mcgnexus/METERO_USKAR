@@ -5,16 +5,16 @@ const AEMET_API_KEY = process.env.AEMET_API_KEY || "";
 const AEMET_OBSERVATION_URL =
   process.env.AEMET_OBSERVATION_URL ||
   "https://opendata.aemet.es/opendata/api/observacion/convencional/datos/estacion/5051X";
-const AEMET_TIMEOUT_MS = parseInt(process.env.AEMET_TIMEOUT_MS || "10000");
-const AEMET_MAX_ATTEMPTS = parseInt(process.env.AEMET_MAX_ATTEMPTS || "3");
+const AEMET_TIMEOUT_MS = parseInt(process.env.AEMET_TIMEOUT_MS || "12000");
+const AEMET_MAX_ATTEMPTS = parseInt(process.env.AEMET_MAX_ATTEMPTS || "2");
 const AEMET_RETRY_DELAY_MS = parseInt(process.env.AEMET_RETRY_DELAY_MS || "2000");
 
 const CACHE_KEY_OBSERVATIONS = `aemet_observations:${AEMET_OBSERVATION_URL}`;
-const CACHE_FRESH_TTL_MS = 5 * 60 * 1000;
+const CACHE_FRESH_TTL_MS = 60 * 60 * 1000;
 const CACHE_STALE_TTL_MS = 4 * 60 * 60 * 1000;
 const COOLDOWN_KEY = "aemet_cooldown";
-const COOLDOWN_TTL_MS = 5 * 60 * 1000;
-const RATE_LIMIT_COOLDOWN_TTL_MS = 60 * 1000;
+const COOLDOWN_TTL_MS = parseInt(process.env.AEMET_FAILURE_COOLDOWN_MS || "600000");
+const RATE_LIMIT_COOLDOWN_TTL_MS = parseInt(process.env.AEMET_RATE_LIMIT_COOLDOWN_MS || "900000");
 
 interface CooldownEntry {
   until: number;
@@ -45,6 +45,7 @@ async function fetchDataUrl(apiKey: string, observationUrl: string): Promise<str
   const url = `${observationUrl}?api_key=${apiKey}`;
   const response = await fetchWithTimeout(url, AEMET_TIMEOUT_MS);
   if (response.status === 429) {
+    console.warn(`[AEMET] Rate limit (429) — cooldown ${RATE_LIMIT_COOLDOWN_TTL_MS / 1000}s`);
     setCooldown(RATE_LIMIT_COOLDOWN_TTL_MS);
     return null;
   }
@@ -83,12 +84,14 @@ function parseAemetStation(raw: Record<string, unknown>): SourceObservation | nu
 
   const timeStr = String(raw.fint || raw.updated || "");
 
-  // C1 — qualityScore dinámico según la antigüedad real del dato
-  // Empieza en 1.0, va bajando linealmente a partir de 30 min, mínimo 0.3
+  // El endpoint de AEMET publica a :00 UTC (horario). El dato más reciente
+  // disponible tiene siempre 20-90 min de antigüedad. La penalización por edad
+  // empieza a los 60 min (no 30) y el mínimo es 0.5 (no 0.3), porque para un
+  // endpoint horario un dato de 60-90 min es perfectamente válido.
   const ageMinutes = timeStr
     ? Math.max(0, (Date.now() - new Date(timeStr).getTime()) / 60000)
-    : 120; // si no hay timestamp, penalizar
-  const dynamicQualityScore = Math.max(0.3, 1.0 - Math.max(0, ageMinutes - 30) / 200);
+    : 120;
+  const dynamicQualityScore = Math.max(0.5, 1.0 - Math.max(0, ageMinutes - 60) / 240);
 
   return {
     source: "AEMET",
@@ -129,14 +132,17 @@ function buildObservations(rawData: unknown[]): SourceObservation[] {
 }
 
 function reduceQuality(observations: SourceObservation[]): SourceObservation[] {
-  return observations.map((obs) => ({
-    ...obs,
-    // I3 — Math.max(0.05,...) evita que qualityScore sea negativo,
-    // lo que produciría pesos negativos en fuseValue()
-    qualityScore: Math.max(0.05, Math.round((obs.qualityScore - 0.4) * 100) / 100),
-    dataAgeMinutes: (Date.now() - new Date(obs.time).getTime()) / 60000,
-    retrievalStatus: "STALE_CACHE" as const,
-  }));
+  const now = Date.now();
+  return observations.map((obs) => {
+    const ageMin = (now - new Date(obs.time).getTime()) / 60000;
+    const reduction = ageMin > 120 ? 0.4 : 0.2;
+    return {
+      ...obs,
+      qualityScore: Math.max(0.15, Math.round((obs.qualityScore - reduction) * 100) / 100),
+      dataAgeMinutes: ageMin,
+      retrievalStatus: "STALE_CACHE" as const,
+    };
+  });
 }
 
 function getUsableCache(key: string): SourceObservation[] | null {
@@ -152,17 +158,17 @@ export async function fetchAEMETObservations(): Promise<{
     return { observations: [], status: "FRESH_CACHE" };
   }
 
-  if (isInCooldown()) {
-    const cached = getUsableCache(CACHE_KEY_OBSERVATIONS);
-    if (cached) {
-      return { observations: reduceQuality(cached), status: "STALE_CACHE" };
-    }
-    return { observations: [], status: "FRESH_CACHE" };
-  }
-
   const freshCached = getUsableCache(CACHE_KEY_OBSERVATIONS);
   if (freshCached) {
     return { observations: freshCached, status: "FRESH_CACHE" };
+  }
+
+  if (isInCooldown()) {
+    const stale = getUsableCache(`${CACHE_KEY_OBSERVATIONS}_stale`);
+    if (stale) {
+      return { observations: reduceQuality(stale), status: "STALE_CACHE" };
+    }
+    return { observations: [], status: "FRESH_CACHE" };
   }
 
   const staleCached = getUsableCache(`${CACHE_KEY_OBSERVATIONS}_stale`);
@@ -201,6 +207,10 @@ export async function fetchAEMETObservations(): Promise<{
 
     const observations = buildObservations(rawData);
     if (observations.length > 0) {
+      const ageMin = observations[0]?.time
+        ? Math.round((Date.now() - new Date(observations[0].time).getTime()) / 60000)
+        : 0;
+      console.log(`[AEMET] OK: ${observations.length} obs, dato de hace ${ageMin} min`);
       cacheSet(CACHE_KEY_OBSERVATIONS, observations, CACHE_FRESH_TTL_MS);
       cacheSet(`${CACHE_KEY_OBSERVATIONS}_stale`, observations, CACHE_STALE_TTL_MS);
     }

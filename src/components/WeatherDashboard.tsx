@@ -112,7 +112,12 @@ function SourceHealthRow({ health }: { health: SourceHealth[] }) {
     if (source.status === 'ERROR') return 'caido';
     if (source.status === 'DEGRADED') return 'degradado';
     const ageMin = source.dataAgeMinutes ?? 0;
+    const isAemet = source.source === 'AEMET';
     if (ageMin <= 15) return 'en vivo';
+    if (isAemet) {
+      if (ageMin <= 90) return 'horario';
+      return 'dato antiguo';
+    }
     if (ageMin <= 60) return 'disponible';
     return 'dato antiguo';
   }
