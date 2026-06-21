@@ -25,9 +25,10 @@ function pestTone(level: 'bajo' | 'medio' | 'alto'): 'success' | 'warning' | 'da
   return 'success';
 }
 
-export function AgricultureSection({ agricultural, climate }: {
+export function AgricultureSection({ agricultural, climate, precipitacionSemanal }: {
   agricultural: AgriculturalData | null;
   climate: ClimateCalibrationPayload;
+  precipitacionSemanal: number | null;
 }) {
   const exotic = climate.exoticVariables;
   const airTemp = climate.calibration.realTemperatureC ?? climate.interpolation.estimatedTemperatureC;
@@ -143,6 +144,8 @@ export function AgricultureSection({ agricultural, climate }: {
             soilTemp={soil10}
             airTemp={airTemp}
             frostRisk={agricultural.frostRisk48h}
+            et0CumulativeMm={agricultural.et0CumulativeMm}
+            precipitacionSemanal={precipitacionSemanal}
           />
         </>
       ) : (

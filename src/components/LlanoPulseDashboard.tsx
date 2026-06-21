@@ -54,7 +54,11 @@ export default function LlanoPulseDashboard() {
       <InminenteSection weather={weather.data} />
       <AlarmBoard alarms={alarms} />
       <Forecast24h hourly={weather.data?.hourly} />
-      <AgricultureSection agricultural={weather.data?.agricultural ?? null} climate={climate.data} />
+      <AgricultureSection
+        agricultural={weather.data?.agricultural ?? null}
+        climate={climate.data}
+        precipitacionSemanal={weather.data?.daily?.precipitationSumMm?.slice(0, 7).reduce((a, b) => a + b, 0) ?? null}
+      />
       <Forecast5d forecast={forecast.data} />
       <ModelDisclosure />
     </div>

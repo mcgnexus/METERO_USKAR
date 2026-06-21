@@ -15,6 +15,7 @@ interface CropProfile {
   kc: number;
   plantingWindow: string;
   harvestWindow: string;
+  irrigationMonths: number[];
 }
 
 const CROPS: CropProfile[] = [
@@ -30,6 +31,35 @@ const CROPS: CropProfile[] = [
     kc: 0.75,
     plantingWindow: 'Mar-Abr',
     harvestWindow: 'Sep-Oct',
+    irrigationMonths: [4, 5, 6, 7, 8, 9],
+  },
+  {
+    name: 'Almendro',
+    icon: '🌰',
+    category: 'fruto_seco',
+    soilTempMinC: 10,
+    gddBaseC: 7,
+    gddTarget: 2800,
+    chillHoursMin: 400,
+    frostSensitive: true,
+    kc: 0.7,
+    plantingWindow: 'Nov-Feb (plantación)',
+    harvestWindow: 'Ago-Sep',
+    irrigationMonths: [3, 4, 5, 6, 7, 8, 9],
+  },
+  {
+    name: 'Olivo',
+    icon: '🫒',
+    category: 'fruto_seco',
+    soilTempMinC: 8,
+    gddBaseC: 10,
+    gddTarget: 2200,
+    chillHoursMin: 200,
+    frostSensitive: false,
+    kc: 0.65,
+    plantingWindow: 'Nov-Feb (plantación)',
+    harvestWindow: 'Nov-Dic',
+    irrigationMonths: [4, 5, 6, 7, 8, 9],
   },
   {
     name: 'Tomate',
@@ -43,6 +73,7 @@ const CROPS: CropProfile[] = [
     kc: 1.15,
     plantingWindow: 'Abr-May',
     harvestWindow: 'Jul-Sep',
+    irrigationMonths: [5, 6, 7, 8, 9],
   },
   {
     name: 'Pepino',
@@ -56,6 +87,7 @@ const CROPS: CropProfile[] = [
     kc: 1.0,
     plantingWindow: 'Abr-May',
     harvestWindow: 'Jun-Ago',
+    irrigationMonths: [5, 6, 7, 8],
   },
   {
     name: 'Patata',
@@ -69,6 +101,7 @@ const CROPS: CropProfile[] = [
     kc: 1.1,
     plantingWindow: 'Feb-Mar / Jul-Ago',
     harvestWindow: 'Jun-Jul / Oct-Nov',
+    irrigationMonths: [3, 4, 5, 6, 8, 9, 10],
   },
   {
     name: 'Melón',
@@ -82,6 +115,7 @@ const CROPS: CropProfile[] = [
     kc: 0.9,
     plantingWindow: 'Abr-May',
     harvestWindow: 'Jul-Sep',
+    irrigationMonths: [5, 6, 7, 8, 9],
   },
   {
     name: 'Sandía',
@@ -95,6 +129,7 @@ const CROPS: CropProfile[] = [
     kc: 0.9,
     plantingWindow: 'Abr-May',
     harvestWindow: 'Jul-Sep',
+    irrigationMonths: [5, 6, 7, 8, 9],
   },
   {
     name: 'Habichuela verde',
@@ -108,6 +143,7 @@ const CROPS: CropProfile[] = [
     kc: 1.05,
     plantingWindow: 'Mar-Jun / Jul-Ago',
     harvestWindow: 'May-Jul / Sep-Oct',
+    irrigationMonths: [4, 5, 6, 7, 8, 9],
   },
   {
     name: 'Vid',
@@ -121,6 +157,7 @@ const CROPS: CropProfile[] = [
     kc: 0.65,
     plantingWindow: 'Nov-Mar (esqueje)',
     harvestWindow: 'Sep-Oct',
+    irrigationMonths: [4, 5, 6, 7, 8, 9],
   },
   {
     name: 'Calabaza',
@@ -134,6 +171,7 @@ const CROPS: CropProfile[] = [
     kc: 0.9,
     plantingWindow: 'Abr-May',
     harvestWindow: 'Sep-Oct',
+    irrigationMonths: [5, 6, 7, 8, 9],
   },
   {
     name: 'Calabacín',
@@ -147,6 +185,7 @@ const CROPS: CropProfile[] = [
     kc: 0.85,
     plantingWindow: 'Mar-May / Jul-Ago',
     harvestWindow: 'May-Jul / Sep-Oct',
+    irrigationMonths: [4, 5, 6, 7, 8, 9],
   },
 ];
 
@@ -158,6 +197,9 @@ interface CropAssessment {
   reasons: string[];
   waterNeed: string;
   gddProgress: string;
+  irrigationMm: number | null;
+  irrigationLitersM2: number | null;
+  isIrrigationSeason: boolean;
 }
 
 function assessCrop(
@@ -166,10 +208,26 @@ function assessCrop(
   airTemp: number | null,
   gddCumulative: number | null,
   chillHours: number | null,
-  frostRisk: AgriculturalData['frostRisk48h']
+  frostRisk: AgriculturalData['frostRisk48h'],
+  et0CumulativeMm: number | null,
+  precipitacionSemanal: number | null
 ): CropAssessment {
   const reasons: string[] = [];
   let status: CropStatus = 'safe';
+
+  const now = new Date();
+  const currentMonth = now.getMonth() + 1;
+  const isIrrigationSeason = crop.irrigationMonths.includes(currentMonth);
+
+  let irrigationMm: number | null = null;
+  let irrigationLitersM2: number | null = null;
+
+  if (isIrrigationSeason && et0CumulativeMm !== null && precipitacionSemanal !== null) {
+    const etc = et0CumulativeMm * crop.kc;
+    const necesidad = etc - precipitacionSemanal;
+    irrigationMm = Math.max(0, necesidad);
+    irrigationLitersM2 = irrigationMm;
+  }
 
   // Soil temperature check
   if (soilTemp !== null) {
@@ -209,7 +267,7 @@ function assessCrop(
     reasons.push('Condiciones favorables');
   }
 
-  return { crop, status, reasons, waterNeed, gddProgress };
+  return { crop, status, reasons, waterNeed, gddProgress, irrigationMm, irrigationLitersM2, isIrrigationSeason };
 }
 
 function statusTone(status: CropStatus): string {
@@ -230,17 +288,19 @@ function statusLabel(status: CropStatus): string {
   return 'No recomendado';
 }
 
-export function CropRequirements({ agricultural, soilTemp, airTemp, frostRisk }: {
+export function CropRequirements({ agricultural, soilTemp, airTemp, frostRisk, et0CumulativeMm, precipitacionSemanal }: {
   agricultural: AgriculturalData | null;
   soilTemp: number | null;
   airTemp: number | null;
   frostRisk: AgriculturalData['frostRisk48h'];
+  et0CumulativeMm: number | null;
+  precipitacionSemanal: number | null;
 }) {
   const gdd = agricultural?.gddCumulative ?? null;
   const chillHours = agricultural?.chillHours ?? null;
 
   const assessments = CROPS.map((crop) =>
-    assessCrop(crop, soilTemp, airTemp, gdd, chillHours, frostRisk)
+    assessCrop(crop, soilTemp, airTemp, gdd, chillHours, frostRisk, et0CumulativeMm, precipitacionSemanal)
   );
 
   const safeCount = assessments.filter((a) => a.status === 'safe').length;
@@ -293,6 +353,21 @@ export function CropRequirements({ agricultural, soilTemp, airTemp, frostRisk }:
               <p>
                 <span className="font-bold">Siembra:</span> {a.crop.plantingWindow}
               </p>
+              {a.isIrrigationSeason && a.irrigationLitersM2 !== null && (
+                <p className="mt-2 rounded-lg bg-sky-50 p-2">
+                  <span className="font-bold text-sky-900">Riego semanal:</span>
+                  <span className="ml-1 text-sky-700">
+                    {a.irrigationLitersM2 > 0
+                      ? `${a.irrigationLitersM2.toFixed(1)} L/m²`
+                      : 'No requiere (lluvia suficiente)'}
+                  </span>
+                </p>
+              )}
+              {!a.isIrrigationSeason && (
+                <p className="mt-2 rounded-lg bg-slate-100 p-2 text-slate-600">
+                  <span className="font-bold">Dormancia:</span> sin riego activo
+                </p>
+              )}
             </div>
 
             {a.reasons.length > 0 && (
