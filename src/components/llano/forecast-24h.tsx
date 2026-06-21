@@ -23,7 +23,7 @@ export function Forecast24h({ hourly, count = 8 }: { hourly?: HourlyWeather; cou
         <div>
           <p className="text-xs font-bold uppercase tracking-[0.18em] text-sky-700">Próximas horas</p>
           <h2 className="mt-1 text-2xl font-black text-slate-950">Detalle de las próximas {upcoming.length} horas</h2>
-          <p className="mt-1 text-sm text-slate-600">Temperatura, lluvia y viento hora a hora.</p>
+          <p className="mt-1 text-sm text-slate-600">Temperatura, lluvia, humedad y viento hora a hora.</p>
         </div>
       </div>
       <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-8">
@@ -32,6 +32,7 @@ export function Forecast24h({ hourly, count = 8 }: { hourly?: HourlyWeather; cou
           const wcode = hourly.weatherCode[h.index] ?? 0;
           const rain = hourly.precipitationProbabilityPct[h.index] ?? 0;
           const wind = hourly.windSpeedKmh[h.index] ?? 0;
+          const hum = hourly.humidityPct[h.index] ?? 0;
           return (
             <article key={h.time} className="rounded-[18px] border border-slate-100 bg-slate-50 p-3 text-center">
               <p className="text-xs font-bold text-slate-700">{fmtHour(h.time)}</p>
@@ -39,6 +40,7 @@ export function Forecast24h({ hourly, count = 8 }: { hourly?: HourlyWeather; cou
               <p className="mt-1 text-[10px] leading-3 text-slate-500">{weatherCodeDescription(wcode)}</p>
               <p className="mt-2 text-xl font-black text-slate-950">{(temp ?? 0).toFixed(1)}°</p>
               <p className="mt-1 text-[11px] text-sky-700">💧 {rain.toFixed(0)}%</p>
+              <p className="text-[11px] text-sky-600">💦 {hum.toFixed(0)}% HR</p>
               <p className="text-[11px] text-slate-500">💨 {wind.toFixed(0)} km/h</p>
             </article>
           );
