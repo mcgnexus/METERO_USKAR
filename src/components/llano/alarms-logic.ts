@@ -90,8 +90,8 @@ export function buildAlarms(
     });
   }
 
-  // 6) Amplitud térmica extrema (max-min ≥20)
-  if (typeof todayMin === 'number' && typeof todayMax === 'number' && todayMax - todayMin >= 20) {
+  // 6) Amplitud térmica extrema (max-min ≥25)
+  if (typeof todayMin === 'number' && typeof todayMax === 'number' && todayMax - todayMin >= 25) {
     alarms.push({
       level: 'aviso',
       audience: 'Poblacion',
@@ -102,7 +102,7 @@ export function buildAlarms(
   }
 
   // 7) Pico de evapotranspiración
-  if ((climate.eto.etoHourlyMm ?? 0) >= 0.35 || (climate.nodes.radiationWind.et0DailyMm ?? 0) >= 6) {
+  if ((climate.eto.etoHourlyMm ?? 0) >= 0.5 || (climate.nodes.radiationWind.et0DailyMm ?? 0) >= 8) {
     alarms.push({
       level: 'precaucion',
       audience: 'Agricultura',
@@ -136,10 +136,10 @@ export function buildAlarms(
     });
   }
 
-  // 10) THI ganadero
+  // 10) THI ganadero (umbrales para ovino Segureña: estrés ≥80, severo ≥85)
   if (humidity !== null) {
     const thi = computeThi(temp, humidity);
-    if (thi >= 78) {
+    if (thi >= 85) {
       alarms.push({
         level: 'critico',
         audience: 'Ganaderia',
@@ -147,7 +147,7 @@ export function buildAlarms(
         message: `THI ${thi.toFixed(0)}. Riesgo para animales en exterior. Valorar sombra, agua y estabulación.`,
         source: 'modelo',
       });
-    } else if (thi >= 72) {
+    } else if (thi >= 80) {
       alarms.push({
         level: 'precaucion',
         audience: 'Ganaderia',
