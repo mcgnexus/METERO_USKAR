@@ -56,13 +56,14 @@ export function buildAlarms(
   }
 
   // 3) Inversión térmica nocturna (microclimate.inversionConditions)
-  if (climate.microclimate.inversionConditions) {
+  if (climate.microclimate.inversionConditions && temp <= 10) {
     const drainage = climate.microclimate.coldAirDrainageC;
+    const frostRisk = temp <= 3;
     alarms.push({
-      level: drainage <= -3 ? 'critico' : 'precaucion',
+      level: frostRisk ? (drainage <= -3 ? 'critico' : 'precaucion') : 'aviso',
       audience: 'Agricultura',
       title: 'Inversión térmica con drenaje catabático',
-      message: `Viento < 1.5 m/s y drenaje de aire frío de Sagra/Castril hacia la cubeta del llano. Corrección aplicada: ${drainage.toFixed(1)} °C. Heladas probables en zonas bajas.`,
+      message: `Noche en calma (viento < 2 m/s) con acumulación de aire frío en la cubeta. Corrección: ${drainage.toFixed(1)} °C.${frostRisk ? ' Heladas probables en zonas bajas.' : ''}`,
       source: 'modelo',
     });
   }
