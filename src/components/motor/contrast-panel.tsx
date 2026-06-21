@@ -143,6 +143,26 @@ export function AuditHero({ data, chillHours, chillHoursYearly, rainNext5d, foeh
           caption={`Foehn actual × ${foehnFactor.toFixed(2)} (llano recibe ${Math.round(foehnFactor * 100)}% de San Clemente)`}
         />
       </div>
+      <div className="mt-4 flex flex-wrap gap-2">
+        {data.dewPoint.frostRisk !== 'unknown' && (
+          <span className={`rounded-full px-3 py-1 text-xs font-bold ${
+            data.dewPoint.frostRisk === 'none' ? 'bg-emerald-100 text-emerald-800' :
+            data.dewPoint.frostRisk === 'media' ? 'bg-amber-100 text-amber-800' :
+            'bg-rose-100 text-rose-800'}`}>
+            Riesgo helada: {data.dewPoint.frostRisk.replace('_', ' ')}
+          </span>
+        )}
+        {data.dewPoint.blackFrostRisk && (
+          <span className="rounded-full bg-purple-100 px-3 py-1 text-xs font-bold text-purple-800">
+            Helada negra posible
+          </span>
+        )}
+        {data.calibration.canTrainModel && (
+          <span className="rounded-full bg-indigo-100 px-3 py-1 text-xs font-bold text-indigo-800">
+            Modelo entrenable
+          </span>
+        )}
+      </div>
     </section>
   );
 }

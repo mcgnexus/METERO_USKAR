@@ -82,6 +82,8 @@ export default function ClimateEngineDashboard() {
   if (loading) return <LoadingState />;
   if (error || !data) return <ErrorState message={error?.message ?? 'Sin datos del motor'} />;
 
+  const weatherDegraded = weather.error && weather.data;
+
   const agri = weather.data?.agricultural;
   const daily = weather.data?.daily;
 
@@ -154,6 +156,11 @@ export default function ClimateEngineDashboard() {
 
   return (
     <div className="space-y-6">
+      {weatherDegraded && (
+        <div className="rounded-[22px] border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+          <span className="font-bold">Datos meteorológicos degradados.</span> No se pudieron obtener datos actualizados de Open-Meteo / AEMET. Algunas métricas agronómicas pueden no estar disponibles.
+        </div>
+      )}
       <AuditHero
         data={data}
         chillHours={agri?.chillHours ?? null}

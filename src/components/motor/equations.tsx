@@ -5,7 +5,7 @@ import type { ClimateCalibrationPayload } from '@/types/climate';
 
 export function EquationsBox({ data }: { data: ClimateCalibrationPayload }) {
   const inversion = data.interpolation.inversionDetected;
-  const deltaH = 165;
+  const deltaH = data.extrapolation.deltaZ;
   const lapseRate = 0.0065;
 
   return (
@@ -110,7 +110,7 @@ export function EquationsBox({ data }: { data: ClimateCalibrationPayload }) {
           <div className="mt-3 space-y-2">
             <FormulaChip
               label="Corrección aplicada"
-              formula={`T_final = T_interpolada + drenaje + isla_calor\n  = ${fmtNumber(data.interpolation.estimatedTemperatureC, 1)} + (${fmtNumber(data.microclimate.coldAirDrainageC, 1)}) + (+${fmtNumber(data.microclimate.urbanHeatIslandC, 1)})\n  = ${fmtNumber(data.calibration.realTemperatureC ?? data.interpolation.estimatedTemperatureC + data.microclimate.totalCorrectionC, 1)}°C`}
+              formula={`T_calculada = T_interpolada + drenaje + isla_calor\n  = ${fmtNumber(data.interpolation.estimatedTemperatureC, 1)} + (${fmtNumber(data.microclimate.coldAirDrainageC, 1)}) + (+${fmtNumber(data.microclimate.urbanHeatIslandC, 1)})\n  = ${fmtNumber(data.interpolation.estimatedTemperatureC + data.microclimate.totalCorrectionC, 1)}°C${data.calibration.realTemperatureC !== null ? `\nT_real (sensor) = ${fmtNumber(data.calibration.realTemperatureC, 1)}°C\nResidual = ${fmtNumber(data.calibration.residualC ?? 0, 2)}°C` : ''}`}
             />
           </div>
           <p className="mt-3 text-xs text-slate-500">

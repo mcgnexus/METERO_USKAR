@@ -74,6 +74,12 @@ export function ExtrapolationPanel({ data }: { data: ClimateCalibrationPayload }
               caption={`Baza ${ex.sourceElevationM} → Huéscar ${ex.targetElevationM}`}
             />
           </div>
+          {ex.rawTemperatureC !== null && (
+            <p className="mt-3 text-xs text-slate-500">
+              T bruta Baza: {fmtNumber(ex.rawTemperatureC, 1)} °C
+              {ex.bazaWindDirectionSource && ` · Dirección viento: ${ex.bazaWindDirectionSource === 'open_meteo' ? 'Open-Meteo' : 'No disponible'}`}
+            </p>
+          )}
         </article>
 
         <article className="rounded-[22px] border border-slate-200 bg-white p-5">
