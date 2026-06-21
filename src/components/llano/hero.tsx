@@ -42,8 +42,10 @@ export function PulseHero({ climate, weather, alarmCount }: {
 
   let source: 'sensor_propio' | 'modelo_calibrado' | 'aemet' | 'open_meteo';
   if (isLocalLive) source = 'sensor_propio';
-  else if (climate.quality.confidencePct >= 70) source = 'modelo_calibrado';
   else if (climate.nodes.baza.status === 'OK') source = 'aemet';
+  else if (climate.nodes.baza.status === 'FALLBACK') source = 'modelo_calibrado';
+  else if (climate.nodes.sanClemente.status === 'OK') source = 'modelo_calibrado';
+  else if (climate.quality.confidencePct >= 50) source = 'modelo_calibrado';
   else source = 'open_meteo';
 
   const toneClass: Record<typeof source, 'OK' | 'FALLBACK' | 'MISSING' | 'DEGRADED' | null> = {
