@@ -100,7 +100,7 @@ export function AuditHero({ data, chillHours, chillHoursYearly, rainNext5d, foeh
       : Math.abs(residual) < 2.5
         ? 'warning'
         : 'danger';
-  const residualSign = residual !== null && residual > 0 ? 'sobreestima' : residual !== null && residual < 0 ? 'subestima' : 'sin auditoría';
+  const residualSign = residual !== null && residual > 0 ? 'sobreestima' : residual !== null && residual < 0 ? 'subestima' : residual === 0 ? 'exacto' : 'sin auditoría';
 
   return (
     <section className="surface-card-strong rounded-[32px] p-6 sm:p-8">

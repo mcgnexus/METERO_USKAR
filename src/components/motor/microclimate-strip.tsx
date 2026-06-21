@@ -37,7 +37,7 @@ export function MicroclimateStrip({ data }: { data: ClimateCalibrationPayload })
           <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">Drenaje catabático</p>
           <p className="mt-2 text-3xl font-black text-slate-950">{sign(m.coldAirDrainageC)}°C</p>
           <p className="mt-1 text-xs text-slate-500">
-            {m.inversionConditions ? 'Activo: viento < 1.5 m/s' : 'Inactivo'}
+            {m.inversionConditions ? 'Activo: viento < 2 m/s' : 'Inactivo'}
           </p>
         </div>
 
@@ -47,7 +47,7 @@ export function MicroclimateStrip({ data }: { data: ClimateCalibrationPayload })
           <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">Isla de calor urbana</p>
           <p className="mt-2 text-3xl font-black text-slate-950">+{fmtNumber(m.urbanHeatIslandC, 1)}°C</p>
           <p className="mt-1 text-xs text-slate-500">
-            {m.isNighttime ? 'Noche: desactivado' : 'Día: asfalto + edificios'}
+            {m.isNighttime ? 'Noche: inercia térmica urbana (+0.5°C)' : 'Día: asfalto + edificios (+0.2°C)'}
           </p>
         </div>
 
@@ -65,7 +65,7 @@ export function MicroclimateStrip({ data }: { data: ClimateCalibrationPayload })
           label="Viento 2m"
           value={fmtNumber(m.windSpeed2mMs, 1)}
           unit="m/s"
-          caption={`Umbral inversión: 1.5 m/s`}
+          caption={`Umbral inversión: 2.0 m/s`}
         />
         <KpiCard
           label="Reducción humedad embalse"

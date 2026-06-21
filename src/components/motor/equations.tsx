@@ -104,8 +104,9 @@ export function EquationsBox({ data }: { data: ClimateCalibrationPayload }) {
           </div>
           <p className="mt-2 text-sm font-black text-slate-950">Drenaje catabático + isla de calor urbana</p>
           <p className="mt-1 text-sm leading-6 text-slate-600">
-            De noche, con viento &lt; 1.5 m/s, el aire frío de Sagra y Castril baja a la cubeta del llano
-            (−2 a −5 °C). De día, el asfalto y la edificación añaden ~0.2 °C al gradiente adiabático.
+            De noche, con viento &lt; 2.0 m/s, el aire frío de Sagra y Castril baja a la cubeta del llano
+            (hasta −5 °C, de forma proporcional a la calma y nubosidad). La isla de calor urbana aporta
+            +0.5 °C nocturnos por inercia térmica del asfalto. De día, la UHI se reduce a ~0.2 °C.
           </p>
           <div className="mt-3 space-y-2">
             <FormulaChip

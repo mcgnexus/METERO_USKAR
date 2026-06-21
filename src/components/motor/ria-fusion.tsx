@@ -63,7 +63,7 @@ export function RiaFusionPanel({ rw }: { rw: ClimateCalibrationPayload['nodes'][
             </div>
             <div className="mt-2 flex justify-between text-[11px] text-slate-500">
               <span>Baza (fosa, 785 m, 42 km)</span>
-              <span>Puebla (piedmont La Sagra, 1160 m, 20 km)</span>
+              <span>Puebla (piedmont La Sagra, 1017 m, 20 km)</span>
             </div>
           </div>
 
