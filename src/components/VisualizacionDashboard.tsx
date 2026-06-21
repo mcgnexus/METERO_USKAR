@@ -12,9 +12,7 @@ import SoilChart from '@/components/visualizacion/SoilChart';
 import ZoneChart from '@/components/visualizacion/ZoneChart';
 import ConfidenceGauges from '@/components/visualizacion/ConfidenceGauges';
 import BiasComparisonChart from '@/components/visualizacion/BiasComparisonChart';
-
-const TABS = ['Ahora', 'Temperatura', 'Agua', 'Viento', 'Suelo', 'Zonas', 'Calidad'] as const;
-type Tab = (typeof TABS)[number];
+import MiniStationChart from '@/components/visualizacion/MiniStationChart';
 
 export default function VisualizacionDashboard() {
   const { data: currentData, loading: loadingCurrent } = useWeatherData();
@@ -37,6 +35,7 @@ export default function VisualizacionDashboard() {
 
   return (
     <div className="space-y-6">
+      <MiniStationChart />
       <CurrentGauges data={currentData} />
       <TemperatureChart currentData={currentData} forecastData={forecastData} />
       <WaterChart currentData={currentData} forecastData={forecastData} />
