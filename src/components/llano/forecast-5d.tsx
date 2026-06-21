@@ -2,8 +2,9 @@
 
 import { useState } from 'react';
 import type { ReactNode } from 'react';
-import { dayLabel } from '@/lib/display';
+import { dayLabel, weatherCodeDescription, weatherEmoji } from '@/lib/display';
 import { type ForecastPayload } from '@/hooks/useForecast';
+import { type DailyWeather } from '@/types/weather';
 import { fmtN, KpiChip } from '@/components/llano/atoms';
 
 interface ForecastDetail {
@@ -98,7 +99,7 @@ function formatSigned(value: number, digits: number, unit = ''): string {
   return `${value > 0 ? '+' : ''}${value.toFixed(digits)}${unit}`;
 }
 
-export function Forecast5d({ forecast }: { forecast: ForecastPayload | null }) {
+export function Forecast5d({ forecast, daily }: { forecast: ForecastPayload | null; daily?: DailyWeather }) {
   const [expandedDetail, setExpandedDetail] = useState<ForecastDetail | null>(null);
 
   if (!forecast?.forecastDays?.length) return null;
@@ -108,6 +109,18 @@ export function Forecast5d({ forecast }: { forecast: ForecastPayload | null }) {
   const minTemp = days.reduce((acc, d) => Math.min(acc, d.dailySummary.tempMinC ?? acc), Infinity);
   const maxTemp = days.reduce((acc, d) => Math.max(acc, d.dailySummary.tempMaxC ?? -Infinity), -Infinity);
   const bias = forecast.biasCorrection;
+
+  function dailyDataFor(dateStr: string) {
+    if (!daily) return null;
+    const idx = daily.time.findIndex((t) => t.slice(0, 10) === dateStr.slice(0, 10));
+    if (idx === -1) return null;
+    return {
+      precipProb: daily.precipitationProbabilityPct[idx] ?? null,
+      precipMm: daily.precipitationSumMm[idx] ?? null,
+      windGust: daily.windGustKmh[idx] ?? null,
+      weatherCode: daily.weatherCode[idx] ?? null,
+    };
+  }
 
   return (
     <section className="surface-card-strong rounded-[28px] p-5 sm:p-6">
@@ -134,6 +147,11 @@ export function Forecast5d({ forecast }: { forecast: ForecastPayload | null }) {
           const max = d.dailySummary.tempMaxC;
           const radiation = d.dailySummary.radiationTotalMJm2;
           const tempRange = min !== null && max !== null ? max - min : null;
+          const dd = dailyDataFor(d.date);
+          const wCode = dd?.weatherCode ?? null;
+          const precipProb = dd?.precipProb ?? null;
+          const windGust = dd?.windGust ?? null;
+          const precipMm = dd?.precipMm ?? null;
           const detail: ForecastDetail = {
             title: dayLabel(d.date),
             subtitle: new Date(d.date).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' }),
@@ -146,10 +164,20 @@ export function Forecast5d({ forecast }: { forecast: ForecastPayload | null }) {
               { label: 'Amplitud', value: tempRange !== null ? `${tempRange.toFixed(1)}°C` : 'Sin dato', tone: tempRange !== null && tempRange >= 25 ? 'amber' : 'slate' },
               { label: 'HR media', value: d.dailySummary.humidityMeanPct !== null ? `${d.dailySummary.humidityMeanPct.toFixed(0)}%` : 'Sin dato', tone: 'sky' },
               { label: 'Viento medio', value: d.dailySummary.windMeanKmh !== null ? `${d.dailySummary.windMeanKmh.toFixed(1)} km/h` : 'Sin dato', tone: 'slate' },
+              { label: 'Rachas máx', value: windGust !== null ? `${windGust.toFixed(0)} km/h` : 'Sin dato', tone: windGust !== null && windGust >= 60 ? 'rose' : 'slate' },
+              { label: 'Prob. lluvia', value: precipProb !== null ? `${precipProb.toFixed(0)}%` : 'Sin dato', tone: precipProb !== null && precipProb >= 50 ? 'sky' : 'slate' },
+              { label: 'Lluvia', value: precipMm !== null ? `${precipMm.toFixed(1)} mm` : 'Sin dato', tone: 'sky' },
               { label: 'ET0', value: `${fmtN(d.dailySummary.et0TotalMm, 1)} mm`, tone: (d.dailySummary.et0TotalMm ?? 0) >= 5 ? 'amber' : 'emerald' },
               { label: 'Radiación', value: radiation !== null ? `${radiation.toFixed(1)} MJ/m²` : 'Sin dato', tone: 'sky' },
             ],
             sections: [
+              {
+                title: 'Tiempo esperado',
+                emphasis: wCode !== null ? `${weatherEmoji(wCode)} ${weatherCodeDescription(wCode)}` : 'Sin código meteorológico',
+                body: wCode !== null
+                  ? weatherCodeDescription(wCode)
+                  : 'No hay código WMO disponible para este día.',
+              },
               {
                 title: 'Interpretación agronómica',
                 emphasis: (d.dailySummary.et0TotalMm ?? 0) >= 5 ? 'Demanda hídrica alta' : 'Demanda hídrica moderada o baja',
@@ -161,6 +189,11 @@ export function Forecast5d({ forecast }: { forecast: ForecastPayload | null }) {
                 body: tempRange !== null && tempRange >= 25
                   ? 'Una amplitud alta puede combinar frío nocturno con estrés diurno. Vigilar cultivos recién trasplantados, floración y animales en exterior.'
                   : 'No se detecta una amplitud extrema. Aun así, revisar mínima si hay cultivos sensibles o zonas bajas con inversión térmica.',
+              },
+              {
+                title: 'Viento y lluvia',
+                emphasis: windGust !== null && windGust >= 60 ? `Rachas de ${windGust.toFixed(0)} km/h` : precipProb !== null && precipProb >= 50 ? `Probabilidad de lluvia ${precipProb.toFixed(0)}%` : 'Sin riesgo eólico o de precipitación destacable',
+                body: `${windGust !== null ? `Rachas máximas previstas: ${windGust.toFixed(0)} km/h. ` : ''}${precipProb !== null ? `Probabilidad de precipitación: ${precipProb.toFixed(0)}%. ` : ''}${precipMm !== null ? `Acumulado previsto: ${precipMm.toFixed(1)} mm.` : ''} El viento fuerte puede afectar tratamientos, el viento moderado aumenta ETo y la lluvia reduce necesidad de riego.`,
               },
               {
                 title: 'Suelo',
@@ -178,15 +211,24 @@ export function Forecast5d({ forecast }: { forecast: ForecastPayload | null }) {
             <ForecastClickable key={d.date} detail={detail} onOpen={setExpandedDetail}>
               <article className="rounded-[22px] border border-slate-100 bg-slate-50 p-4 text-center">
                 <p className="text-xs font-bold uppercase tracking-[0.12em] text-slate-500">{dayLabel(d.date)}</p>
-                <p className="mt-3 text-2xl font-black text-slate-950">
+                {wCode !== null && (
+                  <p className="mt-1 text-2xl">{weatherEmoji(wCode)}</p>
+                )}
+                <p className="mt-2 text-2xl font-black text-slate-950">
                   {min !== null && max !== null ? `${min.toFixed(0)}° / ${max.toFixed(0)}°` : '—'}
                 </p>
                 <p className="mt-1 text-xs text-slate-600">
                   Media {d.dailySummary.tempMeanC !== null ? `${d.dailySummary.tempMeanC.toFixed(1)}°C` : '—'}
                 </p>
-                <p className="mt-2 text-[11px] font-bold text-sky-700">HR media: {d.dailySummary.humidityMeanPct !== null ? `${d.dailySummary.humidityMeanPct.toFixed(0)}%` : '—'}</p>
-                <p className="text-[11px] font-bold text-emerald-700">ETo: {fmtN(d.dailySummary.et0TotalMm, 1)} mm</p>
-                {radiation !== null && <p className="text-[10px] text-slate-400">Rs: {radiation.toFixed(1)} MJ/m²</p>}
+                {wCode !== null && (
+                  <p className="mt-1 text-[10px] leading-3 text-slate-500">{weatherCodeDescription(wCode)}</p>
+                )}
+                <div className="mt-2 space-y-0.5">
+                  <p className="text-[11px] font-bold text-sky-700">💧 {precipProb !== null ? `${precipProb.toFixed(0)}%` : '—'}{precipMm !== null && precipMm > 0 ? ` · ${precipMm.toFixed(1)}mm` : ''}</p>
+                  <p className="text-[11px] font-bold text-emerald-700">💨 {windGust !== null ? `${windGust.toFixed(0)} km/h` : '—'}</p>
+                  <p className="text-[11px] font-bold text-slate-600">HR: {d.dailySummary.humidityMeanPct !== null ? `${d.dailySummary.humidityMeanPct.toFixed(0)}%` : '—'}</p>
+                  <p className="text-[11px] font-bold text-emerald-700">ETo: {fmtN(d.dailySummary.et0TotalMm, 1)} mm</p>
+                </div>
               </article>
             </ForecastClickable>
           );

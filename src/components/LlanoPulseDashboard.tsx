@@ -55,7 +55,7 @@ export default function LlanoPulseDashboard() {
       <InminenteSection weather={weather.data} />
       <AlarmBoard alarms={alarms} />
       <Forecast24h hourly={weather.data?.hourly} />
-      <Forecast5d forecast={forecast.data} />
+      <Forecast5d forecast={forecast.data} daily={weather.data?.daily} />
       <ModelDisclosure />
     </div>
   );
