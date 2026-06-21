@@ -82,6 +82,8 @@ function AlarmModal({ alarm, onClose }: { alarm: PulseAlarm; onClose: () => void
 }
 
 export function AlarmBoard({ alarms }: { alarms: PulseAlarm[] }) {
+  const [expandedAlarm, setExpandedAlarm] = useState<PulseAlarm | null>(null);
+
   if (alarms.length === 0) {
     return (
     <section id="sem-foro-inteligente" className="surface-card-strong rounded-[28px] p-5 sm:p-6">
@@ -102,8 +104,6 @@ export function AlarmBoard({ alarms }: { alarms: PulseAlarm[] }) {
   const criticas = alarms.filter((a) => a.level === 'critico');
   const precauciones = alarms.filter((a) => a.level === 'precaucion');
   const avisos = alarms.filter((a) => a.level === 'aviso');
-
-  const [expandedAlarm, setExpandedAlarm] = useState<PulseAlarm | null>(null);
 
   const groups: { title: string; items: PulseAlarm[]; tone: 'rose' | 'orange' | 'yellow' }[] = [];
   if (criticas.length) groups.push({ title: 'Críticas', items: criticas, tone: 'rose' });

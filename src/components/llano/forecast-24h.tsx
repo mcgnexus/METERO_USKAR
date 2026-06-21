@@ -7,7 +7,7 @@ function fmtHour(iso: string): string {
   return new Date(iso).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
 }
 
-export function Forecast24h({ hourly, count = 8 }: { hourly?: HourlyWeather; count?: number }) {
+export function Forecast24h({ hourly, count = 24 }: { hourly?: HourlyWeather; count?: number }) {
   if (!hourly?.time?.length) return null;
   const now = Date.now();
   const upcoming = hourly.time

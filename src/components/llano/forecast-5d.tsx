@@ -143,7 +143,7 @@ export function Forecast5d({ forecast }: { forecast: ForecastPayload | null }) {
               : 'Temperatura no disponible',
             metrics: [
               { label: 'Media térmica', value: d.dailySummary.tempMeanC !== null ? `${d.dailySummary.tempMeanC.toFixed(1)}°C` : 'Sin dato', tone: 'slate' },
-              { label: 'Amplitud', value: tempRange !== null ? `${tempRange.toFixed(1)}°C` : 'Sin dato', tone: tempRange !== null && tempRange >= 18 ? 'amber' : 'slate' },
+              { label: 'Amplitud', value: tempRange !== null ? `${tempRange.toFixed(1)}°C` : 'Sin dato', tone: tempRange !== null && tempRange >= 25 ? 'amber' : 'slate' },
               { label: 'HR media', value: d.dailySummary.humidityMeanPct !== null ? `${d.dailySummary.humidityMeanPct.toFixed(0)}%` : 'Sin dato', tone: 'sky' },
               { label: 'Viento medio', value: d.dailySummary.windMeanKmh !== null ? `${d.dailySummary.windMeanKmh.toFixed(1)} km/h` : 'Sin dato', tone: 'slate' },
               { label: 'ET0', value: `${fmtN(d.dailySummary.et0TotalMm, 1)} mm`, tone: (d.dailySummary.et0TotalMm ?? 0) >= 5 ? 'amber' : 'emerald' },
@@ -157,8 +157,8 @@ export function Forecast5d({ forecast }: { forecast: ForecastPayload | null }) {
               },
               {
                 title: 'Riesgo térmico',
-                emphasis: tempRange !== null && tempRange >= 18 ? 'Día con mucha oscilación térmica' : 'Oscilación térmica contenida',
-                body: tempRange !== null && tempRange >= 18
+                emphasis: tempRange !== null && tempRange >= 25 ? 'Día con mucha oscilación térmica' : 'Oscilación térmica contenida',
+                body: tempRange !== null && tempRange >= 25
                   ? 'Una amplitud alta puede combinar frío nocturno con estrés diurno. Vigilar cultivos recién trasplantados, floración y animales en exterior.'
                   : 'No se detecta una amplitud extrema. Aun así, revisar mínima si hay cultivos sensibles o zonas bajas con inversión térmica.',
               },

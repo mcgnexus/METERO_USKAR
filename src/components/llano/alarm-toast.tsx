@@ -8,17 +8,19 @@ export function AlarmToast({ alarms }: { alarms: PulseAlarm[] }) {
   const [visible, setVisible] = useState(false);
   const [dismissed, setDismissed] = useState(false);
 
+  const urgentAlarms = alarms.filter((a) => a.level === 'critico' || a.level === 'precaucion');
+
   useEffect(() => {
-    if (alarms.length === 0 || dismissed) return;
+    if (urgentAlarms.length === 0 || dismissed) return;
     const timer = setTimeout(() => setVisible(true), 1200);
     return () => clearTimeout(timer);
-  }, [alarms.length, dismissed]);
+  }, [urgentAlarms.length, dismissed]);
 
-  if (!visible || alarms.length === 0 || dismissed) return null;
+  if (!visible || urgentAlarms.length === 0 || dismissed) return null;
 
-  const top = alarms[0];
-  const criticas = alarms.filter((a) => a.level === 'critico').length;
-  const precauciones = alarms.filter((a) => a.level === 'precaucion').length;
+  const top = urgentAlarms[0];
+  const criticas = urgentAlarms.filter((a) => a.level === 'critico').length;
+  const precauciones = urgentAlarms.filter((a) => a.level === 'precaucion').length;
 
   return (
     <div className="fixed left-4 right-4 top-4 z-50 mx-auto max-w-md animate-slide-down">
@@ -30,7 +32,7 @@ export function AlarmToast({ alarms }: { alarms: PulseAlarm[] }) {
                 {levelLabel(top.level)}
               </span>
               <span className="text-[11px] font-bold opacity-70">
-                {alarms.length} {alarms.length === 1 ? 'alarma' : 'alarmas'}
+                {urgentAlarms.length} {urgentAlarms.length === 1 ? 'alarma' : 'alarmas'}
                 {criticas > 0 && ` · ${criticas} críticas`}
                 {precauciones > 0 && ` · ${precauciones} precauciones`}
               </span>
@@ -40,11 +42,7 @@ export function AlarmToast({ alarms }: { alarms: PulseAlarm[] }) {
             <button
               onClick={() => {
                 setDismissed(true);
-                document.getElementById('alertas-aemet')?.scrollIntoView({ behavior: 'smooth' });
-                setTimeout(() => {
-                  const section = document.querySelector('#sem-foro-inteligente');
-                  if (section) section.scrollIntoView({ behavior: 'smooth' });
-                }, 100);
+                document.querySelector('#sem-foro-inteligente')?.scrollIntoView({ behavior: 'smooth' });
               }}
               className="mt-2 rounded-full bg-black/10 px-3 py-1 text-[11px] font-bold hover:bg-black/20"
             >

@@ -10,16 +10,17 @@ function tempColor(t: number): string {
   if (t <= 10) return '#22d3ee';
   if (t <= 20) return '#34d399';
   if (t <= 30) return '#fbbf24';
-  return '#f97316';
+  if (t <= 35) return '#f97316';
+  return '#ef4444';
 }
 
 function residualCopy(residual: number | null): { label: string; tone: 'success' | 'warning' | 'danger' | 'default' } {
   if (residual === null) return { label: 'Sin auditoría (sensor local no disponible)', tone: 'default' };
   const abs = Math.abs(residual);
-  const dir = residual > 0 ? 'sobreestima' : 'subestima';
-  if (abs < 1) return { label: `Auditado:偏差 < 1 °C · ${dir}`, tone: 'success' };
-  if (abs < 2.5) return { label: `Auditado偏差 ${abs.toFixed(1)} °C · ${dir}`, tone: 'warning' };
-  return { label: `Auditado偏差 ${abs.toFixed(1)} °C · ${dir}`, tone: 'danger' };
+  const dir = residual > 0 ? 'sobreestima' : residual < 0 ? 'subestima' : 'exacto';
+  if (abs < 1) return { label: `Auditado: desviación < 1 °C · ${dir}`, tone: 'success' };
+  if (abs < 2.5) return { label: `Auditado: desviación ${abs.toFixed(1)} °C · ${dir}`, tone: 'warning' };
+  return { label: `Auditado: desviación ${abs.toFixed(1)} °C · ${dir}`, tone: 'danger' };
 }
 
 export function PulseHero({ climate, weather, alarmCount }: {

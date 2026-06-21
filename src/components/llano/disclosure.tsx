@@ -27,7 +27,7 @@ export function ModelDisclosure() {
             La temperatura se interpola entre Baza y San Clemente según el gradiente térmico real medido en cada
             momento. De día se usa el gradiente adiabático estándar (0.65 °C / 100 m). De noche, si hay inversión
             (San Clemente más cálido que Baza), se invierte el gradiente y se aplica drenaje catabático
-            (hasta −5 °C) cuando el viento cae por debajo de 1.5 m/s.
+            (hasta −5 °C) de forma proporcional a la calma del viento (umbral 2.0 m/s) y la nubosidad.
           </p>
           <p>
             La presión se extrapola con la ecuación hipsométrica completa usando la temperatura local de Baza.
