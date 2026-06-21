@@ -10,6 +10,7 @@ import { AlarmBoard } from '@/components/llano/alarms';
 import { Forecast24h } from '@/components/llano/forecast-24h';
 import { Forecast5d } from '@/components/llano/forecast-5d';
 import { ModelDisclosure } from '@/components/llano/disclosure';
+import { AlarmToast } from '@/components/llano/alarm-toast';
 
 function LoadingState() {
   return (
@@ -49,6 +50,7 @@ export default function LlanoPulseDashboard() {
 
   return (
     <div className="space-y-6">
+      <AlarmToast alarms={alarms} />
       <PulseHero climate={climate.data} weather={weather.data} alarmCount={alarms.length} />
       <InminenteSection weather={weather.data} />
       <AlarmBoard alarms={alarms} />

@@ -84,7 +84,7 @@ function AlarmModal({ alarm, onClose }: { alarm: PulseAlarm; onClose: () => void
 export function AlarmBoard({ alarms }: { alarms: PulseAlarm[] }) {
   if (alarms.length === 0) {
     return (
-      <section className="surface-card-strong rounded-[28px] p-5 sm:p-6">
+    <section id="sem-foro-inteligente" className="surface-card-strong rounded-[28px] p-5 sm:p-6">
         <div className="flex items-center justify-between">
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-700">Semáforo inteligente</p>
