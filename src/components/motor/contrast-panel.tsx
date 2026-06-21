@@ -112,7 +112,7 @@ export function AuditHero({ data, chillHours, chillHoursYearly, rainNext5d, foeh
             Contraste entre estaciones oficiales, interpolación física, auditoría contra sensor propio y métricas agronómicas.
           </p>
         </div>
-        <a href="/llano" className="cta-primary">Ver Pulso del Llano</a>
+        <a href="/llano" className="cta-primary">Ver Huescar</a>
       </div>
 
       <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">

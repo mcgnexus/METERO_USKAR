@@ -66,9 +66,9 @@ export function PulseHero({ climate, weather, alarmCount }: {
         <div className="relative grid gap-8 lg:grid-cols-[1.2fr_0.8fr] lg:items-end">
           <div>
             <p className="inline-flex rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-bold uppercase tracking-[0.2em] text-sky-100">
-              Observatorio del llano
+              Observatorio de Huéscar
             </p>
-            <h1 className="mt-5 text-4xl font-black tracking-tight sm:text-6xl">El Pulso del Llano</h1>
+            <h1 className="mt-5 text-4xl font-black tracking-tight sm:text-6xl">Huescar</h1>
             <p className="mt-4 max-w-2xl text-base leading-7 text-slate-100/85">
               Temperatura local, alarmas accionables y pronóstico ajustado al microclima del casco urbano y la vega.
             </p>

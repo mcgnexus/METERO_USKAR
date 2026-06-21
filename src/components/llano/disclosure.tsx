@@ -19,7 +19,7 @@ export function ModelDisclosure() {
         </summary>
         <div className="mt-4 space-y-3 border-t border-slate-100 pt-4 text-sm leading-6 text-slate-700">
           <p>
-            El Pulso del Llano cruza cuatro fuentes: tu miniestación (si está activa), las estaciones AEMET 5047E
+            Huescar cruza cuatro fuentes: tu miniestación (si está activa), las estaciones AEMET 5047E
             (Baza) y 5051X (San Clemente), las estaciones RIA 18/1 (Baza) y 18/2 (Puebla de Don Fadrique), y el modelo
             global Open-Meteo como respaldo y forecast.
           </p>

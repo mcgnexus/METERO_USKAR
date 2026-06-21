@@ -19,7 +19,7 @@ export default function MeteoPage() {
           </div>
           <div className="flex flex-wrap items-center gap-3">
             <Link href="/llano" className="rounded-full border border-slate-200 bg-white/70 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-white">
-              Pulso del Llano
+              Huescar
             </Link>
             <Link href="/motor-climatico" className="rounded-full border border-slate-200 bg-white/70 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-white">
               Motor climatico

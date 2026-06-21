@@ -14,7 +14,7 @@ export default function MotorClimaticoPage() {
             <p className="mt-1 text-sm text-slate-600">Contraste AEMET, RIA, estacion propia y calibracion del llano.</p>
           </div>
           <div className="flex flex-wrap items-center gap-3">
-            <Link href="/llano" className="rounded-full border border-slate-200 bg-white/70 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-white">Pulso del Llano</Link>
+            <Link href="/llano" className="rounded-full border border-slate-200 bg-white/70 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-white">Huescar</Link>
             <Link href="/meteo" className="rounded-full border border-slate-200 bg-white/70 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-white">Panel completo</Link>
           </div>
         </header>
