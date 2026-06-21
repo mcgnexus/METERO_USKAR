@@ -52,7 +52,7 @@ export function ContrastPanel({ data }: { data: ClimateCalibrationPayload }) {
         <NodeRow label="AEMET Baza" node={data.nodes.baza} />
         <NodeRow label="AEMET San Clemente" node={data.nodes.sanClemente} />
         <NodeRow
-          label="Huéscar Llano"
+          label="Huéscar Ciudad"
           node={{
             ...(data.nodes.localStation ?? {
               source: 'LOCAL_STATION',
