@@ -2,14 +2,9 @@
 
 import { useClimateCalibration } from '@/hooks/useClimateCalibration';
 import { useWeatherData } from '@/hooks/useWeatherData';
-import { useForecast } from '@/hooks/useForecast';
 import { buildAlarms } from '@/components/llano/alarms-logic';
 import { PulseHero } from '@/components/llano/hero';
-import { InminenteSection } from '@/components/llano/inminente';
-import { AlarmBoard } from '@/components/llano/alarms';
-import { Forecast24h } from '@/components/llano/forecast-24h';
-import { Forecast5d } from '@/components/llano/forecast-5d';
-import { ModelDisclosure } from '@/components/llano/disclosure';
+import { AgricultureSection } from '@/components/llano/agriculture';
 
 function LoadingState() {
   return (
@@ -22,16 +17,15 @@ function LoadingState() {
 function ErrorState({ message }: { message: string }) {
   return (
     <div className="surface-card rounded-[28px] p-10 text-center">
-      <p className="font-semibold text-red-500">No se pudo cargar la pagina de Huescar</p>
+      <p className="font-semibold text-red-500">No se pudo cargar la página de agricultura</p>
       <p className="mt-2 text-sm text-slate-500">{message}</p>
     </div>
   );
 }
 
-export default function LlanoPulseDashboard() {
-  const climate = useClimateCalibration('llano-pulse-climate');
-  const weather = useWeatherData('llano-pulse-weather');
-  const forecast = useForecast(5, 'llano-pulse-forecast');
+export default function AgriculturaDashboard() {
+  const climate = useClimateCalibration('agri-pulse-climate');
+  const weather = useWeatherData('agri-pulse-weather');
 
   if (climate.loading || weather.loading) {
     return <LoadingState />;
@@ -47,14 +41,16 @@ export default function LlanoPulseDashboard() {
     agricultural: weather.data?.agricultural,
   });
 
+  const precipitacionSemanal = weather.data?.daily?.precipitationSumMm?.slice(0, 7).reduce((a, b) => a + b, 0) ?? null;
+
   return (
     <div className="space-y-6">
       <PulseHero climate={climate.data} weather={weather.data} alarmCount={alarms.length} />
-      <InminenteSection weather={weather.data} />
-      <AlarmBoard alarms={alarms} />
-      <Forecast24h hourly={weather.data?.hourly} />
-      <Forecast5d forecast={forecast.data} />
-      <ModelDisclosure />
+      <AgricultureSection
+        agricultural={weather.data?.agricultural ?? null}
+        climate={climate.data}
+        precipitacionSemanal={precipitacionSemanal}
+      />
     </div>
   );
 }

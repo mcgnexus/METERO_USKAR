@@ -8,7 +8,7 @@ Estado actual del producto:
 - API de datos (Open-Meteo + AEMET) → ✅ Integrada
 - Miniestaciones locales → ❌ Pendiente
 - Radar con marcador Huéscar → ✅ Funcionando
-- Versión gratuita pública (/tiempo) → ✅ Publicada
+- Versión gratuita pública (/huescar) → ✅ Publicada
 - Panel completo (/meteo) → ✅ Publicado
 - Widget Ayuntamiento (/widget) → ✅ Publicado
 - PWA instalable → ✅ Configurada

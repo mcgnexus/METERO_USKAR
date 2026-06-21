@@ -61,4 +61,4 @@ La Sierra de La Sagra y la Sierra de la Encantada fuerzan la elevación del aire
 >
 > No es el tiempo de un modelo genérico. Es el tiempo de tu zona.
 >
-> 🌐 meteohuescar.com/tiempo
+> 🌐 meteohuescar.com/huescar

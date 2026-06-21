@@ -1,6 +1,7 @@
 'use client';
 
-import type { WeatherPayload } from '@/types/weather';
+import { useState } from 'react';
+import type { WeatherAlert, WeatherPayload } from '@/types/weather';
 
 function levelTone(level: string): string {
   if (level === 'peligro' || level === 'severo') return 'border-rose-200 bg-rose-50 text-rose-950';
@@ -16,7 +17,100 @@ function levelBadgeTone(level: string): string {
   return 'bg-sky-400 text-sky-950';
 }
 
+function levelLabel(level: WeatherAlert['level']): string {
+  if (level === 'severo') return 'Severo';
+  if (level === 'peligro') return 'Peligro';
+  return 'Aviso';
+}
+
+function levelMeaning(level: WeatherAlert['level']): string {
+  if (level === 'severo') return 'Riesgo importante. Conviene actuar y evitar exposición innecesaria.';
+  if (level === 'peligro') return 'Riesgo relevante. Preparar medidas preventivas y seguir evolución.';
+  return 'Aviso informativo. Mantener vigilancia y revisar la actualización oficial.';
+}
+
+function actionText(level: WeatherAlert['level']): string {
+  if (level === 'severo') return 'Evitar desplazamientos o trabajos expuestos si no son necesarios. Revisar cultivos, maquinaria, animales, cubiertas, desagües y elementos sueltos.';
+  if (level === 'peligro') return 'Planificar con margen. Preparar protección de cultivos sensibles, revisar riego/drenaje y evitar trabajos vulnerables durante la ventana de riesgo.';
+  return 'No requiere acción inmediata salvo actividades sensibles. Consultar la evolución si hay trabajos al aire libre, viajes o labores agrícolas previstas.';
+}
+
+function AemetAlertModal({ alert, onClose }: { alert: WeatherAlert; onClose: () => void }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/55 p-4" onClick={onClose}>
+      <div
+        className={`max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-[30px] border p-6 shadow-2xl ${levelTone(alert.level)}`}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="text-xs font-black uppercase tracking-[0.18em] text-rose-700">Aviso oficial AEMET</p>
+            <h2 className="mt-1 text-2xl font-black text-slate-950">{alert.title}</h2>
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <span className={`rounded-full px-3 py-1 text-xs font-black uppercase tracking-[0.12em] ${levelBadgeTone(alert.level)}`}>
+                {levelLabel(alert.level)}
+              </span>
+              <span className="rounded-full bg-white/80 px-3 py-1 text-xs font-bold text-slate-700">
+                Fuente oficial AEMET
+              </span>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            className="rounded-full bg-white/80 px-3 py-2 text-sm font-black text-slate-700 shadow-sm hover:bg-white"
+            aria-label="Cerrar"
+          >
+            x
+          </button>
+        </div>
+
+        <div className="mt-5 rounded-3xl bg-slate-950 p-5 text-white">
+          <p className="text-xs font-bold uppercase tracking-[0.16em] text-rose-300">Lectura rápida</p>
+          <p className="mt-2 text-3xl font-black leading-tight">{levelMeaning(alert.level)}</p>
+        </div>
+
+        <div className="mt-4 grid gap-3 sm:grid-cols-3">
+          <div className="rounded-2xl bg-white/85 p-3 shadow-sm">
+            <p className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-500">Nivel</p>
+            <p className="mt-1 text-xl font-black text-slate-950">{levelLabel(alert.level)}</p>
+          </div>
+          <div className="rounded-2xl bg-white/85 p-3 shadow-sm">
+            <p className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-500">Tipo</p>
+            <p className="mt-1 text-xl font-black capitalize text-slate-950">{alert.type || 'Meteorológico'}</p>
+          </div>
+          <div className="rounded-2xl bg-white/85 p-3 shadow-sm">
+            <p className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-500">Ámbito</p>
+            <p className="mt-1 text-xl font-black text-slate-950">Comarca</p>
+          </div>
+        </div>
+
+        <div className="mt-5 space-y-3">
+          <section className="rounded-2xl bg-white/85 p-4 shadow-sm">
+            <h3 className="text-xs font-black uppercase tracking-[0.16em] text-slate-500">Mensaje oficial</h3>
+            <p className="mt-2 text-lg font-black text-slate-950">{alert.title}</p>
+            <p className="mt-2 text-sm font-medium leading-6 text-slate-700">{alert.message}</p>
+          </section>
+
+          <section className="rounded-2xl bg-white/85 p-4 shadow-sm">
+            <h3 className="text-xs font-black uppercase tracking-[0.16em] text-slate-500">Qué implica</h3>
+            <p className="mt-2 text-lg font-black text-slate-950">Impacto potencial según nivel oficial</p>
+            <p className="mt-2 text-sm font-medium leading-6 text-slate-700">{levelMeaning(alert.level)}</p>
+          </section>
+
+          <section className="rounded-2xl bg-white/85 p-4 shadow-sm">
+            <h3 className="text-xs font-black uppercase tracking-[0.16em] text-slate-500">Acción recomendada</h3>
+            <p className="mt-2 text-lg font-black text-slate-950">Priorizar seguridad y planificación</p>
+            <p className="mt-2 text-sm font-medium leading-6 text-slate-700">{actionText(alert.level)}</p>
+          </section>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function InminenteSection({ weather }: { weather: WeatherPayload | null }) {
+  const [expandedAemetAlert, setExpandedAemetAlert] = useState<WeatherAlert | null>(null);
+
   if (!weather) return null;
 
   const nowcast = weather.nowcast;
@@ -132,7 +226,12 @@ export function InminenteSection({ weather }: { weather: WeatherPayload | null }
           <h3 className="mt-1 text-xl font-black">{aemetAlerts.length} aviso(s) activo(s) en la comarca</h3>
           <div className="mt-3 space-y-2">
             {aemetAlerts.slice(0, 3).map((a, i) => (
-              <div key={i} className="rounded-2xl bg-white/70 p-3">
+              <button
+                key={i}
+                type="button"
+                className="block w-full rounded-2xl bg-white/70 p-3 text-left transition-all hover:-translate-y-0.5 hover:bg-white hover:shadow-lg"
+                onClick={() => setExpandedAemetAlert(a)}
+              >
                 <div className="flex items-center gap-2">
                   <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${levelBadgeTone(a.level)}`}>
                     {a.level}
@@ -140,10 +239,14 @@ export function InminenteSection({ weather }: { weather: WeatherPayload | null }
                   <p className="text-sm font-bold">{a.title}</p>
                 </div>
                 <p className="mt-1 text-xs leading-5 text-rose-900/90">{a.message}</p>
-              </div>
+              </button>
             ))}
           </div>
         </article>
+      )}
+
+      {expandedAemetAlert && (
+        <AemetAlertModal alert={expandedAemetAlert} onClose={() => setExpandedAemetAlert(null)} />
       )}
     </section>
   );

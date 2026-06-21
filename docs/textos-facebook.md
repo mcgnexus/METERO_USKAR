@@ -8,7 +8,7 @@
 
 Ahora puedes consultar el tiempo local de Huéscar, gratis, en tu navegador.
 
-**meteohuescar.com/tiempo**
+**meteohuescar.com/huescar**
 
 ☑️ Temperatura, lluvia y viento para el pueblo.
 ☑️ Radar con nuestro marcador exacto.
@@ -35,7 +35,7 @@ No te habla de "Granada provincia". Te habla de tus calles, tus pedanías, tu ra
 
 Y lo mejor: funciona en el móvil, en el ordenador, sin descargar nada.
 
-👉 **meteohuescar.com/tiempo**
+👉 **meteohuescar.com/huescar**
 
 Y si necesitas más: avisos de helada, datos agrícolas, histórico o alertas por zona, tienes versión profesional.
 
@@ -63,7 +63,7 @@ Y si necesitas capa profesional: riesgo de helada, estrés térmico animal, acum
 
 Todo ello pensado para el Altiplano, no para una capital.
 
-🌐 **meteohuescar.com/tiempo**
+🌐 **meteohuescar.com/huescar**
 
 Gratis. Directo. Local.
 
@@ -81,7 +81,7 @@ No es "Andalucía". Es tu pueblo.
 
 **Meteo Huéscar** te muestra si la lluvia viene hacia aquí, desde dónde y con qué intensidad.
 
-[https://meteohuescar.com/tiempo]()
+[https://meteohuescar.com/huescar]()
 
 Radar gratuito, actualizado y local.
 
@@ -109,7 +109,7 @@ No es una app genérica. Es un servicio local para quienes dependen del tiempo.
 
 📩 Escríbenos para más información o sírvetela gratis en:
 
-👉 **meteohuescar.com/tiempo**
+👉 **meteohuescar.com/huescar**
 
 #MeteoHuéscar #Agricultura #Ganadería #Pro #Altiplano
 
@@ -131,7 +131,7 @@ Escríbenos para conocer las opciones.
 
 Mientras tanto, la versión gratuita está abierta para todo el mundo:
 
-👉 **meteohuescar.com/tiempo**
+👉 **meteohuescar.com/huescar**
 
 #Cooperativas #Ayuntamientos #MeteoLocal #ComarcaHuéscar
 
@@ -156,7 +156,7 @@ Perfecto para:
 
 Gratis, rápido y sin app.
 
-👉 **meteohuescar.com/tiempo**
+👉 **meteohuescar.com/huescar**
 
 #TurismoHuéscar #AltiplanoGranadino #Geoparque #EscapadaRural
 
@@ -170,7 +170,7 @@ Gratis, rápido y sin app.
 
 Pásale esto:
 
-**meteohuescar.com/tiempo**
+**meteohuescar.com/huescar**
 
 Un tiempo hecho para Huéscar, no para Google Maps.
 
@@ -214,7 +214,7 @@ Por eso nace **Meteo Huéscar**:
 
 Consulta, comparte y comenta qué tiempo hace ahora en tu zona.
 
-👉 **meteohuescar.com/tiempo**
+👉 **meteohuescar.com/huescar**
 
 #MeteoHuéscar #Curiosidades #Clima #Altiplano
 
@@ -232,7 +232,7 @@ Para Huéscar y pedanías.
 
 Gratis ahora. Pro cuando lo necesites.
 
-👉 **meteohuescar.com/tiempo**
+👉 **meteohuescar.com/huescar**
 
 #Heladas #Campo #Huéscar #MeteoHuéscar
 
@@ -252,7 +252,7 @@ Datos reales, explicados para quien vive aquí.
 
 Y encima, gratis.
 
-👉 **meteohuescar.com/tiempo**
+👉 **meteohuescar.com/huescar**
 
 Comparte si crees que Huéscar merece su propio tiempo.
 

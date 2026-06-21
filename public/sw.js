@@ -5,7 +5,6 @@ const API_CACHE_TTL = 3 * 60 * 1000; // 3 minutos
 
 const PRECACHE_URLS = [
   '/',
-  '/tiempo',
   '/meteo',
   '/manifest.json',
 ];

@@ -18,8 +18,8 @@ export default function MeteoPage() {
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-3">
-            <Link href="/llano" className="rounded-full border border-slate-200 bg-white/70 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-white">
-              Huescar
+            <Link href="/huescar" className="rounded-full border border-slate-200 bg-white/70 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-white">
+              Huéscar
             </Link>
             <Link href="/motor-climatico" className="rounded-full border border-slate-200 bg-white/70 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-white">
               Motor climatico
