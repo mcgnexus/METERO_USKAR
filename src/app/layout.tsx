@@ -12,7 +12,15 @@ export const metadata: Metadata = {
     statusBarStyle: "black-translucent",
   },
   icons: {
-    apple: "/icons/icon-192.svg",
+    apple: [
+      { url: "/icons/apple-icon-120.png", sizes: "120x120" },
+      { url: "/icons/apple-icon-152.png", sizes: "152x152" },
+      { url: "/icons/apple-icon-167.png", sizes: "167x167" },
+      { url: "/icons/apple-icon-180.png", sizes: "180x180" },
+    ],
+  },
+  other: {
+    "apple-mobile-web-app-capable": "yes",
   },
 };
 

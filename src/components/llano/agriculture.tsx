@@ -206,7 +206,7 @@ export function AgricultureSection({ agricultural, climate, precipitacionSemanal
             </ClickableCard>
           </div>
 
-          <div className="mt-5 grid gap-4 lg:grid-cols-2">
+          <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-2">
             <ClickableCard
               onOpen={setExpandedDetail}
               detail={{

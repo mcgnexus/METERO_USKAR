@@ -25,7 +25,7 @@ export function MicroclimateStrip({ data }: { data: ClimateCalibrationPayload })
       </p>
 
       <div className="mt-5 flex flex-wrap items-stretch gap-2">
-        <div className="flex flex-1 min-w-[180px] flex-col items-center justify-center rounded-[22px] border border-slate-200 bg-slate-50 p-5 text-center">
+        <div className="flex flex-1 min-w-[150px] flex-col items-center justify-center rounded-[22px] border border-slate-200 bg-slate-50 p-5 text-center">
           <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">Interpolación</p>
           <p className="mt-2 text-3xl font-black text-slate-950">{fmtNumber(raw, 1)}°C</p>
           <p className="mt-1 text-xs text-slate-500">Capa 1-3 aplicadas</p>
@@ -33,7 +33,7 @@ export function MicroclimateStrip({ data }: { data: ClimateCalibrationPayload })
 
         <div className="flex items-center text-2xl font-bold text-slate-400">+</div>
 
-        <div className={`flex flex-1 min-w-[180px] flex-col items-center justify-center rounded-[22px] border p-5 text-center ${m.coldAirDrainageC < 0 ? 'border-sky-200 bg-sky-50' : 'border-slate-200 bg-slate-50'}`}>
+        <div className={`flex flex-1 min-w-[150px] flex-col items-center justify-center rounded-[22px] border p-5 text-center ${m.coldAirDrainageC < 0 ? 'border-sky-200 bg-sky-50' : 'border-slate-200 bg-slate-50'}`}>
           <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">Drenaje catabático</p>
           <p className="mt-2 text-3xl font-black text-slate-950">{sign(m.coldAirDrainageC)}°C</p>
           <p className="mt-1 text-xs text-slate-500">
@@ -43,7 +43,7 @@ export function MicroclimateStrip({ data }: { data: ClimateCalibrationPayload })
 
         <div className="flex items-center text-2xl font-bold text-slate-400">+</div>
 
-        <div className={`flex flex-1 min-w-[180px] flex-col items-center justify-center rounded-[22px] border p-5 text-center ${m.urbanHeatIslandC > 0 ? 'border-orange-200 bg-orange-50' : 'border-slate-200 bg-slate-50'}`}>
+        <div className={`flex flex-1 min-w-[150px] flex-col items-center justify-center rounded-[22px] border p-5 text-center ${m.urbanHeatIslandC > 0 ? 'border-orange-200 bg-orange-50' : 'border-slate-200 bg-slate-50'}`}>
           <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">Isla de calor urbana</p>
           <p className="mt-2 text-3xl font-black text-slate-950">+{fmtNumber(m.urbanHeatIslandC, 1)}°C</p>
           <p className="mt-1 text-xs text-slate-500">
@@ -53,7 +53,7 @@ export function MicroclimateStrip({ data }: { data: ClimateCalibrationPayload })
 
         <div className="flex items-center text-2xl font-bold text-slate-400">=</div>
 
-        <div className="flex flex-1 min-w-[180px] flex-col items-center justify-center rounded-[22px] border border-emerald-300 bg-emerald-50 p-5 text-center">
+        <div className="flex flex-1 min-w-[150px] flex-col items-center justify-center rounded-[22px] border border-emerald-300 bg-emerald-50 p-5 text-center">
           <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-700">T final del llano</p>
           <p className="mt-2 text-3xl font-black text-emerald-900">{fmtNumber(corrected, 1)}°C</p>
           <p className="mt-1 text-xs text-emerald-700">Auditada vs sensor propio</p>

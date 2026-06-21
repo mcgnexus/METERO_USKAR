@@ -131,7 +131,7 @@ export function AlarmBoard({ alarms }: { alarms: PulseAlarm[] }) {
             <h3 className="text-xs font-bold uppercase tracking-[0.18em] text-slate-500">
               {g.title} ({g.items.length})
             </h3>
-            <div className="mt-3 grid gap-3 lg:grid-cols-3">
+            <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {g.items.map((a, i) => (
                 <article key={`${a.audience}-${a.title}-${i}`} className={`cursor-pointer rounded-[22px] border p-4 transition-all hover:shadow-lg ${levelClass(a.level)}`} onClick={() => setExpandedAlarm(a)}>
                   <div className="flex items-center justify-between">
