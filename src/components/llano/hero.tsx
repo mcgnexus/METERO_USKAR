@@ -29,7 +29,7 @@ export function PulseHero({ climate, weather, alarmCount }: {
 }) {
   const local = climate.nodes.localStation;
   const temp = climate.calibration.realTemperatureC ?? climate.interpolation.estimatedTemperatureC;
-  const humidity = local?.humidityPct ?? climate.eto.inputs.humidityPct;
+  const humidity = local?.humidityPct ?? climate.eto.inputs.humidityPct ?? weather?.current?.humidityPct;
   const dew = climate.dewPoint.dewPointC;
 
   const localAge = ageFromIso(local?.time ?? null);
