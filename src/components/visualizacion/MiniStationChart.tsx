@@ -27,7 +27,11 @@ export default function MiniStationChart() {
   const { data: historyData } = useApiData<{ readings: any[] }>('/api/weather/stations/history', 'station-history');
   const readings = historyData?.readings ?? [];
 
-  const hasStation = station?.status === 'OK';
+  const stationAgeMin = station?.time
+    ? Math.max(0, Math.round((Date.now() - new Date(station.time).getTime()) / 60000))
+    : null;
+  const hasStation = station?.status === 'OK' && stationAgeMin !== null && stationAgeMin < 180;
+  const isStale = station?.status === 'OK' && stationAgeMin !== null && stationAgeMin >= 180;
   const hasHistory = readings.length >= 2;
 
   const labels = useMemo(() => readings.map((r: any) => fmtDayHour(r.measured_at)), [readings]);
@@ -45,7 +49,9 @@ export default function MiniStationChart() {
           <p className="mt-1 text-sm text-slate-600">
             {hasStation
               ? `Estación ${station.name} · ${station.stationId}`
-              : 'Estación local no disponible en este momento'}
+              : isStale
+                ? `Estación ${station?.name ?? ''} sin transmitir desde hace ${stationAgeMin! >= 1440 ? `${Math.floor(stationAgeMin! / 1440)} día(s)` : `${Math.floor(stationAgeMin! / 60)}h`}`
+                : 'Estación local no disponible en este momento'}
           </p>
         </div>
       </div>

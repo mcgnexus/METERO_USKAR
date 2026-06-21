@@ -17,7 +17,7 @@ function ChartBox({ height, children }: { height: number; children: React.ReactN
   return <div className="relative overflow-hidden" style={{ height }}>{children}</div>;
 }
 
-export default function TemperatureChart({ currentData, forecastData }: { currentData: any; forecastData: any }) {
+export default function TemperatureChart({ currentData }: { currentData: any }) {
   const hourly = currentData?.hourly;
   const daily = currentData?.daily;
 

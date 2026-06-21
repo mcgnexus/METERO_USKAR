@@ -141,8 +141,8 @@ export default function ZoneChart({ zones }: { zones: any[] }) {
               <div><span className="font-black text-sky-700">{z.humidityPct?.toFixed(0)}%</span><span className="block text-slate-500">HR</span></div>
               <div><span className="font-black text-emerald-700">{z.windSpeedKmh?.toFixed(0)}</span><span className="block text-slate-500">viento</span></div>
             </div>
-            {z.frostRisk !== 'none' && (
-              <p className="mt-1 text-center text-[9px] font-bold uppercase text-rose-600">Riesgo helada: {z.frostRisk}</p>
+            {z.frostRisk && z.frostRisk !== 'none' && (
+              <p className="mt-1 text-center text-[9px] font-bold uppercase text-rose-600">Riesgo helada: {z.frostRisk === 'unknown' ? 'no disponible' : z.frostRisk === 'muy_alta' ? 'muy alta' : z.frostRisk}</p>
             )}
           </div>
         ))}

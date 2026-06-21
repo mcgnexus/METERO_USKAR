@@ -6,7 +6,8 @@ import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Tooltip, Legend, Filler);
 
 function fmtHour(iso: string): string {
-  return new Date(iso).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+  const d = new Date(iso);
+  return d.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric' }) + ' ' + d.toLocaleTimeString('es-ES', { hour: '2-digit' }) + 'h';
 }
 
 function ChartBox({ height, children }: { height: number; children: React.ReactNode }) {

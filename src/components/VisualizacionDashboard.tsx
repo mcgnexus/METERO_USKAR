@@ -37,8 +37,8 @@ export default function VisualizacionDashboard() {
     <div className="space-y-6">
       <MiniStationChart />
       <CurrentGauges data={currentData} />
-      <TemperatureChart currentData={currentData} forecastData={forecastData} />
-      <WaterChart currentData={currentData} forecastData={forecastData} />
+      <TemperatureChart currentData={currentData} />
+      <WaterChart currentData={currentData} />
       <WindChart forecastData={forecastData} />
       <SoilChart forecastData={forecastData} />
       <ZoneChart zones={zones.data ?? []} />

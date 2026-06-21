@@ -13,7 +13,7 @@ function ChartBox({ height, children }: { height: number; children: React.ReactN
   return <div className="relative overflow-hidden" style={{ height }}>{children}</div>;
 }
 
-export default function WaterChart({ currentData, forecastData }: { currentData: any; forecastData: any }) {
+export default function WaterChart({ currentData }: { currentData: any }) {
   const daily = currentData?.daily;
   const hourly = currentData?.hourly;
 
