@@ -21,10 +21,10 @@ const DEFAULT_PARAMS: Record<string, number> = {
   altitude_lapse_rate: 0.0065,           // 0.65°C por cada 100m de descenso (ISA estándar)
 
   // Microclima del llano (casco urbano de Huéscar, ~950m, cubeta topográfica)
-  urban_heat_island_c: 0.2,              // Día: asfalto + edificación suman ~0.2°C al gradiente adiabático
-  cold_air_drainage_min_c: -2.0,         // Noche calma (viento < threshold): drenaje catabático mínimo
-  cold_air_drainage_max_c: -5.0,         // Noche en calma absoluta, despejado: la cubeta se llena de aire helado
-  inversion_wind_threshold_ms: 1.5,      // Por debajo de 1.5 m/s el aire se estanca y se invierte el gradiente
+  urban_heat_island_day_c: 0.2,          // Día: asfalto + edificación suman ~0.2°C
+  urban_heat_island_night_c: 0.5,        // Noche: la inercia térmica urbana libera calor (+0.3 a +1.0°C)
+  cold_air_drainage_max_c: -5.0,         // Noche en calma absoluta, despejado: amplitud máxima del drenaje catabático
+  inversion_wind_threshold_ms: 2.0,      // Por encima de 2.0 m/s la mezcla turbulenta anula el drenaje
 
   // Precipitación (sombra orográfica / Foehn)
   rainfall_foehn_factor: 0.5,            // El llano recibe ~50% menos lluvia que San Clemente (rango 30-60%)

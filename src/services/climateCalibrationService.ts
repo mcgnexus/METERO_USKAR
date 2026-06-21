@@ -359,24 +359,23 @@ interface LlanoMicroclimate {
 function computeLlanoMicroclimate(
   rawEstimatedTempC: number,
   windSpeed2mMs: number,
+  cloudCoverPct?: number | null,
 ): LlanoMicroclimate {
   const hourMadrid = getHourMadrid();
   const isNighttime = hourMadrid < 8 || hourMadrid >= 20;
-  const inversionThreshold = getModelParam("inversion_wind_threshold_ms");
-  const isCalm = windSpeed2mMs < inversionThreshold;
+  const windThreshold = getModelParam("inversion_wind_threshold_ms");
 
   let coldAirDrainageC = 0;
   let urbanHeatIslandC = 0;
 
-  if (isNighttime && isCalm) {
-    const minP = getModelParam("cold_air_drainage_min_c");
-    const maxP = getModelParam("cold_air_drainage_max_c");
-    const calmness = Math.max(0, 1 - windSpeed2mMs / inversionThreshold);
-    coldAirDrainageC = Math.round((minP + (maxP - minP) * calmness) * 10) / 10;
-  }
-
-  if (!isNighttime) {
-    urbanHeatIslandC = getModelParam("urban_heat_island_c");
+  if (isNighttime) {
+    const amplitude = Math.abs(getModelParam("cold_air_drainage_max_c"));
+    const F_viento = Math.max(0, 1 - windSpeed2mMs / windThreshold);
+    const F_cielo = cloudCoverPct != null ? Math.max(0, 1 - cloudCoverPct / 100) : 0.7;
+    coldAirDrainageC = Math.round(-amplitude * F_viento * F_cielo * 10) / 10;
+    urbanHeatIslandC = getModelParam("urban_heat_island_night_c");
+  } else {
+    urbanHeatIslandC = getModelParam("urban_heat_island_day_c");
   }
 
   const totalCorrectionC = Math.round((coldAirDrainageC + urbanHeatIslandC) * 10) / 10;
@@ -387,7 +386,7 @@ function computeLlanoMicroclimate(
     coldAirDrainageC,
     urbanHeatIslandC,
     totalCorrectionC,
-    inversionConditions: isNighttime && isCalm,
+    inversionConditions: isNighttime && coldAirDrainageC < 0,
     hourMadrid,
     isNighttime,
   };
@@ -594,7 +593,7 @@ export function computeDynamicGradient(bazaTempC: number, sanClementeTempC: numb
   const deltaH = REFERENCE_NODES.sanClemente.elevation - REFERENCE_NODES.baza.elevation;
   const rawGamma = (bazaTempC - sanClementeTempC) / deltaH;
   return {
-    gammaCPerM: Math.max(-0.03, Math.min(0.02, rawGamma || 0.0065)),
+    gammaCPerM: Math.max(-0.015, Math.min(0.012, rawGamma || 0.0065)),
     inversionDetected: bazaTempC < sanClementeTempC,
   };
 }
@@ -753,7 +752,7 @@ export async function computeClimateCalibration(): Promise<ClimateCalibrationRes
   const { gammaCPerM, inversionDetected } = computeDynamicGradient(bazaTemp, sanTemp);
   const rawInterpolatedTempC = estimateLlanoTemperature(bazaTemp, gammaCPerM);
   const windSpeed2mMs = radiationWind.windSpeed2mKmh / 3.6;
-  const micro = computeLlanoMicroclimate(Math.round(rawInterpolatedTempC * 10) / 10, windSpeed2mMs);
+  const micro = computeLlanoMicroclimate(Math.round(rawInterpolatedTempC * 10) / 10, windSpeed2mMs, radiationWind.cloudCoverPct);
   const estimatedTemperatureC = micro.correctedTempC;
 
   const realTemperatureC = localStation?.temperatureC ?? null;

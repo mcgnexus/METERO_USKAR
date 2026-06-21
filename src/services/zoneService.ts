@@ -23,7 +23,7 @@ function getZoneModifier(type: ZoneType, isNight: boolean): ZoneModifier {
         humAdjPct: -3,
         dewShiftC: -0.2,
         irrigationNeedFactor: 1.0,
-        frostRiskBoost: -0.3,
+        frostRiskBoost: 0.4,
       };
     case "VEGA":
       return {
@@ -31,7 +31,7 @@ function getZoneModifier(type: ZoneType, isNight: boolean): ZoneModifier {
         humAdjPct: 8,
         dewShiftC: 0.6,
         irrigationNeedFactor: 1.3,
-        frostRiskBoost: 0.4,
+        frostRiskBoost: -1.0,
       };
     case "SECANO":
       return {
@@ -39,7 +39,7 @@ function getZoneModifier(type: ZoneType, isNight: boolean): ZoneModifier {
         humAdjPct: -5,
         dewShiftC: -0.4,
         irrigationNeedFactor: 1.5,
-        frostRiskBoost: 0.2,
+        frostRiskBoost: -0.4,
       };
     case "MONTE":
       return {
@@ -47,7 +47,7 @@ function getZoneModifier(type: ZoneType, isNight: boolean): ZoneModifier {
         humAdjPct: 5,
         dewShiftC: 0.3,
         irrigationNeedFactor: 0.7,
-        frostRiskBoost: 0.1,
+        frostRiskBoost: -0.2,
       };
     case "RESERVOIR":
       return {
@@ -55,7 +55,7 @@ function getZoneModifier(type: ZoneType, isNight: boolean): ZoneModifier {
         humAdjPct: 4,
         dewShiftC: 0.4,
         irrigationNeedFactor: 0.5,
-        frostRiskBoost: -0.1,
+        frostRiskBoost: 0.3,
       };
     default:
       return { tempAdjC: 0, humAdjPct: 0, dewShiftC: 0, irrigationNeedFactor: 1.0, frostRiskBoost: 0 };
@@ -63,7 +63,7 @@ function getZoneModifier(type: ZoneType, isNight: boolean): ZoneModifier {
 }
 
 function computeFrostRisk(tempC: number, boost: number): ZoneEstimation["frostRisk"] {
-  const adjusted = tempC + boost * 2;
+  const adjusted = tempC + boost;
   if (adjusted < -4) return "muy_alta";
   if (adjusted < -1) return "alta";
   if (adjusted < 2) return "media";

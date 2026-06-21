@@ -145,7 +145,7 @@ export async function fetchObservationLayer(): Promise<{
       const isDaytime = hourMadrid >= 8 && hourMadrid < 20;
 
       const reservoirDistanceKm = AEMET_HUESCAR_5051X.reservoirDistanceKm ?? 0.28;
-      const reservoirInfluence = Math.min(1.5, Math.max(0.5, Math.sqrt(0.28 / Math.max(reservoirDistanceKm, 0.05))));
+      const reservoirInfluence = Math.min(1, Math.max(0, Math.sqrt(0.28 / Math.max(reservoirDistanceKm, 0.28))));
       const reservoirTempBias = (isDaytime
         ? getModelParam("reservoir_temp_bias_day")
         : getModelParam("reservoir_temp_bias_night")) * reservoirInfluence;
