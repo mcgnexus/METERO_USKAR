@@ -5,6 +5,10 @@ import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Tooltip, Legend, Filler);
 
+function ChartBox({ height, children }: { height: number; children: React.ReactNode }) {
+  return <div className="relative overflow-hidden" style={{ height }}>{children}</div>;
+}
+
 export default function SoilChart({ forecastData }: { forecastData: any }) {
   const forecastDays = forecastData?.forecastDays ?? [];
   const labels = forecastDays.map((d: any) =>
@@ -29,103 +33,112 @@ export default function SoilChart({ forecastData }: { forecastData: any }) {
       </div>
 
       {hasSoil && (
-        <div className="mt-5 h-56">
-          <Line
-            data={{
-              labels,
-              datasets: [
-                {
-                  label: 'Suelo 10 cm',
-                  data: soil10,
-                  borderColor: '#d97706',
-                  backgroundColor: 'rgba(217,119,6,0.08)',
-                  fill: true,
-                  tension: 0.3,
-                  pointRadius: 3,
-                  pointHoverRadius: 6,
-                  borderWidth: 2,
+        <div className="mt-5">
+          <ChartBox height={224}>
+            <Line
+              data={{
+                labels,
+                datasets: [
+                  {
+                    label: 'Suelo 10 cm',
+                    data: soil10,
+                    borderColor: '#d97706',
+                    backgroundColor: 'rgba(217,119,6,0.08)',
+                    fill: true,
+                    tension: 0.3,
+                    pointRadius: 3,
+                    pointHoverRadius: 6,
+                    borderWidth: 2,
+                  },
+                  {
+                    label: 'Suelo 40 cm',
+                    data: soil40,
+                    borderColor: '#92400e',
+                    borderDash: [4, 4],
+                    tension: 0.3,
+                    pointRadius: 3,
+                    pointHoverRadius: 6,
+                    borderWidth: 2,
+                  },
+                ],
+              }}
+              options={{
+                responsive: true,
+                maintainAspectRatio: false,
+                resizeDelay: 0,
+                interaction: { mode: 'index', intersect: false },
+                plugins: {
+                  legend: { position: 'top', labels: { boxWidth: 12, padding: 12, font: { size: 11 } } },
                 },
-                {
-                  label: 'Suelo 40 cm',
-                  data: soil40,
-                  borderColor: '#92400e',
-                  borderDash: [4, 4],
-                  tension: 0.3,
-                  pointRadius: 3,
-                  pointHoverRadius: 6,
-                  borderWidth: 2,
+                scales: {
+                  x: { ticks: { font: { size: 10 } }, grid: { display: false } },
+                  y: { ticks: { font: { size: 10 } }, grid: { color: 'rgba(0,0,0,0.04)' }, title: { display: true, text: '°C', font: { size: 10 } } },
                 },
-              ],
-            }}
-            options={{
-              responsive: true,
-              maintainAspectRatio: false,
-              interaction: { mode: 'index', intersect: false },
-              plugins: {
-                legend: { position: 'top', labels: { boxWidth: 12, padding: 12, font: { size: 11 } } },
-              },
-              scales: {
-                x: { ticks: { font: { size: 10 } }, grid: { display: false } },
-                y: { ticks: { font: { size: 10 } }, grid: { color: 'rgba(0,0,0,0.04)' }, title: { display: true, text: '°C', font: { size: 10 } } },
-              },
-            }}
-          />
+              }}
+            />
+          </ChartBox>
         </div>
       )}
 
       <div className="mt-6 grid gap-6 lg:grid-cols-2">
         {hasEto && (
-          <div className="h-48">
+          <div>
             <p className="mb-2 text-xs font-bold uppercase tracking-[0.12em] text-slate-500">ETo (mm/día)</p>
-            <Bar
-              data={{
-                labels,
-                datasets: [{
-                  label: 'ETo',
-                  data: eto,
-                  backgroundColor: 'rgba(59,130,246,0.5)',
-                  borderColor: '#3b82f6',
-                  borderWidth: 1,
-                  borderRadius: 4,
-                }],
-              }}
-              options={{
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
-                scales: {
-                  x: { ticks: { font: { size: 10 } }, grid: { display: false } },
-                  y: { beginAtZero: true, ticks: { font: { size: 10 } }, grid: { color: 'rgba(0,0,0,0.04)' } },
-                },
-              }}
-            />
+            <ChartBox height={192}>
+              <Bar
+                data={{
+                  labels,
+                  datasets: [{
+                    label: 'ETo',
+                    data: eto,
+                    backgroundColor: 'rgba(59,130,246,0.5)',
+                    borderColor: '#3b82f6',
+                    borderWidth: 1,
+                    borderRadius: 4,
+                  }],
+                }}
+                options={{
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  resizeDelay: 0,
+                  plugins: { legend: { display: false } },
+                  scales: {
+                    x: { ticks: { font: { size: 10 } }, grid: { display: false } },
+                    y: { beginAtZero: true, ticks: { font: { size: 10 } }, grid: { color: 'rgba(0,0,0,0.04)' } },
+                  },
+                }}
+              />
+            </ChartBox>
           </div>
         )}
         {hasRad && (
-          <div className="h-48">
+          <div>
             <p className="mb-2 text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Radiación solar (MJ/m²)</p>
-            <Bar
-              data={{
-                labels,
-                datasets: [{
-                  label: 'Radiación',
-                  data: radiation,
-                  backgroundColor: 'rgba(245,158,11,0.5)',
-                  borderColor: '#f59e0b',
-                  borderWidth: 1,
-                  borderRadius: 4,
-                }],
-              }}
-              options={{
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
-                scales: {
-                  x: { ticks: { font: { size: 10 } }, grid: { display: false } },
-                  y: { beginAtZero: true, ticks: { font: { size: 10 } }, grid: { color: 'rgba(0,0,0,0.04)' } },
-                },
-              }}
-            />
+            <ChartBox height={192}>
+              <Bar
+                data={{
+                  labels,
+                  datasets: [{
+                    label: 'Radiación',
+                    data: radiation,
+                    backgroundColor: 'rgba(245,158,11,0.5)',
+                    borderColor: '#f59e0b',
+                    borderWidth: 1,
+                    borderRadius: 4,
+                  }],
+                }}
+                options={{
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  resizeDelay: 0,
+                  plugins: { legend: { display: false } },
+                  scales: {
+                    x: { ticks: { font: { size: 10 } }, grid: { display: false } },
+                    y: { beginAtZero: true, ticks: { font: { size: 10 } }, grid: { color: 'rgba(0,0,0,0.04)' } },
+                  },
+                }}
+              />
+            </ChartBox>
           </div>
         )}
       </div>

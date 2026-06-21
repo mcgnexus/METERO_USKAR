@@ -24,30 +24,33 @@ export default function BiasComparisonChart({ forecastData }: { forecastData: an
       </div>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-2">
-        <div className="h-56">
+        <div>
           <p className="mb-2 text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Sesgo de temperatura (°C)</p>
-          <Bar
-            data={{
-              labels,
-              datasets: [{
-                label: 'Sesgo',
-                data: allBias,
-                backgroundColor: allBias.map((v: number) => v > 0 ? 'rgba(239,68,68,0.5)' : 'rgba(59,130,246,0.5)'),
-                borderColor: allBias.map((v: number) => v > 0 ? '#ef4444' : '#3b82f6'),
-                borderWidth: 1,
-                borderRadius: 4,
-              }],
-            }}
-            options={{
-              responsive: true,
-              maintainAspectRatio: false,
-              plugins: { legend: { display: false } },
-              scales: {
-                x: { ticks: { font: { size: 10 } }, grid: { display: false } },
-                y: { ticks: { font: { size: 10 } }, grid: { color: 'rgba(0,0,0,0.04)' } },
-              },
-            }}
-          />
+          <div className="relative overflow-hidden" style={{ height: 224 }}>
+            <Bar
+              data={{
+                labels,
+                datasets: [{
+                  label: 'Sesgo',
+                  data: allBias,
+                  backgroundColor: allBias.map((v: number) => v > 0 ? 'rgba(239,68,68,0.5)' : 'rgba(59,130,246,0.5)'),
+                  borderColor: allBias.map((v: number) => v > 0 ? '#ef4444' : '#3b82f6'),
+                  borderWidth: 1,
+                  borderRadius: 4,
+                }],
+              }}
+              options={{
+                responsive: true,
+                maintainAspectRatio: false,
+                resizeDelay: 0,
+                plugins: { legend: { display: false } },
+                scales: {
+                  x: { ticks: { font: { size: 10 } }, grid: { display: false } },
+                  y: { ticks: { font: { size: 10 } }, grid: { color: 'rgba(0,0,0,0.04)' } },
+                },
+              }}
+            />
+          </div>
         </div>
 
         <div className="grid grid-cols-3 gap-3">

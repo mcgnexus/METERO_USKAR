@@ -9,9 +9,8 @@ function fmtHour(iso: string): string {
   return new Date(iso).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
 }
 
-function degToCompass(deg: number): string {
-  const dirs = ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW'];
-  return dirs[Math.round(deg / 22.5) % 16];
+function ChartBox({ height, children }: { height: number; children: React.ReactNode }) {
+  return <div className="relative overflow-hidden" style={{ height }}>{children}</div>;
 }
 
 export default function WindChart({ forecastData }: { forecastData: any }) {
@@ -39,74 +38,81 @@ export default function WindChart({ forecastData }: { forecastData: any }) {
       </div>
 
       {hasHourly && (
-        <div className="mt-5 h-64">
-          <Line
-            data={{
-              labels: times,
-              datasets: [
-                {
-                  label: 'Viento 10 m',
-                  data: wind10m,
-                  borderColor: '#10b981',
-                  backgroundColor: 'rgba(16,185,129,0.08)',
-                  fill: true,
-                  tension: 0.3,
-                  pointRadius: 1,
-                  pointHoverRadius: 4,
-                  borderWidth: 2,
+        <div className="mt-5">
+          <ChartBox height={256}>
+            <Line
+              data={{
+                labels: times,
+                datasets: [
+                  {
+                    label: 'Viento 10 m',
+                    data: wind10m,
+                    borderColor: '#10b981',
+                    backgroundColor: 'rgba(16,185,129,0.08)',
+                    fill: true,
+                    tension: 0.3,
+                    pointRadius: 1,
+                    pointHoverRadius: 4,
+                    borderWidth: 2,
+                  },
+                  {
+                    label: 'Viento 2 m',
+                    data: wind2m,
+                    borderColor: '#6ee7b7',
+                    borderDash: [4, 4],
+                    tension: 0.3,
+                    pointRadius: 1,
+                    pointHoverRadius: 4,
+                    borderWidth: 1.5,
+                  },
+                ],
+              }}
+              options={{
+                responsive: true,
+                maintainAspectRatio: false,
+                resizeDelay: 0,
+                interaction: { mode: 'index', intersect: false },
+                plugins: {
+                  legend: { position: 'top', labels: { boxWidth: 12, padding: 12, font: { size: 11 } } },
                 },
-                {
-                  label: 'Viento 2 m',
-                  data: wind2m,
-                  borderColor: '#6ee7b7',
-                  borderDash: [4, 4],
-                  tension: 0.3,
-                  pointRadius: 1,
-                  pointHoverRadius: 4,
-                  borderWidth: 1.5,
+                scales: {
+                  x: { ticks: { maxTicksLimit: 12, font: { size: 10 } }, grid: { display: false } },
+                  y: { beginAtZero: true, ticks: { font: { size: 10 } }, grid: { color: 'rgba(0,0,0,0.04)' }, title: { display: true, text: 'km/h', font: { size: 10 } } },
                 },
-              ],
-            }}
-            options={{
-              responsive: true,
-              maintainAspectRatio: false,
-              interaction: { mode: 'index', intersect: false },
-              plugins: {
-                legend: { position: 'top', labels: { boxWidth: 12, padding: 12, font: { size: 11 } } },
-              },
-              scales: {
-                x: { ticks: { maxTicksLimit: 12, font: { size: 10 } }, grid: { display: false } },
-                y: { beginAtZero: true, ticks: { font: { size: 10 } }, grid: { color: 'rgba(0,0,0,0.04)' }, title: { display: true, text: 'km/h', font: { size: 10 } } },
-              },
-            }}
-          />
+              }}
+            />
+          </ChartBox>
         </div>
       )}
 
       {hasDaily && (
-        <div className="mt-6 h-48">
-          <Bar
-            data={{
-              labels: dayLabels,
-              datasets: [{
-                label: 'Viento medio diario',
-                data: windMean,
-                backgroundColor: 'rgba(16,185,129,0.5)',
-                borderColor: '#10b981',
-                borderWidth: 1,
-                borderRadius: 4,
-              }],
-            }}
-            options={{
-              responsive: true,
-              maintainAspectRatio: false,
-              plugins: { legend: { display: false } },
-              scales: {
-                x: { ticks: { font: { size: 10 } }, grid: { display: false } },
-                y: { beginAtZero: true, ticks: { font: { size: 10 } }, grid: { color: 'rgba(0,0,0,0.04)' } },
-              },
-            }}
-          />
+        <div className="mt-6">
+          <p className="mb-2 text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Viento medio diario</p>
+          <ChartBox height={192}>
+            <Bar
+              data={{
+                labels: dayLabels,
+                datasets: [{
+                  label: 'Viento medio',
+                  data: windMean,
+                  backgroundColor: 'rgba(16,185,129,0.5)',
+                  borderColor: '#10b981',
+                  borderWidth: 1,
+                  borderRadius: 4,
+                }],
+              }}
+              options={{
+                responsive: true,
+                maintainAspectRatio: false,
+                resizeDelay: 0,
+                plugins: { legend: { display: false } },
+                scales: {
+                  x: { ticks: { font: { size: 10 } }, grid: { display: false } },
+                  y: { beginAtZero: true, ticks: { font: { size: 10 } }, grid: { color: 'rgba(0,0,0,0.04)' } },
+                },
+              }}
+            />
+          </ChartBox>
         </div>
       )}
     </section>

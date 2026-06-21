@@ -9,6 +9,10 @@ function fmtDay(iso: string): string {
   return new Date(iso).toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric' });
 }
 
+function ChartBox({ height, children }: { height: number; children: React.ReactNode }) {
+  return <div className="relative overflow-hidden" style={{ height }}>{children}</div>;
+}
+
 export default function WaterChart({ currentData, forecastData }: { currentData: any; forecastData: any }) {
   const daily = currentData?.daily;
   const hourly = currentData?.hourly;
@@ -36,91 +40,100 @@ export default function WaterChart({ currentData, forecastData }: { currentData:
 
       {hasPrecip && (
         <div className="mt-5 grid gap-4 lg:grid-cols-2">
-          <div className="h-56">
+          <div>
             <p className="mb-2 text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Precipitación (mm)</p>
-            <Bar
-              data={{
-                labels,
-                datasets: [{
-                  label: 'mm',
-                  data: precip,
-                  backgroundColor: 'rgba(14,165,233,0.6)',
-                  borderColor: '#0ea5e9',
-                  borderWidth: 1,
-                  borderRadius: 4,
-                }],
-              }}
-              options={{
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
-                scales: {
-                  x: { ticks: { font: { size: 10 } }, grid: { display: false } },
-                  y: { beginAtZero: true, ticks: { font: { size: 10 } }, grid: { color: 'rgba(0,0,0,0.04)' } },
-                },
-              }}
-            />
+            <ChartBox height={224}>
+              <Bar
+                data={{
+                  labels,
+                  datasets: [{
+                    label: 'mm',
+                    data: precip,
+                    backgroundColor: 'rgba(14,165,233,0.6)',
+                    borderColor: '#0ea5e9',
+                    borderWidth: 1,
+                    borderRadius: 4,
+                  }],
+                }}
+                options={{
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  resizeDelay: 0,
+                  plugins: { legend: { display: false } },
+                  scales: {
+                    x: { ticks: { font: { size: 10 } }, grid: { display: false } },
+                    y: { beginAtZero: true, ticks: { font: { size: 10 } }, grid: { color: 'rgba(0,0,0,0.04)' } },
+                  },
+                }}
+              />
+            </ChartBox>
           </div>
-          <div className="h-56">
+          <div>
             <p className="mb-2 text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Probabilidad de lluvia (%)</p>
+            <ChartBox height={224}>
+              <Line
+                data={{
+                  labels,
+                  datasets: [{
+                    label: '%',
+                    data: prob,
+                    borderColor: '#f59e0b',
+                    backgroundColor: 'rgba(245,158,11,0.15)',
+                    fill: true,
+                    tension: 0.3,
+                    pointRadius: 3,
+                    pointHoverRadius: 5,
+                    borderWidth: 2,
+                  }],
+                }}
+                options={{
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  resizeDelay: 0,
+                  plugins: { legend: { display: false } },
+                  scales: {
+                    x: { ticks: { font: { size: 10 } }, grid: { display: false } },
+                    y: { min: 0, max: 100, ticks: { font: { size: 10 } }, grid: { color: 'rgba(0,0,0,0.04)' } },
+                  },
+                }}
+              />
+            </ChartBox>
+          </div>
+        </div>
+      )}
+
+      {hasHum && (
+        <div className="mt-6">
+          <p className="mb-2 text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Humedad relativa (%) — 72 horas</p>
+          <ChartBox height={224}>
             <Line
               data={{
-                labels,
+                labels: hourLabels,
                 datasets: [{
-                  label: '%',
-                  data: prob,
-                  borderColor: '#f59e0b',
-                  backgroundColor: 'rgba(245,158,11,0.15)',
+                  label: 'HR',
+                  data: humidities,
+                  borderColor: '#0ea5e9',
+                  backgroundColor: 'rgba(14,165,233,0.12)',
                   fill: true,
                   tension: 0.3,
-                  pointRadius: 3,
-                  pointHoverRadius: 5,
+                  pointRadius: 1,
+                  pointHoverRadius: 4,
                   borderWidth: 2,
                 }],
               }}
               options={{
                 responsive: true,
                 maintainAspectRatio: false,
+                resizeDelay: 0,
+                interaction: { mode: 'index', intersect: false },
                 plugins: { legend: { display: false } },
                 scales: {
-                  x: { ticks: { font: { size: 10 } }, grid: { display: false } },
+                  x: { ticks: { maxTicksLimit: 12, font: { size: 10 } }, grid: { display: false } },
                   y: { min: 0, max: 100, ticks: { font: { size: 10 } }, grid: { color: 'rgba(0,0,0,0.04)' } },
                 },
               }}
             />
-          </div>
-        </div>
-      )}
-
-      {hasHum && (
-        <div className="mt-6 h-56">
-          <p className="mb-2 text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Humedad relativa (%) — 72 horas</p>
-          <Line
-            data={{
-              labels: hourLabels,
-              datasets: [{
-                label: 'HR',
-                data: humidities,
-                borderColor: '#0ea5e9',
-                backgroundColor: 'rgba(14,165,233,0.12)',
-                fill: true,
-                tension: 0.3,
-                pointRadius: 1,
-                pointHoverRadius: 4,
-                borderWidth: 2,
-              }],
-            }}
-            options={{
-              responsive: true,
-              maintainAspectRatio: false,
-              interaction: { mode: 'index', intersect: false },
-              plugins: { legend: { display: false } },
-              scales: {
-                x: { ticks: { maxTicksLimit: 12, font: { size: 10 } }, grid: { display: false } },
-                y: { min: 0, max: 100, ticks: { font: { size: 10 } }, grid: { color: 'rgba(0,0,0,0.04)' } },
-              },
-            }}
-          />
+          </ChartBox>
         </div>
       )}
     </section>

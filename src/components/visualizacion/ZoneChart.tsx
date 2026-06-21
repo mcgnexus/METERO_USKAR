@@ -1,9 +1,13 @@
 'use client';
 
-import { Bar, Line } from 'react-chartjs-2';
-import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, PointElement, LineElement, Tooltip, Legend, Filler } from 'chart.js';
+import { Bar } from 'react-chartjs-2';
+import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Tooltip, Legend } from 'chart.js';
 
-ChartJS.register(CategoryScale, LinearScale, BarElement, PointElement, LineElement, Tooltip, Legend, Filler);
+ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, Legend);
+
+function ChartBox({ height, children }: { height: number; children: React.ReactNode }) {
+  return <div className="relative overflow-hidden" style={{ height }}>{children}</div>;
+}
 
 const ZONE_COLORS: Record<string, string> = {
   URBAN: '#3b82f6',
@@ -33,8 +37,9 @@ export default function ZoneChart({ zones }: { zones: any[] }) {
       </div>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-3">
-        <div className="h-56">
+        <div>
           <p className="mb-2 text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Temperatura (°C)</p>
+          <ChartBox height={224}>
           <Bar
             data={{
               labels: names,
@@ -50,6 +55,7 @@ export default function ZoneChart({ zones }: { zones: any[] }) {
             options={{
               responsive: true,
               maintainAspectRatio: false,
+              resizeDelay: 0,
               indexAxis: 'y',
               plugins: { legend: { display: false } },
               scales: {
@@ -58,37 +64,42 @@ export default function ZoneChart({ zones }: { zones: any[] }) {
               },
             }}
           />
+          </ChartBox>
         </div>
 
-        <div className="h-56">
+        <div>
           <p className="mb-2 text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Humedad relativa (%)</p>
-          <Bar
-            data={{
-              labels: names,
-              datasets: [{
-                label: 'Humedad',
-                data: hums,
-                backgroundColor: colors.map((c: string) => c + '88'),
-                borderColor: colors,
-                borderWidth: 1,
-                borderRadius: 4,
-              }],
-            }}
-            options={{
-              responsive: true,
-              maintainAspectRatio: false,
-              indexAxis: 'y',
-              plugins: { legend: { display: false } },
-              scales: {
-                x: { min: 0, max: 100, ticks: { font: { size: 10 } }, grid: { color: 'rgba(0,0,0,0.04)' } },
-                y: { ticks: { font: { size: 9 } }, grid: { display: false } },
-              },
-            }}
-          />
+          <ChartBox height={224}>
+            <Bar
+              data={{
+                labels: names,
+                datasets: [{
+                  label: 'Humedad',
+                  data: hums,
+                  backgroundColor: colors.map((c: string) => c + '88'),
+                  borderColor: colors,
+                  borderWidth: 1,
+                  borderRadius: 4,
+                }],
+              }}
+              options={{
+                responsive: true,
+                maintainAspectRatio: false,
+                resizeDelay: 0,
+                indexAxis: 'y',
+                plugins: { legend: { display: false } },
+                scales: {
+                  x: { min: 0, max: 100, ticks: { font: { size: 10 } }, grid: { color: 'rgba(0,0,0,0.04)' } },
+                  y: { ticks: { font: { size: 9 } }, grid: { display: false } },
+                },
+              }}
+            />
+          </ChartBox>
         </div>
 
-        <div className="h-56">
+        <div>
           <p className="mb-2 text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Viento (km/h)</p>
+          <ChartBox height={224}>
           <Bar
             data={{
               labels: names,
@@ -104,6 +115,7 @@ export default function ZoneChart({ zones }: { zones: any[] }) {
             options={{
               responsive: true,
               maintainAspectRatio: false,
+              resizeDelay: 0,
               indexAxis: 'y',
               plugins: { legend: { display: false } },
               scales: {
@@ -112,6 +124,7 @@ export default function ZoneChart({ zones }: { zones: any[] }) {
               },
             }}
           />
+          </ChartBox>
         </div>
       </div>
 
