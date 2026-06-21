@@ -115,6 +115,7 @@ export default function WindChart({ forecastData }: { forecastData: any }) {
           </ChartBox>
         </div>
       )}
+      <p className="mt-4 text-[10px] text-slate-400">Fuente: /api/weather/forecast &mdash; Open-Meteo corregido por sesgo</p>
     </section>
   );
 }

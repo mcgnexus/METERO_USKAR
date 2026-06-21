@@ -136,6 +136,7 @@ export default function WaterChart({ currentData, forecastData }: { currentData:
           </ChartBox>
         </div>
       )}
+      <p className="mt-4 text-[10px] text-slate-400">Fuente: /api/weather/current &mdash; Open-Meteo + AEMET</p>
     </section>
   );
 }

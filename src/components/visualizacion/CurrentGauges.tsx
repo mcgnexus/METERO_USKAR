@@ -59,6 +59,7 @@ export default function CurrentGauges({ data }: { data: any }) {
         <Gauge value={c.windSpeedKmh ?? 0} label="Viento" unit="km/h" min={0} max={80} color={COLORS.wind} />
         <Gauge value={dew ?? 0} label="Punto de rocío" unit="°C" min={-15} max={30} color={COLORS.pressure} />
       </div>
+      <p className="mt-4 text-[10px] text-slate-400">Fuente: /api/weather/current &mdash; Open-Meteo + AEMET</p>
     </section>
   );
 }

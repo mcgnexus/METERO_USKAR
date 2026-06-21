@@ -147,6 +147,7 @@ export default function ZoneChart({ zones }: { zones: any[] }) {
           </div>
         ))}
       </div>
+      <p className="mt-4 text-[10px] text-slate-400">Fuente: /api/weather/zones &mdash; Modelo de microclimas</p>
     </section>
   );
 }

@@ -100,6 +100,7 @@ export default function ConfidenceGauges({ currentData, calibrationData }: { cur
           )}
         </div>
       </div>
+      <p className="mt-4 text-[10px] text-slate-400">Fuente: /api/weather/current + /api/weather/climate-calibration</p>
     </section>
   );
 }

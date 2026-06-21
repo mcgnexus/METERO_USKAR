@@ -128,6 +128,7 @@ export default function TemperatureChart({ currentData, forecastData }: { curren
           </ChartBox>
         </div>
       )}
+      <p className="mt-4 text-[10px] text-slate-400">Fuente: /api/weather/current &mdash; Open-Meteo (datos horarios y diarios)</p>
     </section>
   );
 }

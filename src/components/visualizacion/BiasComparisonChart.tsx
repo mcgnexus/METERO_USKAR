@@ -74,6 +74,7 @@ export default function BiasComparisonChart({ forecastData }: { forecastData: an
           </div>
         </div>
       </div>
+      <p className="mt-4 text-[10px] text-slate-400">Fuente: /api/weather/forecast &mdash; Validación contra datos reales (30d)</p>
     </section>
   );
 }
