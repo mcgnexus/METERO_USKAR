@@ -1,6 +1,7 @@
 'use client';
 
 import { fmtN, KpiChip } from '@/components/llano/atoms';
+import { CropRequirements } from '@/components/llano/crop-requirements';
 import type { ClimateCalibrationPayload } from '@/hooks/useClimateCalibration';
 import type { AgriculturalData } from '@/types/weather';
 
@@ -136,6 +137,13 @@ export function AgricultureSection({ agricultural, climate }: {
               </ul>
             </div>
           )}
+
+          <CropRequirements
+            agricultural={agricultural}
+            soilTemp={soil10}
+            airTemp={airTemp}
+            frostRisk={agricultural.frostRisk48h}
+          />
         </>
       ) : (
         <p className="mt-5 text-sm text-slate-500">Sin datos agrícolas en la respuesta actual.</p>
