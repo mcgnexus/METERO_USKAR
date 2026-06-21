@@ -103,6 +103,22 @@ CREATE TABLE IF NOT EXISTS model_parameters (
   sample_count INT DEFAULT 0,
   last_updated TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+CREATE TABLE IF NOT EXISTS model_residuals (
+  id SERIAL PRIMARY KEY,
+  measured_at TIMESTAMPTZ NOT NULL,
+  model TEXT NOT NULL,
+  estimated_temp_c FLOAT,
+  real_temp_c FLOAT,
+  residual_c FLOAT,
+  payload JSONB,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE TABLE IF NOT EXISTS current_weather_llano (
+  location_id TEXT PRIMARY KEY,
+  measured_at TIMESTAMPTZ NOT NULL,
+  payload JSONB,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
 `;
 
 let initialized = false;
@@ -406,4 +422,28 @@ export async function getAllModelParameters(): Promise<Record<string, { value: n
     };
   }
   return result;
+}
+
+export async function saveModelResidual(row: {
+  measuredAt: string;
+  model: string;
+  estimatedTempC: number | null;
+  realTempC: number | null;
+  residualC: number | null;
+  payload: Record<string, unknown>;
+}): Promise<void> {
+  await safeExecute(
+    `INSERT INTO model_residuals (measured_at, model, estimated_temp_c, real_temp_c, residual_c, payload)
+     VALUES ($1, $2, $3, $4, $5, $6)`,
+    [row.measuredAt, row.model, row.estimatedTempC, row.realTempC, row.residualC, JSON.stringify(row.payload)]
+  );
+}
+
+export async function upsertCurrentWeatherLlano(locationId: string, measuredAt: string, payload: Record<string, unknown>): Promise<void> {
+  await safeExecute(
+    `INSERT INTO current_weather_llano (location_id, measured_at, payload, updated_at)
+     VALUES ($1, $2, $3, NOW())
+     ON CONFLICT (location_id) DO UPDATE SET measured_at = $2, payload = $3, updated_at = NOW()`,
+    [locationId, measuredAt, JSON.stringify(payload)]
+  );
 }

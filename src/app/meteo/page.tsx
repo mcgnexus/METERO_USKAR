@@ -18,17 +18,17 @@ export default function MeteoPage() {
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-3">
-            <Link href="/" className="rounded-full border border-slate-200 bg-white/70 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-white">
-              Landing
+            <Link href="/llano" className="rounded-full border border-slate-200 bg-white/70 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-white">
+              Pulso del Llano
             </Link>
-            <Link href="/widget" className="rounded-full border border-slate-200 bg-white/70 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-white">
-              Widget ayuntamiento
+            <Link href="/motor-climatico" className="rounded-full border border-slate-200 bg-white/70 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-white">
+              Motor climatico
             </Link>
           </div>
         </header>
 
         <main>
-          <WeatherDashboard variant="neutral" />
+          <WeatherDashboard />
         </main>
       </div>
     </div>

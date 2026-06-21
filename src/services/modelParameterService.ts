@@ -10,12 +10,38 @@ const CACHE_KEY = "model_parameters";
 const CACHE_TTL_MS = 6 * 60 * 60 * 1000;
 
 const DEFAULT_PARAMS: Record<string, number> = {
-  reservoir_temp_bias_day: -0.5,
-  reservoir_temp_bias_night: -0.2,
-  reservoir_dew_bias: 0.4,
-  night_inversion_valley: -1.5,
-  night_inversion_mixed: -0.5,
-  altitude_lapse_rate: 0.006,
+  // Bias del embalse de San Clemente sobre la estación 5051X (0.28 km)
+  // Signo: positivo = la estación lee MÁS caluroso; negativo = lee MÁS frío
+  reservoir_temp_bias_day: -0.3,         // Día: el agua absorbe calor → estación lee ~0.3°C más fresco
+  reservoir_temp_bias_night: 0.4,        // Noche: el agua libera calor → estación lee ~0.4°C más cálido (CORREGIDO)
+  reservoir_humidity_bias_pct: 15,       // Evaporación del embalse → HR saturada, reducir ~15% (rango 10-20%)
+  reservoir_dew_bias: 0.5,               // Punto de rocío sesgado al alza por humedad del embalse
+
+  // Gradiente térmico vertical estándar
+  altitude_lapse_rate: 0.0065,           // 0.65°C por cada 100m de descenso (ISA estándar)
+
+  // Microclima del llano (casco urbano de Huéscar, ~950m, cubeta topográfica)
+  urban_heat_island_c: 0.2,              // Día: asfalto + edificación suman ~0.2°C al gradiente adiabático
+  cold_air_drainage_min_c: -2.0,         // Noche calma (viento < threshold): drenaje catabático mínimo
+  cold_air_drainage_max_c: -5.0,         // Noche en calma absoluta, despejado: la cubeta se llena de aire helado
+  inversion_wind_threshold_ms: 1.5,      // Por debajo de 1.5 m/s el aire se estanca y se invierte el gradiente
+
+  // Precipitación (sombra orográfica / Foehn)
+  rainfall_foehn_factor: 0.5,            // El llano recibe ~50% menos lluvia que San Clemente (rango 30-60%)
+
+  // Viento (canalización del valle del embalse)
+  wind_gust_reduction_factor: 0.6,       // Rachas en el llano ≈ 60% de San Clemente (efecto túnel en valle encajonado)
+  vega_friction_factor: 0.85,            // Fricción orográfica por arbolado local: u2_vega = u2_Baza × 0.85
+
+  // Corrección por advección húmeda del Negratín (embalse al Oeste de Baza)
+  negratin_penalty_factor: 0.85,         // Reducción del 15% de e_Baza cuando el viento es del Oeste y HR>90%
+  negratin_west_min_deg: 225,            // Inicio del cuadrante Oeste (Suroeste)
+  negratin_west_max_deg: 315,            // Final del cuadrante Oeste (Noroeste)
+  negratin_humidity_threshold: 90,       // HR mínima para considerar advección del Negratín
+
+  // Legacy (mantenidos para compatibilidad con auto-tuning)
+  night_inversion_valley: -3.5,          // ACTUALIZADO: cubeta de Huéscar, penality fuerte
+  night_inversion_mixed: -1.5,           // ACTUALIZADO: brisa moderada mezcla parcial
   wind_factor_valley: 0.7,
   wind_factor_plateau: 1.2,
   orographic_barlovento_max: 0.4,

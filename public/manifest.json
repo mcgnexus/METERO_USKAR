@@ -2,7 +2,7 @@
   "name": "Meteo Huéscar — Tiempo local",
   "short_name": "MeteoHuéscar",
   "description": "Previsión meteorológica local para Huéscar y comarca: tiempo actual, radar, avisos y datos agrícolas.",
-  "start_url": "/tiempo",
+  "start_url": "/llano",
   "scope": "/",
   "display": "standalone",
   "background_color": "#f4f7fb",
@@ -33,14 +33,14 @@
   "screenshots": [],
   "shortcuts": [
     {
-      "name": "Tiempo gratuito",
-      "short_name": "Tiempo",
-      "url": "/tiempo"
+      "name": "Pulso del Llano",
+      "short_name": "Llano",
+      "url": "/llano"
     },
     {
-      "name": "Panel completo",
-      "short_name": "Completo",
-      "url": "/meteo"
+      "name": "Motor Climático",
+      "short_name": "Motor",
+      "url": "/motor-climatico"
     }
   ]
 }

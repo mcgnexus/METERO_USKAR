@@ -54,7 +54,12 @@ async function fetchDataUrl(apiKey: string, observationUrl: string): Promise<str
     console.warn(`[AEMET] fetchDataUrl HTTP ${response.status} para ${observationUrl} (api_key omitida)`);
     return null;
   }
-  const json = await response.json();
+  const text = await response.text();
+  if (!text.trim()) {
+    console.warn(`[AEMET] fetchDataUrl HTTP 200 con cuerpo vacio para ${observationUrl}`);
+    return null;
+  }
+  const json = JSON.parse(text);
   if (!json || !json.datos) return null;
   return json.datos;
 }
@@ -62,7 +67,12 @@ async function fetchDataUrl(apiKey: string, observationUrl: string): Promise<str
 async function fetchRealData(dataUrl: string): Promise<unknown[] | null> {
   const response = await fetchWithTimeout(dataUrl, AEMET_TIMEOUT_MS);
   if (!response.ok) return null;
-  return response.json();
+  const text = await response.text();
+  if (!text.trim()) {
+    console.warn("[AEMET] fetchRealData HTTP 200 con cuerpo vacio");
+    return null;
+  }
+  return JSON.parse(text);
 }
 
 function parseAemetStation(raw: Record<string, unknown>): SourceObservation | null {
