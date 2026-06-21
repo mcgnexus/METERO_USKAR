@@ -94,7 +94,7 @@ const CROPS: CropProfile[] = [
     gddBaseC: 10,
     gddTarget: 2200,
     chillHoursMin: 200,
-    frostSensitive: false,
+    frostSensitive: true,
     kc: 0.65,
     kcStages: [
       { name: 'Inicial (floración)', kc: 0.40, monthStart: 4, monthEnd: 5 },
@@ -188,6 +188,7 @@ const CROPS: CropProfile[] = [
       { name: 'Desarrollo ciclo 1', kc: 0.75, monthStart: 4, monthEnd: 4 },
       { name: 'Media ciclo 1 (tuberización)', kc: 1.10, monthStart: 5, monthEnd: 5 },
       { name: 'Final ciclo 1 (maduración)', kc: 0.65, monthStart: 6, monthEnd: 6 },
+      { name: 'Inter-ciclo (barbecho/cosecha)', kc: 0.30, monthStart: 7, monthEnd: 7 },
       { name: 'Inicial ciclo 2 (siembra)', kc: 0.40, monthStart: 8, monthEnd: 8 },
       { name: 'Desarrollo ciclo 2', kc: 0.75, monthStart: 9, monthEnd: 9 },
       { name: 'Media ciclo 2 (tuberización)', kc: 1.10, monthStart: 10, monthEnd: 10 },
@@ -353,7 +354,7 @@ const CROPS: CropProfile[] = [
   },
   {
     name: 'Calabacín',
-    icon: '🥬',
+    icon: '🥒',
     category: 'hortaliza',
     soilTempMinC: 15,
     gddBaseC: 10,
@@ -415,7 +416,6 @@ function findCurrentStage(crop: CropProfile, month: number): PhenologicalStage |
 function assessCrop(
   crop: CropProfile,
   soilTemp: number | null,
-  airTemp: number | null,
   gddCumulative: number | null,
   chillHours: number | null,
   frostRisk: AgriculturalData['frostRisk48h'],
@@ -1064,10 +1064,9 @@ function CropModal({ assessment, onClose, soilTemp, chillHours }: {
   );
 }
 
-export function CropRequirements({ agricultural, soilTemp, airTemp, frostRisk, et0CumulativeMm, precipitacionSemanal }: {
+export function CropRequirements({ agricultural, soilTemp, frostRisk, et0CumulativeMm, precipitacionSemanal }: {
   agricultural: AgriculturalData | null;
   soilTemp: number | null;
-  airTemp: number | null;
   frostRisk: AgriculturalData['frostRisk48h'];
   et0CumulativeMm: number | null;
   precipitacionSemanal: number | null;
@@ -1077,7 +1076,7 @@ export function CropRequirements({ agricultural, soilTemp, airTemp, frostRisk, e
   const chillHours = agricultural?.chillHours ?? null;
 
   const assessments = CROPS.map((crop) =>
-    assessCrop(crop, soilTemp, airTemp, gdd, chillHours, frostRisk, et0CumulativeMm, precipitacionSemanal)
+    assessCrop(crop, soilTemp, gdd, chillHours, frostRisk, et0CumulativeMm, precipitacionSemanal)
   );
 
   const safeCount = assessments.filter((a) => a.status === 'safe').length;

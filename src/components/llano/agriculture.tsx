@@ -8,7 +8,7 @@ import type { AgriculturalData } from '@/types/weather';
 
 function frostTone(risk: AgriculturalData['frostRisk48h']): 'default' | 'warning' | 'danger' | 'success' {
   if (risk === 'muy_alta') return 'danger';
-  if (risk === 'alta') return 'warning';
+  if (risk === 'alta') return 'danger';
   if (risk === 'media') return 'warning';
   return 'success';
 }
@@ -291,7 +291,6 @@ export function AgricultureSection({ agricultural, climate, precipitacionSemanal
           <CropRequirements
             agricultural={agricultural}
             soilTemp={soil10}
-            airTemp={airTemp}
             frostRisk={agricultural.frostRisk48h}
             et0CumulativeMm={agricultural.et0CumulativeMm}
             precipitacionSemanal={precipitacionSemanal}
