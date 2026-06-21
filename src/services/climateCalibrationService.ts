@@ -604,10 +604,9 @@ export function estimateLlanoTemperature(bazaTempC: number, gammaCPerM: number):
 
 export function computeFrostRisk(tempC: number | null, dewPointC: number | null): ClimateCalibrationResult["dewPoint"]["frostRisk"] {
   if (tempC === null || dewPointC === null) return "unknown";
-  const critical = Math.min(tempC, dewPointC);
-  if (critical <= -4) return "muy_alta";
-  if (critical <= -1) return "alta";
-  if (critical <= 2) return "media";
+  if (tempC <= 0) return "muy_alta";
+  if (tempC <= 1) return "alta";
+  if (tempC <= 3) return "media";
   return "none";
 }
 
@@ -800,7 +799,7 @@ export async function computeClimateCalibration(): Promise<ClimateCalibrationRes
     dewPoint: {
       dewPointC,
       frostRisk,
-      blackFrostRisk: dewPointC !== null && dewPointC <= 0 && (realTemperatureC ?? estimatedTemperatureC) <= 2,
+      blackFrostRisk: dewPointC !== null && (realTemperatureC ?? estimatedTemperatureC) <= 0 && ((realTemperatureC ?? estimatedTemperatureC) - dewPointC) >= 2,
     },
     eto: {
       etoHourlyMm: etoComputed?.etoHourlyMm ?? null,

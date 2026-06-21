@@ -64,9 +64,9 @@ function getZoneModifier(type: ZoneType, isNight: boolean): ZoneModifier {
 
 function computeFrostRisk(tempC: number, boost: number): ZoneEstimation["frostRisk"] {
   const adjusted = tempC + boost;
-  if (adjusted < -4) return "muy_alta";
-  if (adjusted < -1) return "alta";
-  if (adjusted < 2) return "media";
+  if (adjusted <= 0) return "muy_alta";
+  if (adjusted <= 1) return "alta";
+  if (adjusted <= 3) return "media";
   return "none";
 }
 
