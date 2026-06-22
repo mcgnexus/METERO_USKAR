@@ -31,7 +31,7 @@ export async function fetchOpenMeteoForecast(
     `&current=temperature_2m,apparent_temperature,relative_humidity_2m,precipitation,weather_code,wind_speed_10m,wind_direction_10m,wind_gusts_10m,surface_pressure` +
     `&hourly=temperature_2m,relative_humidity_2m,precipitation_probability,precipitation,weather_code,wind_speed_10m` +
     `&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max,precipitation_sum,wind_gusts_10m_max,et0_fao_evapotranspiration,weather_code` +
-    `&timezone=auto&forecast_days=7`;
+    `&timezone=auto&forecast_days=14`;
 
   let data: Record<string, unknown>;
 

@@ -44,10 +44,10 @@ export function OverviewMetric({
         : 'bg-white text-slate-900 border-slate-200';
 
   return (
-    <div className={`rounded-[22px] border p-4 shadow-sm ${toneClass}`}>
-      <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">{label}</p>
-      <p className="mt-2 text-2xl font-bold">{value}</p>
-      <p className="mt-1 text-sm text-slate-600">{caption}</p>
+    <div className={`rounded-[18px] border p-3 shadow-sm sm:rounded-[22px] sm:p-4 ${toneClass}`}>
+      <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500 sm:text-[11px]">{label}</p>
+      <p className="mt-1.5 text-xl font-bold leading-tight sm:mt-2 sm:text-2xl">{value}</p>
+      <p className="mt-0.5 text-xs text-slate-600 sm:mt-1 sm:text-sm">{caption}</p>
     </div>
   );
 }

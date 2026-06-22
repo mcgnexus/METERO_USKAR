@@ -14,7 +14,7 @@ export const revalidate = 0;
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
-  const days = Math.min(7, Math.max(1, parseInt(url.searchParams.get("days") || "7", 10)));
+  const days = Math.min(16, Math.max(1, parseInt(url.searchParams.get("days") || "14", 10)));
 
   const [forecast, bias] = await Promise.all([
     fetchOpenMeteoForecast(LLANO.lat, LLANO.lon, LLANO.elevation, days),

@@ -48,6 +48,6 @@ export interface ForecastPayload {
   }>;
 }
 
-export function useForecast(days = 7, cacheKey = 'forecast-bias-corrected') {
+export function useForecast(days = 14, cacheKey = 'forecast-bias-corrected') {
   return useApiData<ForecastPayload>(`/api/weather/forecast?days=${days}`, cacheKey);
 }

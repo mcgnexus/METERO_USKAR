@@ -145,28 +145,41 @@ export function HourlyForecastDetails({ hourly }: { hourly: HourlyWeather }) {
 }
 
 export function DailyCards({ daily }: { daily: DailyWeather }) {
+  const [expanded, setExpanded] = useState(false);
+  const visibleCount = expanded ? 14 : 7;
+
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <div>
           <p className="text-xs font-bold uppercase tracking-[0.18em] text-sky-700">Proximos dias</p>
-          <h3 className="mt-1 text-xl font-bold text-slate-900">Proximos 5 dias</h3>
+          <h3 className="mt-1 text-xl font-bold text-slate-900">Proximos {visibleCount} dias</h3>
         </div>
-        <p className="text-sm text-slate-500">Resumen diario para planificar con rapidez.</p>
+        <div className="flex items-center gap-3">
+          <p className="hidden text-sm text-slate-500 sm:block">Resumen diario para planificar con rapidez.</p>
+          {daily.time.length > 7 && (
+            <button
+              onClick={() => setExpanded((v) => !v)}
+              className="shrink-0 rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600 transition hover:bg-slate-200"
+            >
+              {expanded ? 'Ver 7 dias' : 'Ver 14 dias'}
+            </button>
+          )}
+        </div>
       </div>
-      <div className="grid gap-3 md:grid-cols-5">
-        {daily.time.slice(0, 5).map((time, index) => {
+      <div className="grid grid-cols-2 gap-2.5 sm:gap-3 md:grid-cols-5 lg:grid-cols-7">
+        {daily.time.slice(0, Math.min(visibleCount, daily.time.length)).map((time, index) => {
           const weatherCode = daily.weatherCode[index];
           return (
-          <div key={time} className="rounded-[22px] border border-slate-200 bg-white p-4 text-center shadow-sm">
-            <p className="text-sm font-semibold text-slate-700">{dayLabel(time)}</p>
-            <p className="mt-2 text-3xl">{isNumber(weatherCode) ? weatherEmoji(weatherCode) : '—'}</p>
-            <p className="mt-1 text-xs text-slate-500">{isNumber(weatherCode) ? weatherCodeDescription(weatherCode) : 'Sin dato'}</p>
-            <div className="mt-3 flex items-center justify-center gap-3">
-              <span className="font-bold text-red-500">{fmtNumber(daily.temperatureMaxC[index])}°</span>
-              <span className="font-bold text-blue-500">{fmtNumber(daily.temperatureMinC[index])}°</span>
+          <div key={time} className="rounded-[18px] border border-slate-200 bg-white p-3 text-center shadow-sm sm:rounded-[22px] sm:p-4">
+            <p className="text-xs font-semibold text-slate-700 sm:text-sm">{dayLabel(time)}</p>
+            <p className="mt-1.5 text-2xl sm:mt-2 sm:text-3xl">{isNumber(weatherCode) ? weatherEmoji(weatherCode) : '—'}</p>
+            <p className="mt-1 text-[10px] text-slate-500 sm:text-xs">{isNumber(weatherCode) ? weatherCodeDescription(weatherCode) : 'Sin dato'}</p>
+            <div className="mt-2 flex items-center justify-center gap-2 sm:mt-3 sm:gap-3">
+              <span className="text-sm font-bold text-red-500 sm:text-base">{fmtNumber(daily.temperatureMaxC[index])}°</span>
+              <span className="text-sm font-bold text-blue-500 sm:text-base">{fmtNumber(daily.temperatureMinC[index])}°</span>
             </div>
-            <p className="mt-2 text-xs text-slate-400">{fmtNumber(daily.precipitationSumMm[index], 1)} mm</p>
+            <p className="mt-1.5 text-[10px] text-slate-400 sm:mt-2 sm:text-xs">{fmtNumber(daily.precipitationSumMm[index], 1)} mm</p>
           </div>
         );
         })}
