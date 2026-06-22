@@ -87,8 +87,8 @@ function parseAemetStation(raw: Record<string, unknown>): SourceObservation | nu
   const temperatureC = parseNumber(raw.ta);
   const humidityPct = parseNumber(raw.hr);
   const precipitationMm = parseNumber(raw.prec);
-  const windSpeedKmh = parseNumber(raw.vv);
-  const windGustKmh = parseNumber(raw.vmax);
+  const windSpeedMs = parseNumber(raw.vv);
+  const windGustMs = parseNumber(raw.vmax);
 
   if (temperatureC === null) return null;
 
@@ -117,8 +117,8 @@ function parseAemetStation(raw: Record<string, unknown>): SourceObservation | nu
     temperatureC,
     humidityPct: humidityPct ?? 0,
     precipitationMm: precipitationMm ?? 0,
-    windSpeedKmh: windSpeedKmh ?? 0,
-    windGustKmh: windGustKmh ?? 0,
+    windSpeedKmh: windSpeedMs !== null ? Math.round(windSpeedMs * 3.6 * 10) / 10 : 0,
+    windGustKmh: windGustMs !== null ? Math.round(windGustMs * 3.6 * 10) / 10 : 0,
   };
 }
 

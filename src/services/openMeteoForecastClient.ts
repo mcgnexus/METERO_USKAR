@@ -25,6 +25,7 @@ export async function fetchOpenMeteoForecast(
   const url =
     `https://api.open-meteo.com/v1/forecast?` +
     `latitude=${lat}&longitude=${lon}` +
+    `&elevation=${elevation}` +
     // C2 — Solicitar apparent_temperature explícitamente
     // C3 — Solicitar wind_direction_10m y weather_code explícitamente
     `&current=temperature_2m,apparent_temperature,relative_humidity_2m,precipitation,weather_code,wind_speed_10m,wind_direction_10m,wind_gusts_10m,surface_pressure` +
