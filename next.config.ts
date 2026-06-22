@@ -5,9 +5,6 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   compress: true,
   serverExternalPackages: ['ws'],
-  webpack: (config) => {
-    return config;
-  },
   async headers() {
     return [
       {
