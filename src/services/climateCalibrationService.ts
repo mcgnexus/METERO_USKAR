@@ -138,8 +138,21 @@ export interface ClimateCalibrationResult {
   extrapolation: ExtrapolationResult;
   exoticVariables: {
     cloudCoverPct: number | null;
+    dewPoint2mC: number | null;
+    vapourPressureDeficitKPa: number | null;
+    directRadiationWm2: number | null;
+    diffuseRadiationWm2: number | null;
+    visibilityM: number | null;
+    uvIndex: number | null;
+    capeJkg: number | null;
+    isDay: boolean | null;
     soilTemp10cmC: number | null;
     soilTemp40cmC: number | null;
+    soilMoisture0To1cm: number | null;
+    soilMoisture1To3cm: number | null;
+    soilMoisture3To9cm: number | null;
+    soilMoisture9To27cm: number | null;
+    soilMoisture27To81cm: number | null;
     source: "open_meteo" | "unavailable";
   };
   quality: {
@@ -275,28 +288,94 @@ async function fetchBazaWindDirection(): Promise<number | null> {
 
 interface ExoticVariables {
   cloudCoverPct: number | null;
+  dewPoint2mC: number | null;
+  vapourPressureDeficitKPa: number | null;
+  directRadiationWm2: number | null;
+  diffuseRadiationWm2: number | null;
+  visibilityM: number | null;
+  uvIndex: number | null;
+  capeJkg: number | null;
+  isDay: boolean | null;
   soilTemp10cmC: number | null;
   soilTemp40cmC: number | null;
+  soilMoisture0To1cm: number | null;
+  soilMoisture1To3cm: number | null;
+  soilMoisture3To9cm: number | null;
+  soilMoisture9To27cm: number | null;
+  soilMoisture27To81cm: number | null;
+}
+
+function emptyExoticVariables(): ExoticVariables {
+  return {
+    cloudCoverPct: null,
+    dewPoint2mC: null,
+    vapourPressureDeficitKPa: null,
+    directRadiationWm2: null,
+    diffuseRadiationWm2: null,
+    visibilityM: null,
+    uvIndex: null,
+    capeJkg: null,
+    isDay: null,
+    soilTemp10cmC: null,
+    soilTemp40cmC: null,
+    soilMoisture0To1cm: null,
+    soilMoisture1To3cm: null,
+    soilMoisture3To9cm: null,
+    soilMoisture9To27cm: null,
+    soilMoisture27To81cm: null,
+  };
 }
 
 async function fetchExoticVariables(): Promise<ExoticVariables> {
   const cacheKey = "climate:llano:exotic";
   const cached = cacheGet<ExoticVariables>(cacheKey);
   if (cached) return cached;
-  const url = `https://api.open-meteo.com/v1/forecast?latitude=${LLANO.lat}&longitude=${LLANO.lon}&current=cloud_cover,soil_temperature_0_to_7cm,soil_temperature_28_to_100cm&timezone=auto&forecast_days=1`;
+  const currentVars = [
+    "cloud_cover",
+    "dew_point_2m",
+    "vapour_pressure_deficit",
+    "direct_radiation",
+    "diffuse_radiation",
+    "visibility",
+    "uv_index",
+    "cape",
+    "is_day",
+    "soil_temperature_0_to_7cm",
+    "soil_temperature_28_to_100cm",
+    "soil_moisture_0_to_1cm",
+    "soil_moisture_1_to_3cm",
+    "soil_moisture_3_to_9cm",
+    "soil_moisture_9_to_27cm",
+    "soil_moisture_27_to_81cm",
+  ].join(",");
+  const url = `https://api.open-meteo.com/v1/forecast?latitude=${LLANO.lat}&longitude=${LLANO.lon}&elevation=${LLANO.elevation}&current=${currentVars}&timezone=Europe/Madrid&forecast_days=1`;
   try {
     const res = await fetchWithTimeout(url, 5000);
-    if (!res.ok) return { cloudCoverPct: null, soilTemp10cmC: null, soilTemp40cmC: null };
+    if (!res.ok) return emptyExoticVariables();
     const json = await res.json();
+    const isDay = parseNumber(json.current?.is_day);
     const result: ExoticVariables = {
       cloudCoverPct: parseNumber(json.current?.cloud_cover),
+      dewPoint2mC: parseNumber(json.current?.dew_point_2m),
+      vapourPressureDeficitKPa: parseNumber(json.current?.vapour_pressure_deficit),
+      directRadiationWm2: parseNumber(json.current?.direct_radiation),
+      diffuseRadiationWm2: parseNumber(json.current?.diffuse_radiation),
+      visibilityM: parseNumber(json.current?.visibility),
+      uvIndex: parseNumber(json.current?.uv_index),
+      capeJkg: parseNumber(json.current?.cape),
+      isDay: isDay === null ? null : isDay === 1,
       soilTemp10cmC: parseNumber(json.current?.soil_temperature_0_to_7cm),
       soilTemp40cmC: parseNumber(json.current?.soil_temperature_28_to_100cm),
+      soilMoisture0To1cm: parseNumber(json.current?.soil_moisture_0_to_1cm),
+      soilMoisture1To3cm: parseNumber(json.current?.soil_moisture_1_to_3cm),
+      soilMoisture3To9cm: parseNumber(json.current?.soil_moisture_3_to_9cm),
+      soilMoisture9To27cm: parseNumber(json.current?.soil_moisture_9_to_27cm),
+      soilMoisture27To81cm: parseNumber(json.current?.soil_moisture_27_to_81cm),
     };
     cacheSet(cacheKey, result, 30 * 60 * 1000);
     return result;
   } catch {
-    return { cloudCoverPct: null, soilTemp10cmC: null, soilTemp40cmC: null };
+    return emptyExoticVariables();
   }
 }
 
@@ -772,13 +851,20 @@ export async function computeClimateCalibration(): Promise<ClimateCalibrationRes
     pressureHPa = Math.round(pressureFromElevation(LLANO.elevation) * 10 * 10) / 10;
   }
 
+  const extrapolation = buildExtrapolation(baza, Math.round(rawInterpolatedTempC * 10) / 10, pressureHPa, bazaWindDirectionDeg);
+  const effectiveTemperatureC = realTemperatureC ?? estimatedTemperatureC;
+  const effectiveHumidityPct = realHumidityPct ?? extrapolation.humidityPct;
   const dewPointC = realTemperatureC !== null && realHumidityPct !== null
     ? Math.round(dewPoint(realTemperatureC, realHumidityPct) * 10) / 10
-    : null;
-  const frostRisk = computeFrostRisk(realTemperatureC ?? estimatedTemperatureC, dewPointC);
-  const etoInputsValid = realTemperatureC !== null && realHumidityPct !== null && pressureHPa !== null;
+    : exoticVars.dewPoint2mC !== null
+      ? exoticVars.dewPoint2mC
+      : effectiveHumidityPct !== null
+        ? Math.round(dewPoint(effectiveTemperatureC, effectiveHumidityPct) * 10) / 10
+        : null;
+  const frostRisk = computeFrostRisk(effectiveTemperatureC, dewPointC);
+  const etoInputsValid = effectiveHumidityPct !== null && pressureHPa !== null;
   const etoComputed = etoInputsValid
-    ? computeHourlyEto({ temperatureC: realTemperatureC, humidityPct: realHumidityPct, pressureHPa, solarRadiationWm2: radiationWind.solarRadiationWm2, windSpeed2mKmh: radiationWind.windSpeed2mKmh })
+    ? computeHourlyEto({ temperatureC: effectiveTemperatureC, humidityPct: effectiveHumidityPct, pressureHPa, solarRadiationWm2: radiationWind.solarRadiationWm2, windSpeed2mKmh: radiationWind.windSpeed2mKmh })
     : null;
   const residualC = realTemperatureC !== null ? Math.round((estimatedTemperatureC - realTemperatureC) * 10) / 10 : null;
 
@@ -802,14 +888,14 @@ export async function computeClimateCalibration(): Promise<ClimateCalibrationRes
     dewPoint: {
       dewPointC,
       frostRisk,
-      blackFrostRisk: dewPointC !== null && (realTemperatureC ?? estimatedTemperatureC) <= 0 && ((realTemperatureC ?? estimatedTemperatureC) - dewPointC) >= 2,
+      blackFrostRisk: dewPointC !== null && effectiveTemperatureC <= 0 && (effectiveTemperatureC - dewPointC) >= 2,
     },
     eto: {
       etoHourlyMm: etoComputed?.etoHourlyMm ?? null,
       method: "FAO56_HOURLY_PM",
       inputs: {
-        temperatureC: realTemperatureC,
-        humidityPct: realHumidityPct,
+        temperatureC: effectiveTemperatureC,
+        humidityPct: effectiveHumidityPct,
         pressureKPa: etoComputed?.pressureKPa ?? (pressureHPa ? Math.round((pressureHPa / 10) * 100) / 100 : null),
         solarRadiationWm2: radiationWind.solarRadiationWm2,
         netRadiationMJm2h: etoComputed?.netRadiationMJm2h ?? 0,
@@ -835,12 +921,25 @@ export async function computeClimateCalibration(): Promise<ClimateCalibrationRes
       rainfallFoehnFactor: getModelParam("rainfall_foehn_factor"),
       windGustReductionFactor: getModelParam("wind_gust_reduction_factor"),
     },
-    extrapolation: buildExtrapolation(baza, Math.round(rawInterpolatedTempC * 10) / 10, pressureHPa, bazaWindDirectionDeg),
+    extrapolation,
     exoticVariables: {
       cloudCoverPct: exoticVars.cloudCoverPct,
+      dewPoint2mC: exoticVars.dewPoint2mC,
+      vapourPressureDeficitKPa: exoticVars.vapourPressureDeficitKPa,
+      directRadiationWm2: exoticVars.directRadiationWm2,
+      diffuseRadiationWm2: exoticVars.diffuseRadiationWm2,
+      visibilityM: exoticVars.visibilityM,
+      uvIndex: exoticVars.uvIndex,
+      capeJkg: exoticVars.capeJkg,
+      isDay: exoticVars.isDay,
       soilTemp10cmC: exoticVars.soilTemp10cmC,
       soilTemp40cmC: exoticVars.soilTemp40cmC,
-      source: exoticVars.cloudCoverPct !== null || exoticVars.soilTemp10cmC !== null
+      soilMoisture0To1cm: exoticVars.soilMoisture0To1cm,
+      soilMoisture1To3cm: exoticVars.soilMoisture1To3cm,
+      soilMoisture3To9cm: exoticVars.soilMoisture3To9cm,
+      soilMoisture9To27cm: exoticVars.soilMoisture9To27cm,
+      soilMoisture27To81cm: exoticVars.soilMoisture27To81cm,
+      source: exoticVars.cloudCoverPct !== null || exoticVars.dewPoint2mC !== null || exoticVars.soilTemp10cmC !== null
         ? "open_meteo"
         : "unavailable",
     },

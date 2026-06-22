@@ -107,8 +107,21 @@ export interface ClimateCalibrationPayload {
   };
   exoticVariables: {
     cloudCoverPct: number | null;
+    dewPoint2mC: number | null;
+    vapourPressureDeficitKPa: number | null;
+    directRadiationWm2: number | null;
+    diffuseRadiationWm2: number | null;
+    visibilityM: number | null;
+    uvIndex: number | null;
+    capeJkg: number | null;
+    isDay: boolean | null;
     soilTemp10cmC: number | null;
     soilTemp40cmC: number | null;
+    soilMoisture0To1cm: number | null;
+    soilMoisture1To3cm: number | null;
+    soilMoisture3To9cm: number | null;
+    soilMoisture9To27cm: number | null;
+    soilMoisture27To81cm: number | null;
     source: "open_meteo" | "unavailable";
   };
   quality: { confidencePct: number; warnings: string[] };

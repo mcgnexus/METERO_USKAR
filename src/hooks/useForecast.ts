@@ -8,11 +8,23 @@ export interface ForecastDaySummary {
   tempMaxC: number | null;
   tempMeanC: number | null;
   humidityMeanPct: number | null;
+  dewPointMeanC: number | null;
+  vapourPressureDeficitMeanKPa: number | null;
   windMeanKmh: number | null;
   radiationTotalMJm2: number | null;
+  directRadiationTotalMJm2: number | null;
+  diffuseRadiationTotalMJm2: number | null;
   cloudCoverMeanPct: number | null;
+  visibilityMeanM: number | null;
+  uvIndexMax: number | null;
+  capeMaxJkg: number | null;
   soilTemp10cmMeanC: number | null;
   soilTemp40cmMeanC: number | null;
+  soilMoisture0To1cmMean: number | null;
+  soilMoisture1To3cmMean: number | null;
+  soilMoisture3To9cmMean: number | null;
+  soilMoisture9To27cmMean: number | null;
+  soilMoisture27To81cmMean: number | null;
   et0TotalMm: number | null;
 }
 

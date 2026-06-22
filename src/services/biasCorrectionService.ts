@@ -58,12 +58,25 @@ export interface CorrectedHour {
   time: string;
   temperatureC: number | null;
   humidityPct: number | null;
+  dewPointC: number | null;
+  vapourPressureDeficitKPa: number | null;
   pressureHPa: number | null;
   solarRadiationWm2: number | null;
+  directRadiationWm2: number | null;
+  diffuseRadiationWm2: number | null;
   windSpeed2mKmh: number | null;
   cloudCoverPct: number | null;
+  visibilityM: number | null;
+  uvIndex: number | null;
+  capeJkg: number | null;
+  isDay: boolean | null;
   soilTemp10cmC: number | null;
   soilTemp40cmC: number | null;
+  soilMoisture0To1cm: number | null;
+  soilMoisture1To3cm: number | null;
+  soilMoisture3To9cm: number | null;
+  soilMoisture9To27cm: number | null;
+  soilMoisture27To81cm: number | null;
   biasApplied: {
     temperature: number;
     humidity: number;
@@ -76,12 +89,25 @@ export interface RawHour {
   time: string;
   temperatureC: number | null;
   humidityPct: number | null;
+  dewPointC?: number | null;
+  vapourPressureDeficitKPa?: number | null;
   pressureHPa: number | null;
   solarRadiationWm2: number | null;
+  directRadiationWm2?: number | null;
+  diffuseRadiationWm2?: number | null;
   windSpeed10mKmh: number | null;
   cloudCoverPct: number | null;
+  visibilityM?: number | null;
+  uvIndex?: number | null;
+  capeJkg?: number | null;
+  isDay?: boolean | null;
   soilTemp10cmC: number | null;
   soilTemp40cmC: number | null;
+  soilMoisture0To1cm?: number | null;
+  soilMoisture1To3cm?: number | null;
+  soilMoisture3To9cm?: number | null;
+  soilMoisture9To27cm?: number | null;
+  soilMoisture27To81cm?: number | null;
 }
 
 function getHourMadridFromISO(iso: string): number {
@@ -113,12 +139,25 @@ export function correctForecastHour(raw: RawHour, bias: OpenMeteoBiasSet): Corre
     time: raw.time,
     temperatureC: correctedTemp,
     humidityPct: correctedHum,
+    dewPointC: raw.dewPointC ?? null,
+    vapourPressureDeficitKPa: raw.vapourPressureDeficitKPa ?? null,
     pressureHPa: raw.pressureHPa,
     solarRadiationWm2: correctedRad,
+    directRadiationWm2: raw.directRadiationWm2 ?? null,
+    diffuseRadiationWm2: raw.diffuseRadiationWm2 ?? null,
     windSpeed2mKmh: correctedWind,
     cloudCoverPct: raw.cloudCoverPct,
+    visibilityM: raw.visibilityM ?? null,
+    uvIndex: raw.uvIndex ?? null,
+    capeJkg: raw.capeJkg ?? null,
+    isDay: raw.isDay ?? null,
     soilTemp10cmC: raw.soilTemp10cmC,
     soilTemp40cmC: raw.soilTemp40cmC,
+    soilMoisture0To1cm: raw.soilMoisture0To1cm ?? null,
+    soilMoisture1To3cm: raw.soilMoisture1To3cm ?? null,
+    soilMoisture3To9cm: raw.soilMoisture3To9cm ?? null,
+    soilMoisture9To27cm: raw.soilMoisture9To27cm ?? null,
+    soilMoisture27To81cm: raw.soilMoisture27To81cm ?? null,
     biasApplied: {
       temperature: Math.round(tempBias * 100) / 100,
       humidity: Math.round(bias.humidityAll * 100) / 100,
