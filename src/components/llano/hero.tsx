@@ -110,15 +110,15 @@ export function PulseHero({ climate, weather, alarmCount }: {
                   <p className="text-5xl font-black" style={{ color: tempColor(temp ?? 0) }}>
                     {fmtN(temp, 1)}°C
                   </p>
-                  <p className="mt-1 text-sm text-slate-100/80">
-                    {sky}
-                  </p>
                 </div>
                 <div className="text-right text-sm text-slate-100/80">
                   <p>Sensación {fmtN(feelsLike, 1)}°C</p>
                   <p className="mt-0.5">Humedad {fmtN(humidity, 0)}%</p>
                 </div>
               </div>
+              <p className="mt-4 text-5xl font-black leading-tight text-slate-50">
+                {sky}
+              </p>
               <div className="mt-4 grid grid-cols-2 gap-3 rounded-2xl bg-white/10 p-3 text-sm text-slate-100/80">
                 <div>
                   <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">Viento local 2m</p>
