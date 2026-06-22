@@ -4,20 +4,34 @@ import { useState } from 'react';
 import { dayLabel, temperatureColor, weatherCodeDescription, weatherEmoji } from '@/lib/display';
 import type { DailyWeather, HourlyWeather } from '@/types/weather';
 
+function isNumber(value: unknown): value is number {
+  return typeof value === 'number' && Number.isFinite(value);
+}
+
+function fmtNumber(value: number | undefined, digits = 0): string {
+  return isNumber(value) ? value.toFixed(digits) : '—';
+}
+
 export function getUpcomingHourlyRows(hourly: HourlyWeather, hours = 24) {
   const rows: { time: string; temp: number; hum: number; precip: number; wind: number; wcode: number }[] = [];
   const now = new Date();
 
   for (let index = 0; index < hourly.time.length; index++) {
     const time = new Date(hourly.time[index]);
-    if (time >= now) {
+    const temp = hourly.temperatureC[index];
+    const hum = hourly.humidityPct[index];
+    const precip = hourly.precipitationMm[index];
+    const wind = hourly.windSpeedKmh[index];
+    const wcode = hourly.weatherCode[index];
+
+    if (time >= now && isNumber(temp) && isNumber(hum) && isNumber(precip) && isNumber(wind) && isNumber(wcode)) {
       rows.push({
         time: hourly.time[index],
-        temp: hourly.temperatureC[index],
-        hum: hourly.humidityPct[index],
-        precip: hourly.precipitationMm[index],
-        wind: hourly.windSpeedKmh[index],
-        wcode: hourly.weatherCode[index],
+        temp,
+        hum,
+        precip,
+        wind,
+        wcode,
       });
     }
   }
@@ -141,18 +155,21 @@ export function DailyCards({ daily }: { daily: DailyWeather }) {
         <p className="text-sm text-slate-500">Resumen diario para planificar con rapidez.</p>
       </div>
       <div className="grid gap-3 md:grid-cols-5">
-        {daily.time.slice(0, 5).map((time, index) => (
+        {daily.time.slice(0, 5).map((time, index) => {
+          const weatherCode = daily.weatherCode[index];
+          return (
           <div key={time} className="rounded-[22px] border border-slate-200 bg-white p-4 text-center shadow-sm">
             <p className="text-sm font-semibold text-slate-700">{dayLabel(time)}</p>
-            <p className="mt-2 text-3xl">{weatherEmoji(daily.weatherCode[index])}</p>
-            <p className="mt-1 text-xs text-slate-500">{weatherCodeDescription(daily.weatherCode[index])}</p>
+            <p className="mt-2 text-3xl">{isNumber(weatherCode) ? weatherEmoji(weatherCode) : '—'}</p>
+            <p className="mt-1 text-xs text-slate-500">{isNumber(weatherCode) ? weatherCodeDescription(weatherCode) : 'Sin dato'}</p>
             <div className="mt-3 flex items-center justify-center gap-3">
-              <span className="font-bold text-red-500">{daily.temperatureMaxC[index].toFixed(0)}°</span>
-              <span className="font-bold text-blue-500">{daily.temperatureMinC[index].toFixed(0)}°</span>
+              <span className="font-bold text-red-500">{fmtNumber(daily.temperatureMaxC[index])}°</span>
+              <span className="font-bold text-blue-500">{fmtNumber(daily.temperatureMinC[index])}°</span>
             </div>
-            <p className="mt-2 text-xs text-slate-400">{daily.precipitationSumMm[index].toFixed(1)} mm</p>
+            <p className="mt-2 text-xs text-slate-400">{fmtNumber(daily.precipitationSumMm[index], 1)} mm</p>
           </div>
-        ))}
+        );
+        })}
       </div>
     </div>
   );

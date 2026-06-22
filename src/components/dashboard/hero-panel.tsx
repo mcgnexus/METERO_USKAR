@@ -19,6 +19,9 @@ function CompactRainCard({ nowcast, radar }: { nowcast?: NowcastData; radar?: Ra
 
 export function HeroPanel({ data }: { data: WeatherPayload }) {
   const todayRainProbability = data.daily.precipitationProbabilityPct[0];
+  const todayRainProbabilityLabel = typeof todayRainProbability === 'number' && Number.isFinite(todayRainProbability)
+    ? `${todayRainProbability.toFixed(0)}%`
+    : '—';
   const alertSummary = data.alerts.length > 0 ? `${data.alerts.length} activas` : 'Sin alertas';
   const confidenceTone = data.confidencePct >= 70 ? 'accent' : data.confidencePct >= 50 ? 'default' : 'warning';
 
@@ -84,7 +87,7 @@ export function HeroPanel({ data }: { data: WeatherPayload }) {
             </div>
             <div className="rounded-[20px] bg-slate-50 p-4">
               <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-500">Prob. lluvia</p>
-              <p className="mt-2 text-2xl font-bold text-slate-900">{todayRainProbability.toFixed(0)}%</p>
+              <p className="mt-2 text-2xl font-bold text-slate-900">{todayRainProbabilityLabel}</p>
               <p className="mt-1 text-sm text-slate-600">Prevision diaria base</p>
             </div>
             <div className="rounded-[20px] bg-slate-50 p-4">
