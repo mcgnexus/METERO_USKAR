@@ -1,16 +1,24 @@
 'use client';
 
 import { useState } from 'react';
+import dynamic from 'next/dynamic';
 import { useWeatherData } from '@/hooks/useWeatherData';
 import { HeroPanel } from '@/components/dashboard/hero-panel';
 import { DailyCards, HourlyForecastDetails } from '@/components/dashboard/forecast-tables';
-import { TemperatureChart } from '@/components/dashboard/temperature-chart';
 import { AgriculturalSection, LightningPanel, LivestockSection } from '@/components/dashboard/operations-panels';
 import { DashboardDetail, TabSystem, type DashboardTab } from '@/components/dashboard/tabs';
 import ModelTransparencyPanel from '@/components/ModelTransparencyPanel';
 import NowcastPanel from '@/components/NowcastPanel';
 import RadarPanel from '@/components/RadarPanel';
 import WeatherStationPanel from '@/components/WeatherStationPanel';
+
+const TemperatureChart = dynamic(() => import('@/components/dashboard/temperature-chart').then(m => ({ default: m.TemperatureChart })), {
+  loading: () => (
+    <div className="flex h-48 items-center justify-center">
+      <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-slate-400" />
+    </div>
+  ),
+});
 
 function LoadingState() {
   return (

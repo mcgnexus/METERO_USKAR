@@ -1,18 +1,28 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import { useWeatherData } from '@/hooks/useWeatherData';
 import { useForecast } from '@/hooks/useForecast';
 import { useClimateCalibration } from '@/hooks/useClimateCalibration';
 import { useApiData } from '@/hooks/useApiData';
-import CurrentGauges from '@/components/visualizacion/CurrentGauges';
-import TemperatureChart from '@/components/visualizacion/TemperatureChart';
-import WaterChart from '@/components/visualizacion/WaterChart';
-import WindChart from '@/components/visualizacion/WindChart';
-import SoilChart from '@/components/visualizacion/SoilChart';
-import ZoneChart from '@/components/visualizacion/ZoneChart';
-import ConfidenceGauges from '@/components/visualizacion/ConfidenceGauges';
-import BiasComparisonChart from '@/components/visualizacion/BiasComparisonChart';
-import MiniStationChart from '@/components/visualizacion/MiniStationChart';
+
+const MiniStationChart = dynamic(() => import('@/components/visualizacion/MiniStationChart'));
+const CurrentGauges = dynamic(() => import('@/components/visualizacion/CurrentGauges'));
+const TemperatureChart = dynamic(() => import('@/components/visualizacion/TemperatureChart'));
+const WaterChart = dynamic(() => import('@/components/visualizacion/WaterChart'));
+const WindChart = dynamic(() => import('@/components/visualizacion/WindChart'));
+const SoilChart = dynamic(() => import('@/components/visualizacion/SoilChart'));
+const ZoneChart = dynamic(() => import('@/components/visualizacion/ZoneChart'));
+const ConfidenceGauges = dynamic(() => import('@/components/visualizacion/ConfidenceGauges'));
+const BiasComparisonChart = dynamic(() => import('@/components/visualizacion/BiasComparisonChart'));
+
+function ChartFallback() {
+  return (
+    <div className="surface-card flex min-h-[280px] items-center justify-center rounded-[28px]">
+      <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-slate-400" />
+    </div>
+  );
+}
 
 export default function VisualizacionDashboard() {
   const { data: currentData, loading: loadingCurrent } = useWeatherData();

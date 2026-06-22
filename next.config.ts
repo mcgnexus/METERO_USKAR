@@ -4,6 +4,7 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   reactStrictMode: true,
   compress: true,
+  serverExternalPackages: ['ws'],
   webpack: (config) => {
     return config;
   },

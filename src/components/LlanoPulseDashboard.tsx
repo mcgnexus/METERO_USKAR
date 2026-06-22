@@ -1,16 +1,26 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import { useClimateCalibration } from '@/hooks/useClimateCalibration';
 import { useWeatherData } from '@/hooks/useWeatherData';
 import { useForecast } from '@/hooks/useForecast';
 import { buildAlarms } from '@/components/llano/alarms-logic';
 import { PulseHero } from '@/components/llano/hero';
-import { InminenteSection } from '@/components/llano/inminente';
-import { AlarmBoard } from '@/components/llano/alarms';
-import { Forecast24h } from '@/components/llano/forecast-24h';
-import { Forecast5d } from '@/components/llano/forecast-5d';
-import { ModelDisclosure } from '@/components/llano/disclosure';
 import { AlarmToast } from '@/components/llano/alarm-toast';
+
+const InminenteSection = dynamic(() => import('@/components/llano/inminente').then(m => ({ default: m.InminenteSection })), { loading: () => <SectionFallback /> });
+const AlarmBoard = dynamic(() => import('@/components/llano/alarms').then(m => ({ default: m.AlarmBoard })), { loading: () => <SectionFallback /> });
+const Forecast24h = dynamic(() => import('@/components/llano/forecast-24h').then(m => ({ default: m.Forecast24h })), { loading: () => <SectionFallback /> });
+const Forecast5d = dynamic(() => import('@/components/llano/forecast-5d').then(m => ({ default: m.Forecast5d })), { loading: () => <SectionFallback /> });
+const ModelDisclosure = dynamic(() => import('@/components/llano/disclosure').then(m => ({ default: m.ModelDisclosure })), { loading: () => <SectionFallback /> });
+
+function SectionFallback() {
+  return (
+    <div className="surface-card flex min-h-[200px] items-center justify-center rounded-[28px]">
+      <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-slate-400" />
+    </div>
+  );
+}
 
 function LoadingState() {
   return (
