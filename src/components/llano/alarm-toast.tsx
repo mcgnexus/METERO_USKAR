@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import type { PulseAlarm } from '@/components/llano/alarms-logic';
-import { levelBadge, levelLabel, levelClass } from '@/components/llano/alarms-logic';
+import { levelBadge, levelLabel, levelClass, levelEmoji } from '@/components/llano/alarms-logic';
 
 export function AlarmToast({ alarms }: { alarms: PulseAlarm[] }) {
   const [visible, setVisible] = useState(false);
@@ -29,15 +29,15 @@ export function AlarmToast({ alarms }: { alarms: PulseAlarm[] }) {
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
               <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${levelBadge(top.level)}`}>
-                {levelLabel(top.level)}
+                {levelEmoji(top.level)} {levelLabel(top.level)}
               </span>
               <span className="text-[11px] font-bold opacity-70">
                 {urgentAlarms.length} {urgentAlarms.length === 1 ? 'alarma' : 'alarmas'}
-                {criticas > 0 && ` · ${criticas} críticas`}
-                {precauciones > 0 && ` · ${precauciones} precauciones`}
+                {criticas > 0 && ` · 🚨 ${criticas} críticas`}
+                {precauciones > 0 && ` · ⚠️ ${precauciones} precauciones`}
               </span>
             </div>
-            <p className="mt-2 text-sm font-black">{top.title}</p>
+            <p className="mt-2 text-sm font-black">{levelEmoji(top.level)} {top.title}</p>
             <p className="mt-1 text-xs leading-5 opacity-85 line-clamp-2">{top.message}</p>
             <button
               onClick={() => {
@@ -46,7 +46,7 @@ export function AlarmToast({ alarms }: { alarms: PulseAlarm[] }) {
               }}
               className="mt-2 rounded-full bg-black/10 px-3 py-1 text-[11px] font-bold hover:bg-black/20"
             >
-              Ver todas las alarmas
+              🔔 Ver todas las alarmas
             </button>
           </div>
           <button

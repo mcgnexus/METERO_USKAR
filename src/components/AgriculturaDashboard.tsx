@@ -5,6 +5,7 @@ import { useWeatherData } from '@/hooks/useWeatherData';
 import { buildAlarms } from '@/components/llano/alarms-logic';
 import { PulseHero } from '@/components/llano/hero';
 import { AgricultureSection } from '@/components/llano/agriculture';
+import { RaifPanel } from '@/components/llano/RaifPanel';
 
 function LoadingState() {
   return (
@@ -46,6 +47,7 @@ export default function AgriculturaDashboard() {
   return (
     <div className="space-y-6">
       <PulseHero climate={climate.data} weather={weather.data} alarmCount={alarms.length} />
+      <RaifPanel weather={weather.data ?? null} />
       <AgricultureSection
         agricultural={weather.data?.agricultural ?? null}
         climate={climate.data}

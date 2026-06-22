@@ -205,3 +205,26 @@ export function levelLabel(level: AlarmLevel): string {
   if (level === 'precaucion') return 'Precaución';
   return 'Aviso';
 }
+
+export function levelEmoji(level: AlarmLevel): string {
+  if (level === 'critico') return '🚨';
+  if (level === 'precaucion') return '⚠️';
+  return 'ℹ️';
+}
+
+export function sourceEmoji(source: PulseAlarm['source']): string {
+  if (source === 'aemet') return '🏛️';
+  if (source === 'modelo') return '🧠';
+  if (source === 'sensor') return '📡';
+  if (source === 'ria') return '🌾';
+  return '🔹';
+}
+
+export function audienceEmoji(audience: string): string {
+  const a = audience.toLowerCase();
+  if (a.includes('poblacion') || a.includes('población')) return '🏘️';
+  if (a.includes('agricultura')) return '🌾';
+  if (a.includes('ganaderia') || a.includes('ganadería')) return '🐄';
+  if (a.includes('general')) return '👥';
+  return '👤';
+}

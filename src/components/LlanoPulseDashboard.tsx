@@ -23,7 +23,7 @@ function LoadingState() {
 function ErrorState({ message }: { message: string }) {
   return (
     <div className="surface-card rounded-[28px] p-10 text-center">
-      <p className="font-semibold text-red-500">No se pudo cargar la pagina de Huescar</p>
+      <p className="font-semibold text-red-500">❌ No se pudo cargar la página de Huéscar</p>
       <p className="mt-2 text-sm text-slate-500">{message}</p>
     </div>
   );
