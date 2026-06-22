@@ -1,6 +1,6 @@
 'use client';
 
-import { ageFromIso, ConfidenceInline, fmtN, SourceBadge } from '@/components/llano/atoms';
+import { ageFromIso, fmtN } from '@/components/llano/atoms';
 import { weatherCodeDescription, weatherEmoji, windDirection } from '@/lib/display';
 import type { ClimateCalibrationPayload } from '@/hooks/useClimateCalibration';
 import type { WeatherPayload } from '@/types/weather';
@@ -12,15 +12,6 @@ function tempColor(t: number): string {
   if (t <= 30) return '#fbbf24';
   if (t <= 35) return '#f97316';
   return '#ef4444';
-}
-
-function residualCopy(residual: number | null): { label: string; tone: 'success' | 'warning' | 'danger' | 'default' } {
-  if (residual === null) return { label: 'Sin auditoría (sensor local no disponible)', tone: 'default' };
-  const abs = Math.abs(residual);
-  const dir = residual > 0 ? 'sobreestima' : residual < 0 ? 'subestima' : 'exacto';
-  if (abs < 1) return { label: `Auditado: desviación < 1 °C · ${dir}`, tone: 'success' };
-  if (abs < 2.5) return { label: `Auditado: desviación ${abs.toFixed(1)} °C · ${dir}`, tone: 'warning' };
-  return { label: `Auditado: desviación ${abs.toFixed(1)} °C · ${dir}`, tone: 'danger' };
 }
 
 function dewPointC(tempC: number | null | undefined, rhPct: number | null | undefined): number | null {
@@ -77,29 +68,8 @@ export function PulseHero({ climate, weather, alarmCount }: {
   const localAge = ageFromIso(local?.time ?? null);
   const isLocalLive = local?.status === 'OK' && localAge !== null && localAge < 180;
   const isLocalStale = local !== null && !isLocalLive;
-  const noLocal = local === null;
-
-  const residual = climate.calibration.residualC;
-  const residualInfo = residualCopy(residual);
-
-  let source: 'sensor_propio' | 'modelo_calibrado' | 'aemet' | 'open_meteo';
-  if (isLocalLive) source = 'sensor_propio';
-  else if (climate.nodes.baza.status === 'OK') source = 'aemet';
-  else if (climate.nodes.baza.status === 'FALLBACK') source = 'modelo_calibrado';
-  else if (climate.nodes.sanClemente.status === 'OK') source = 'modelo_calibrado';
-  else if (climate.quality.confidencePct >= 50) source = 'modelo_calibrado';
-  else source = 'open_meteo';
-
-  const toneClass: Record<typeof source, 'OK' | 'FALLBACK' | 'MISSING' | 'DEGRADED' | null> = {
-    sensor_propio: 'OK',
-    modelo_calibrado: 'FALLBACK',
-    aemet: 'FALLBACK',
-    open_meteo: 'DEGRADED',
-  };
-  const sourceStatus = toneClass[source];
 
   const updateAge = ageFromIso(climate.generatedAt);
-  const confidencePct = climate.quality.confidencePct;
 
   return (
     <section className="overflow-hidden rounded-[34px] border border-slate-200 bg-slate-950 text-white shadow-2xl">
@@ -114,26 +84,6 @@ export function PulseHero({ climate, weather, alarmCount }: {
             <p className="mt-4 max-w-2xl text-base leading-7 text-slate-100/85">
               Temperatura local, alarmas accionables y pronóstico ajustado al microclima del casco urbano y la vega.
             </p>
-            <div className="mt-5 flex flex-wrap items-center gap-2">
-              <SourceBadge source={source} status={sourceStatus} ageMinutes={localAge} className="bg-white/10 text-sky-100" />
-              <span className="text-[11px] text-slate-300">Confianza</span>
-              <ConfidenceInline pct={confidencePct} />
-            </div>
-            <div className="mt-3 flex flex-wrap gap-2 text-[11px] text-slate-300">
-              {isLocalStale && localAge !== null && (
-                <span className="rounded-full border border-rose-400/30 bg-rose-500/10 px-2.5 py-1 font-bold text-rose-200">
-                  ⚠ Tu sensor: hace {localAge >= 60 * 24 ? `${Math.floor(localAge / 60 / 24)} días` : localAge >= 60 ? `${Math.floor(localAge / 60)}h` : `${localAge} min`}. Estimación calibrada activa.
-                </span>
-              )}
-              {noLocal && (
-                <span className="rounded-full border border-amber-400/30 bg-amber-500/10 px-2.5 py-1 font-bold text-amber-200">
-                  Sin miniestación propia registrada.
-                </span>
-              )}
-              <span className={`rounded-full border px-2.5 py-1 font-bold ${residualInfo.tone === 'success' ? 'border-emerald-400/30 bg-emerald-500/10 text-emerald-200' : residualInfo.tone === 'warning' ? 'border-amber-400/30 bg-amber-500/10 text-amber-200' : residualInfo.tone === 'danger' ? 'border-rose-400/30 bg-rose-500/10 text-rose-200' : 'border-white/15 bg-white/10 text-slate-300'}`}>
-                {residualInfo.label}
-              </span>
-            </div>
             <div className="mt-6 flex flex-wrap gap-3">
               <a href="#alertas-aemet" className="rounded-full bg-white px-5 py-3 text-sm font-bold text-slate-950 transition hover:bg-sky-50">
                 Ver alertas AEMET
