@@ -66,7 +66,7 @@ export default function MiniStationChart() {
           <div className="rounded-2xl border border-sky-100 bg-sky-50 p-4 text-center">
             <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-sky-700">Humedad</p>
             <p className="mt-1 text-3xl font-black text-sky-900">{station.humidityPct?.toFixed(0) ?? '—'}%</p>
-            <p className="mt-0.5 text-[11px] text-sky-600">HR</p>
+            <p className="mt-0.5 text-[11px] text-sky-800">HR</p>
           </div>
           <div className="rounded-2xl border border-purple-100 bg-purple-50 p-4 text-center">
             <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-purple-700">Presión</p>

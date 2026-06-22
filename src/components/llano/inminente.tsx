@@ -12,7 +12,7 @@ function levelTone(level: string): string {
 
 function levelBadgeTone(level: string): string {
   if (level === 'peligro' || level === 'severo') return 'bg-rose-600 text-white';
-  if (level === 'alerta') return 'bg-orange-500 text-white';
+  if (level === 'alerta') return 'bg-orange-600 text-white';
   if (level === 'precaucion' || level === 'aviso') return 'bg-amber-400 text-amber-950';
   return 'bg-sky-400 text-sky-950';
 }

@@ -40,7 +40,7 @@ export function Forecast24h({ hourly, count = 8 }: { hourly?: HourlyWeather; cou
               <p className="mt-1 text-[10px] leading-3 text-slate-500">{weatherCodeDescription(wcode)}</p>
               <p className="mt-2 text-xl font-black text-slate-950">{(temp ?? 0).toFixed(1)}°</p>
               <p className="mt-1 text-[11px] text-sky-700">💧 {rain.toFixed(0)}%</p>
-              <p className="text-[11px] text-sky-600">💦 {hum.toFixed(0)}% HR</p>
+              <p className="text-[11px] text-sky-800">💦 {hum.toFixed(0)}% HR</p>
               <p className="text-[11px] text-slate-500">💨 {wind.toFixed(0)} km/h</p>
             </article>
           );

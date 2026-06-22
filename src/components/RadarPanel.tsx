@@ -243,7 +243,7 @@ export default function RadarPanel({
   const levelBadges: Record<RadarData['level'], string> = {
     ninguno: 'bg-green-500 text-white',
     aviso:   'bg-yellow-500 text-black',
-    alerta:  'bg-orange-500 text-white',
+    alerta:  'bg-orange-600 text-white',
     peligro: 'bg-red-600 text-white',
   };
 
