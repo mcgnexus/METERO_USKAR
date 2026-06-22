@@ -223,7 +223,7 @@ export function InminenteSection({ weather }: { weather: WeatherPayload | null }
       {hasAemet && (
         <article id="alertas-aemet" className="rounded-[24px] border border-rose-200 bg-rose-50 p-5 text-rose-950">
           <p className="text-xs font-bold uppercase tracking-[0.18em] text-rose-700">Avisos oficiales AEMET</p>
-          <h3 className="mt-1 text-xl font-black">{aemetAlerts.length} aviso(s) activo(s) en la comarca</h3>
+          <h2 className="mt-1 text-xl font-black">{aemetAlerts.length} aviso(s) activo(s) en la comarca</h2>
           <div className="mt-3 space-y-2">
             {aemetAlerts.slice(0, 3).map((a, i) => (
               <button
