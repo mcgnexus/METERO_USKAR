@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import { ageFromIso, ConfidenceInline, fmtN, SourceBadge } from '@/components/llano/atoms';
 import { weatherCodeDescription, weatherEmoji, windDirection } from '@/lib/display';
 import type { ClimateCalibrationPayload } from '@/hooks/useClimateCalibration';
@@ -24,6 +23,36 @@ function residualCopy(residual: number | null): { label: string; tone: 'success'
   return { label: `Auditado: desviación ${abs.toFixed(1)} °C · ${dir}`, tone: 'danger' };
 }
 
+function dewPointC(tempC: number | null | undefined, rhPct: number | null | undefined): number | null {
+  if (tempC === null || tempC === undefined || rhPct === null || rhPct === undefined || rhPct <= 0) return null;
+  const a = 17.62;
+  const b = 243.12;
+  const gamma = Math.log(rhPct / 100) + (a * tempC) / (b + tempC);
+  return (b * gamma) / (a - gamma);
+}
+
+function apparentTemperatureC(tempC: number, rhPct: number | null | undefined, windKmh: number | null | undefined): number {
+  if (tempC <= 10 && windKmh !== null && windKmh !== undefined && windKmh > 4.8) {
+    return 13.12 + 0.6215 * tempC - 11.37 * Math.pow(windKmh, 0.16) + 0.3965 * tempC * Math.pow(windKmh, 0.16);
+  }
+
+  if (tempC >= 27 && rhPct !== null && rhPct !== undefined && rhPct >= 40) {
+    const t = tempC * 9 / 5 + 32;
+    const hi = -42.379 + 2.04901523 * t + 10.14333127 * rhPct - 0.22475541 * t * rhPct - 0.00683783 * t * t - 0.05481717 * rhPct * rhPct + 0.00122874 * t * t * rhPct + 0.00085282 * t * rhPct * rhPct - 0.00000199 * t * t * rhPct * rhPct;
+    return (hi - 32) * 5 / 9;
+  }
+
+  return tempC;
+}
+
+function cloudLabel(cloudCoverPct: number | null | undefined): string {
+  if (cloudCoverPct === null || cloudCoverPct === undefined) return 'Cielo actual no disponible';
+  if (cloudCoverPct < 15) return '☀️ Despejado';
+  if (cloudCoverPct < 45) return '🌤️ Claros';
+  if (cloudCoverPct < 75) return '⛅ Nuboso variable';
+  return '☁️ Cubierto';
+}
+
 export function PulseHero({ climate, weather, alarmCount }: {
   climate: ClimateCalibrationPayload;
   weather: WeatherPayload | null;
@@ -31,15 +60,19 @@ export function PulseHero({ climate, weather, alarmCount }: {
 }) {
   const local = climate.nodes.localStation;
   const temp = climate.calibration.realTemperatureC ?? climate.interpolation.estimatedTemperatureC;
-  const humidity = local?.humidityPct ?? climate.eto.inputs.humidityPct ?? weather?.current?.humidityPct;
-  const dew = climate.dewPoint.dewPointC;
+  const humidity = local?.humidityPct ?? climate.extrapolation.humidityPct ?? climate.eto.inputs.humidityPct ?? weather?.current?.humidityPct;
+  const localWindSpeed = climate.nodes.radiationWind.windSpeed2mKmh;
+  const dew = climate.dewPoint.dewPointC ?? dewPointC(temp, humidity);
+  const feelsLike = apparentTemperatureC(temp, humidity, localWindSpeed);
 
   const current = weather?.current;
-  const feelsLike = current?.apparentTemperatureC ?? null;
-  const windSpeed = current?.windSpeedKmh ?? null;
-  const windDir = current?.windDirectionDeg ?? null;
-  const windGust = current?.windGustKmh ?? null;
+  const windSpeed = localWindSpeed;
+  const windDir = climate.extrapolation.bazaWindDirectionDeg ?? current?.windDirectionDeg ?? null;
+  const windGust = current?.windGustKmh !== undefined
+    ? current.windGustKmh * climate.microclimate.windGustReductionFactor
+    : null;
   const wcode = current?.weatherCode ?? 0;
+  const sky = current ? `${weatherEmoji(wcode)} ${weatherCodeDescription(wcode)}` : cloudLabel(climate.exoticVariables.cloudCoverPct);
 
   const localAge = ageFromIso(local?.time ?? null);
   const isLocalLive = local?.status === 'OK' && localAge !== null && localAge < 180;
@@ -65,7 +98,7 @@ export function PulseHero({ climate, weather, alarmCount }: {
   };
   const sourceStatus = toneClass[source];
 
-  const updateAge = ageFromIso(weather?.fetchedAt);
+  const updateAge = ageFromIso(climate.generatedAt);
   const confidencePct = climate.quality.confidencePct;
 
   return (
@@ -121,14 +154,14 @@ export function PulseHero({ climate, weather, alarmCount }: {
               </div>
             )}
             <div className="rounded-[30px] border border-white/12 bg-white/10 p-5 backdrop-blur">
-              <p className="text-xs font-bold uppercase tracking-[0.2em] text-sky-100">Dato local</p>
+              <p className="text-xs font-bold uppercase tracking-[0.2em] text-sky-100">Dato local calibrado</p>
               <div className="mt-3 flex items-start justify-between gap-3">
                 <div>
                   <p className="text-5xl font-black" style={{ color: tempColor(temp ?? 0) }}>
                     {fmtN(temp, 1)}°C
                   </p>
                   <p className="mt-1 text-sm text-slate-100/80">
-                    {weatherEmoji(wcode)} {weatherCodeDescription(wcode)}
+                    {sky}
                   </p>
                 </div>
                 <div className="text-right text-sm text-slate-100/80">
@@ -138,9 +171,9 @@ export function PulseHero({ climate, weather, alarmCount }: {
               </div>
               <div className="mt-4 grid grid-cols-2 gap-3 rounded-2xl bg-white/10 p-3 text-sm text-slate-100/80">
                 <div>
-                  <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">Viento</p>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">Viento local 2m</p>
                   <p className="mt-0.5">
-                    {windSpeed !== null ? `${windSpeed.toFixed(0)} km/h ${windDir !== null ? windDirection(windDir) : ''}` : '—'}
+                    {`${windSpeed.toFixed(0)} km/h ${windDir !== null ? windDirection(windDir) : ''}`}
                     {windGust !== null ? <span className="text-slate-400"> ráf. {windGust.toFixed(0)}</span> : null}
                   </p>
                 </div>
@@ -156,7 +189,7 @@ export function PulseHero({ climate, weather, alarmCount }: {
                     ? `Inversión térmica · drenaje ${climate.microclimate.coldAirDrainageC.toFixed(1)}°C`
                     : isLocalStale
                       ? 'Sensor sin lecturas frescas. Modelo calibrado activo.'
-                      : 'Estimación calibrada AEMET Baza + San Clemente'}
+                      : 'Estimación calibrada AEMET Baza + Huéscar/San Clemente'}
               </p>
               <div className="mt-3 flex items-center justify-between text-[11px] text-slate-400">
                 <span>
