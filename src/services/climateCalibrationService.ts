@@ -26,7 +26,7 @@ const REFERENCE_NODES = {
   sanClemente: { id: "5051X", name: "AEMET San Clemente", lat: 37.861389, lon: -2.652778, elevation: 1101 },
 };
 
-const LLANO = { id: "llano_huescar", name: "Llano/Casco urbano Huéscar", lat: 37.8094, lon: -2.5392, elevation: 950 };
+const LLANO = { id: "llano_huescar", name: "Llano/Casco urbano Huéscar", lat: 37.8094, lon: -2.5392, elevation: 953 };
 
 type SourceKind = "AEMET" | "OPEN_METEO" | "LOCAL_STATION";
 
@@ -191,6 +191,9 @@ async function fetchAemetStation(station: typeof REFERENCE_NODES.sanClemente): P
       cacheSet(cacheKey, reading, AEMET_CACHE_TTL_MS);
       return reading;
     }
+    const missing: ClimateNodeReading = { source: "AEMET", stationId: station.id, name: station.name, time: new Date().toISOString(), temperatureC: null, humidityPct: null, elevationM: station.elevation, status: "MISSING" };
+    cacheSet(cacheKey, missing, AEMET_FAILURE_CACHE_TTL_MS);
+    return missing;
   }
 
   if (!AEMET_API_KEY) {

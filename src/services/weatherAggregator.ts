@@ -187,11 +187,11 @@ export async function aggregateWeather(): Promise<WeatherPayload> {
     message: "Lightning data not available",
   };
 
-  const sourceLevel: "FUSED" | "OPEN_METEO" | "AEMET" | "ERROR" =
+  const sourceLevel: "FUSED" | "OPEN_METEO" | "AEMET" | "LOCAL_STATIONS" | "ERROR" =
     layerResult.sources.length >= 2
       ? "FUSED"
       : layerResult.sources.length === 1
-        ? (layerResult.sources[0].source === "AEMET" ? "AEMET" : "OPEN_METEO")
+        ? layerResult.sources[0].source
         : "ERROR";
 
   return {

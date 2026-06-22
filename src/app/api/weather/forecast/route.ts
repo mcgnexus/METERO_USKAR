@@ -7,7 +7,7 @@ import {
   type CorrectedHour,
 } from "@/services/biasCorrectionService";
 
-const LLANO = { lat: 37.8094, lon: -2.5392, elevation: 950 };
+const LLANO = { lat: 37.8094, lon: -2.5392, elevation: 953 };
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
