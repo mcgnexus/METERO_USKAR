@@ -124,6 +124,17 @@ export interface ClimateCalibrationPayload {
     soilMoisture27To81cm: number | null;
     source: "open_meteo" | "unavailable";
   };
-  quality: { confidencePct: number; warnings: string[] };
+  quality: {
+    confidencePct: number;
+    warnings: string[];
+    breakdown?: {
+      basePct: number;
+      missingPenalty: number;
+      localStationPenalty: number;
+      agePenalty: number;
+      maxSourceAgeMin: number;
+      structuralWarnings: string[];
+    };
+  };
   persisted?: boolean;
 }

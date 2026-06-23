@@ -1,7 +1,6 @@
 'use client';
 
 import Link from 'next/link';
-import { useMemo } from 'react';
 import { useWeatherData } from '@/hooks/useWeatherData';
 import RadarPanel from '@/components/RadarPanel';
 import {
@@ -30,8 +29,8 @@ function comfortLabel(apparentTemperatureC: number) {
   return 'Calor extremo';
 }
 
-function nextHours(hourly: HourlyWeather) {
-  const now = Date.now();
+function nextHours(hourly: HourlyWeather, referenceTimeIso?: string) {
+  const now = referenceTimeIso ? new Date(referenceTimeIso).getTime() : Date.now();
   return hourly.time
     .map((time, index) => ({
       time,
@@ -69,8 +68,8 @@ function AlertsMini({ alerts }: { alerts: WeatherAlert[] }) {
   );
 }
 
-function FreeHourlyStrip({ hourly }: { hourly: HourlyWeather }) {
-  const hours = nextHours(hourly);
+function FreeHourlyStrip({ hourly, referenceTimeIso }: { hourly: HourlyWeather; referenceTimeIso?: string }) {
+  const hours = nextHours(hourly, referenceTimeIso);
 
   return (
     <section className="surface-card rounded-[28px] p-5 sm:p-6">
@@ -185,12 +184,9 @@ export default function WeatherFreeDashboard() {
     : 'Tiempo local de Huéscar.';
   const shareHref = `https://wa.me/?text=${encodeURIComponent(`${shareText} ${shareUrl}`)}`;
   const rainToday = data?.daily.precipitationProbabilityPct[0] ?? 0;
-  const freeSummary = useMemo(() => {
-    if (!data) return '';
-    const gust = data.current.windGustKmh.toFixed(0);
-    const rain = rainToday.toFixed(0);
-    return `Hoy: ${weatherCodeDescription(data.current.weatherCode).toLowerCase()}, lluvia ${rain}% y rachas de hasta ${gust} km/h.`;
-  }, [data, rainToday]);
+  const freeSummary = data
+    ? `Hoy: ${weatherCodeDescription(data.current.weatherCode).toLowerCase()}, lluvia ${rainToday.toFixed(0)}% y rachas de hasta ${data.current.windGustKmh.toFixed(0)} km/h.`
+    : '';
 
   if (loading) {
     return (
@@ -213,6 +209,8 @@ export default function WeatherFreeDashboard() {
   }
 
   if (!data) return null;
+
+  const hours = nextHours(data.hourly, data.current.time);
 
   return (
     <div className="space-y-6">
@@ -276,7 +274,7 @@ export default function WeatherFreeDashboard() {
         <AlertsMini alerts={data.alerts} />
       </section>
 
-      <FreeHourlyStrip hourly={data.hourly} />
+      <FreeHourlyStrip hourly={data.hourly} referenceTimeIso={data.current.time} />
       <FreeDailyCards daily={data.daily} />
       <MicroclimateCard data={data} />
 

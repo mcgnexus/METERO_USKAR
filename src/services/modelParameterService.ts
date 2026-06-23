@@ -1,8 +1,8 @@
 import {
   getAggregatedValidation,
-  getModelParameter,
   saveModelParameter,
   getAllModelParameters,
+  type AggregatedValidationSummary,
 } from "@/lib/weatherStore";
 import { cacheGet, cacheSet, cacheDelete } from "@/lib/inMemoryCache";
 
@@ -10,42 +10,43 @@ const CACHE_KEY = "model_parameters";
 const CACHE_TTL_MS = 6 * 60 * 60 * 1000;
 
 const DEFAULT_PARAMS: Record<string, number> = {
-  // Bias del embalse de San Clemente sobre la estación 5051X (0.28 km)
-  // Signo: positivo = la estación lee MÁS caluroso; negativo = lee MÁS frío
-  reservoir_temp_bias_day: -0.3,         // Día: el agua absorbe calor → estación lee ~0.3°C más fresco
-  reservoir_temp_bias_night: 0.4,        // Noche: el agua libera calor → estación lee ~0.4°C más cálido (CORREGIDO)
-  reservoir_humidity_bias_pct: 15,       // Evaporación del embalse → HR saturada, reducir ~15% (rango 10-20%)
-  reservoir_dew_bias: 0.5,               // Punto de rocío sesgado al alza por humedad del embalse
-
-  // Gradiente térmico vertical estándar
-  altitude_lapse_rate: 0.0065,           // 0.65°C por cada 100m de descenso (ISA estándar)
-
-  // Microclima del llano (casco urbano de Huéscar, ~950m, cubeta topográfica)
-  urban_heat_island_day_c: 0.2,          // Día: asfalto + edificación suman ~0.2°C
-  urban_heat_island_night_c: 0.5,        // Noche: la inercia térmica urbana libera calor (+0.3 a +1.0°C)
-  cold_air_drainage_max_c: -5.0,         // Noche en calma absoluta, despejado: amplitud máxima del drenaje catabático
-  inversion_wind_threshold_ms: 2.0,      // Por encima de 2.0 m/s la mezcla turbulenta anula el drenaje
-
-  // Precipitación (sombra orográfica / Foehn)
-  rainfall_foehn_factor: 0.5,            // El llano recibe ~50% menos lluvia que San Clemente (rango 30-60%)
-
-  // Viento (canalización del valle del embalse)
-  wind_gust_reduction_factor: 0.6,       // Rachas en el llano ≈ 60% de San Clemente (efecto túnel en valle encajonado)
-  vega_friction_factor: 0.85,            // Fricción orográfica por arbolado local: u2_vega = u2_Baza × 0.85
-
-  // Corrección por advección húmeda del Negratín (embalse al Oeste de Baza)
-  negratin_penalty_factor: 0.85,         // Reducción del 15% de e_Baza cuando el viento es del Oeste y HR>90%
-  negratin_west_min_deg: 225,            // Inicio del cuadrante Oeste (Suroeste)
-  negratin_west_max_deg: 315,            // Final del cuadrante Oeste (Noroeste)
-  negratin_humidity_threshold: 90,       // HR mínima para considerar advección del Negratín
-
-  // Legacy (mantenidos para compatibilidad con auto-tuning)
-  night_inversion_valley: -3.5,          // ACTUALIZADO: cubeta de Huéscar, penality fuerte
-  night_inversion_mixed: -1.5,           // ACTUALIZADO: brisa moderada mezcla parcial
+  reservoir_temp_bias_day: -0.3,
+  reservoir_temp_bias_night: 0.4,
+  reservoir_humidity_bias_pct: 15,
+  reservoir_dew_bias: 0.5,
+  altitude_lapse_rate: 0.0065,
+  urban_heat_island_day_c: 0.2,
+  urban_heat_island_night_c: 0.5,
+  cold_air_drainage_max_c: -5.0,
+  cold_air_drainage_factor_urban_center: 0.5,
+  cold_air_drainage_factor_urban_barrio: 0.7,
+  cold_air_drainage_factor_vega: 1.0,
+  cold_air_drainage_factor_monte: 0.2,
+  cold_air_drainage_factor_reservoir: 0.3,
+  inversion_wind_threshold_ms: 2.0,
+  rainfall_foehn_factor: 0.5,
+  wind_gust_reduction_factor: 0.6,
+  vega_friction_factor: 0.85,
+  negratin_penalty_factor: 0.85,
+  negratin_west_min_deg: 225,
+  negratin_west_max_deg: 315,
+  negratin_humidity_threshold: 90,
+  night_inversion_valley: -3.5,
+  night_inversion_mixed: -1.5,
   wind_factor_valley: 0.7,
   wind_factor_plateau: 1.2,
   orographic_barlovento_max: 0.4,
   orographic_sotavento_max: 0.35,
+  sensor_blend_weight_fresh: 0.9,
+  sensor_blend_weight_medium: 0.4,
+  sensor_fresh_threshold_min: 30,
+  sensor_medium_threshold_min: 180,
+  sensor_medium_decay_min: 180,
+  temporal_smoothing_alpha: 0.7,
+  confidence_age_penalty_max: 20,
+  confidence_age_penalty_divisor: 3,
+  dynamic_residual_feedback_factor: 0.3,
+  dynamic_residual_min_samples: 30,
 };
 
 export interface ParameterTuningResult {
@@ -55,35 +56,50 @@ export interface ParameterTuningResult {
   reason: string;
 }
 
+type StoredModelParameter = {
+  value: number;
+  previousValue: number | null;
+  sampleCount: number;
+};
+
+async function getStoredModelParameters(): Promise<Record<string, StoredModelParameter>> {
+  try {
+    return await getAllModelParameters();
+  } catch {
+    return {};
+  }
+}
+
+async function getAggregatedValidationSafe(): Promise<Record<string, AggregatedValidationSummary>> {
+  try {
+    return await getAggregatedValidation(30);
+  } catch {
+    return {};
+  }
+}
+
 export async function getModelParameters(): Promise<Record<string, number>> {
   const cached = cacheGet<Record<string, number>>(CACHE_KEY);
   if (cached) return cached;
 
-  const dbParams = await getAllModelParameters().catch(() => ({} as Record<string, { value: number; previousValue: number | null; sampleCount: number }>));
-
+  const dbParams = await getStoredModelParameters();
   const merged: Record<string, number> = {};
+
   for (const [key, defaultValue] of Object.entries(DEFAULT_PARAMS)) {
-    if (dbParams[key] !== undefined) {
-      merged[key] = dbParams[key].value;
-    } else {
-      merged[key] = defaultValue;
-    }
+    merged[key] = dbParams[key]?.value ?? defaultValue;
   }
 
   cacheSet(CACHE_KEY, merged, CACHE_TTL_MS);
   return merged;
 }
 
-// Parámetros cargados en memoria, accesibles de forma síncrona desde los
-// servicios del modelo microclimático. Se refrescan vía refreshRuntimeParameters()
-// (cron hourly + aggregateWeather) y arrancan con los defaults hasta la primera carga.
 let runtimeParams: Record<string, number> = { ...DEFAULT_PARAMS };
 
 export async function refreshRuntimeParameters(): Promise<void> {
   try {
     runtimeParams = await getModelParameters();
   } catch {
-    // Se mantienen los parámetros anteriores (o defaults si es la primera carga).
+    // Keep previous runtime params.
   }
 }
 
@@ -94,17 +110,12 @@ export function getModelParam(key: keyof typeof DEFAULT_PARAMS): number {
 
 export async function tuneParametersFromHistory(): Promise<ParameterTuningResult[]> {
   const results: ParameterTuningResult[] = [];
-
-  const agg = await getAggregatedValidation(30).catch(() => ({} as Record<string, any>));
+  const aggregated = await getAggregatedValidationSafe();
   const current = await getModelParameters();
 
-  const aemetTempKey = "AEMET_temperature_all_all";
-  const aemetHumKey = "AEMET_humidity_all_all";
-  const omTempKey = "OPEN_METEO_temperature_all_all";
-
-  const aemetTemp = agg[aemetTempKey];
-  const aemetHum = agg[aemetHumKey];
-  const omTemp = agg[omTempKey];
+  const aemetTemp = aggregated["AEMET_temperature_all_all"];
+  const aemetHum = aggregated["AEMET_humidity_all_all"];
+  const omTemp = aggregated["OPEN_METEO_temperature_all_all"];
 
   if (aemetTemp && aemetTemp.avgBias !== 0 && aemetTemp.totalSamples >= 10) {
     const bias = aemetTemp.avgBias;
@@ -122,7 +133,7 @@ export async function tuneParametersFromHistory(): Promise<ParameterTuningResult
     }
 
     const oldNight = current.reservoir_temp_bias_night;
-    const aemetNight = agg["AEMET_temperature_noche_all"];
+    const aemetNight = aggregated["AEMET_temperature_noche_all"];
     if (aemetNight && aemetNight.avgBias !== 0 && aemetNight.totalSamples >= 5) {
       const nightBias = aemetNight.avgBias;
       const newNight = Math.round((oldNight - nightBias * 0.3) * 1000) / 1000;
@@ -139,16 +150,16 @@ export async function tuneParametersFromHistory(): Promise<ParameterTuningResult
   }
 
   if (aemetHum && aemetHum.avgBias !== 0 && aemetHum.totalSamples >= 10) {
-    const humBias = aemetHum.avgBias;
+    const humidityBias = aemetHum.avgBias;
     const oldDew = current.reservoir_dew_bias;
-    const newDew = Math.round((oldDew + humBias * 0.01) * 1000) / 1000;
+    const newDew = Math.round((oldDew + humidityBias * 0.01) * 1000) / 1000;
     if (Math.abs(newDew - oldDew) > 0.02) {
       await saveModelParameter("reservoir_dew_bias", newDew, aemetHum.totalSamples);
       results.push({
         key: "reservoir_dew_bias",
         oldValue: oldDew,
         newValue: newDew,
-        reason: `Bias humedad AEMET (${humBias.toFixed(1)}%), correccion punto de rocio`,
+        reason: `Bias humedad AEMET (${humidityBias.toFixed(1)}%), correccion punto de rocio`,
       });
     }
   }

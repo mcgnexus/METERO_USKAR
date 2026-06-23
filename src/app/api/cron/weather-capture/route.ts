@@ -11,6 +11,7 @@ import { runDailyBacktest, runBacktestRange } from "@/services/backtestingServic
 import { tuneParametersFromHistory } from "@/services/modelParameterService";
 import { fetchZoneWeather } from "@/services/zoneService";
 import type { SourceObservation, WeatherPayload } from "@/types/weather";
+import type { ParameterTuningResult } from "@/services/modelParameterService";
 
 async function persistSourceMeasurements(weather: WeatherPayload): Promise<void> {
   const variables: Array<[string, keyof SourceObservation, number]> = [
@@ -49,6 +50,12 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   }
 
   const weather = await aggregateWeather();
+  if (weather.source === "ERROR" || weather.sources.length === 0) {
+    return NextResponse.json(
+      { error: weather.confidenceExplanation || "No hay datos meteorológicos válidos para persistir." },
+      { status: 503 }
+    );
+  }
 
   await initializeDatabase();
 
@@ -65,7 +72,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   let comarcaRun = false;
   let backtestRun = false;
   let zonesRun = false;
-  let tuningResults: any[] | undefined;
+  let tuningResults: ParameterTuningResult[] | undefined;
 
   if (hour % 3 === 0) {
     await loadCalibratedTolerances();

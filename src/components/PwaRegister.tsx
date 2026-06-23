@@ -2,45 +2,91 @@
 
 import { useEffect, useState } from 'react';
 
+interface BeforeInstallPromptEvent extends Event {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: 'accepted' | 'dismissed'; platform: string }>;
+}
+
+const STORAGE_KEY = 'pwa-install-dismissed';
+
 export default function PwaRegister() {
-  const [installEvent, setInstallEvent] = useState<Event | null>(null);
+  const [installEvent, setInstallEvent] = useState<BeforeInstallPromptEvent | null>(null);
+  const [showPrompt, setShowPrompt] = useState(false);
   const [dismissed, setDismissed] = useState(false);
 
   useEffect(() => {
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker
         .register('/sw.js')
-        .then((reg) => console.log('SW registrado:', reg.scope))
-        .catch((err) => console.warn('SW no se pudo registrar:', err));
+        .catch(() => {});
+    }
+
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) {
+      const { date } = JSON.parse(stored);
+      const daysSince = (Date.now() - new Date(date).getTime()) / 86400000;
+      if (daysSince < 7) {
+        return;
+      }
     }
   }, []);
 
   useEffect(() => {
     const handleBeforeInstall = (e: Event) => {
-      e.preventDefault();
-      setInstallEvent(e);
+      const promptEvent = e as BeforeInstallPromptEvent;
+      promptEvent.preventDefault();
+      setInstallEvent(promptEvent);
     };
     window.addEventListener('beforeinstallprompt', handleBeforeInstall);
     return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
   }, []);
 
+  useEffect(() => {
+    if (!installEvent) return;
+    const timer = setTimeout(() => {
+      setShowPrompt(true);
+    }, 15000);
+    return () => clearTimeout(timer);
+  }, [installEvent]);
+
   const handleInstall = async () => {
     if (!installEvent) return;
-    (installEvent as any).prompt();
-    const result = await (installEvent as any).userChoice;
-    if (result.outcome === 'accepted') setInstallEvent(null);
+    await installEvent.prompt();
+    await installEvent.userChoice;
+    setInstallEvent(null);
+    setShowPrompt(false);
     setDismissed(true);
   };
 
-  if (!installEvent || dismissed) return null;
+  const handleDismiss = () => {
+    setShowPrompt(false);
+    setDismissed(true);
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ date: new Date().toISOString() }));
+    } catch {}
+  };
+
+  if (!showPrompt || dismissed) return null;
 
   return (
-    <div className="fixed bottom-4 left-4 right-4 z-50 mx-auto max-w-sm rounded-2xl border border-slate-200 bg-white p-4 shadow-2xl">
-      <p className="text-sm font-bold text-slate-900">Instala Meteo Huéscar</p>
-      <p className="mt-1 text-xs text-slate-600">Añade esta web a tu pantalla de inicio para acceso rápido.</p>
+    <div className="fixed bottom-20 left-4 right-4 z-50 mx-auto max-w-sm animate-slide-down rounded-2xl border border-sky-100 bg-white p-4 shadow-2xl">
+      <p className="text-sm font-bold text-slate-900">📲 Instala Meteo Huéscar</p>
+      <p className="mt-1 text-xs leading-5 text-slate-600">
+        Acceso rápido a alertas, riego y previsión local desde tu pantalla de inicio.
+      </p>
       <div className="mt-3 flex gap-2">
-        <button onClick={handleInstall} className="rounded-full bg-sky-600 px-4 py-2 text-xs font-bold text-white hover:bg-sky-700">Instalar</button>
-        <button onClick={() => setDismissed(true)} className="rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-50">Ahora no</button>
+        <button
+          onClick={handleInstall}
+          className="rounded-full bg-sky-700 px-4 py-2.5 text-xs font-bold text-white hover:bg-sky-800"
+        >
+          Instalar
+        </button>
+        <button
+          onClick={handleDismiss}
+          className="rounded-full border border-slate-200 px-4 py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-50"
+        >
+          Ahora no
+        </button>
       </div>
     </div>
   );

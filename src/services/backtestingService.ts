@@ -1,5 +1,15 @@
 import { saveValidationDaily, getPoolInstance } from "@/lib/weatherStore";
 
+interface RawMeasurementRow {
+  source: string;
+  variable: string;
+  error: number | string;
+  absolute_error: number | string;
+  squared_error: number | string;
+  hour: number | string;
+  month: number | string;
+}
+
 interface RawMeasurement {
   source: string;
   variable: string;
@@ -32,12 +42,13 @@ interface MetricGroup {
 }
 
 function computeMetrics(group: MetricGroup): { mae: number; rmse: number; bias: number; count: number } {
-  const n = group.errors.length;
-  if (n === 0) return { mae: 0, rmse: 0, bias: 0, count: 0 };
-  const bias = group.errors.reduce((s, e) => s + e, 0) / n;
-  const mae = group.absErrors.reduce((s, e) => s + e, 0) / n;
-  const rmse = Math.sqrt(group.sqErrors.reduce((s, e) => s + e, 0) / n);
-  return { mae, rmse, bias, count: n };
+  const count = group.errors.length;
+  if (count === 0) return { mae: 0, rmse: 0, bias: 0, count: 0 };
+
+  const bias = group.errors.reduce((sum, error) => sum + error, 0) / count;
+  const mae = group.absErrors.reduce((sum, error) => sum + error, 0) / count;
+  const rmse = Math.sqrt(group.sqErrors.reduce((sum, error) => sum + error, 0) / count);
+  return { mae, rmse, bias, count };
 }
 
 export interface BacktestResult {
@@ -50,10 +61,10 @@ export async function runDailyBacktest(targetDate?: Date): Promise<BacktestResul
   const dateStr = date.toISOString().split("T")[0];
 
   const pool = getPoolInstance();
-  let rows: any[] = [];
+  let rows: RawMeasurementRow[] = [];
 
   try {
-    const result = await pool.query(
+    const result = await pool.query<RawMeasurementRow>(
       `SELECT source, variable, error, absolute_error, squared_error,
               EXTRACT(HOUR FROM snapshot_id) AS hour,
               EXTRACT(MONTH FROM snapshot_id) AS month
@@ -70,62 +81,49 @@ export async function runDailyBacktest(targetDate?: Date): Promise<BacktestResul
     return { date: dateStr, rowsSaved: 0 };
   }
 
-  const measurements: RawMeasurement[] = rows.map((r: any) => ({
-    source: r.source,
-    variable: r.variable,
-    error: Number(r.error),
-    absolute_error: Number(r.absolute_error),
-    squared_error: Number(r.squared_error),
-    hour: Number(r.hour),
-    month: Number(r.month),
+  const measurements: RawMeasurement[] = rows.map((row) => ({
+    source: row.source,
+    variable: row.variable,
+    error: Number(row.error),
+    absolute_error: Number(row.absolute_error),
+    squared_error: Number(row.squared_error),
+    hour: Number(row.hour),
+    month: Number(row.month),
   }));
 
-  const breakdowns = [
-    { hourBand: "all", season: "all" },
-  ];
-
-  const sources = [...new Set(measurements.map((m) => m.source))];
-  const variables = [...new Set(measurements.map((m) => m.variable))];
+  const breakdowns = [{ hourBand: "all", season: "all" }] as const;
+  const sources = [...new Set(measurements.map((measurement) => measurement.source))];
+  const variables = [...new Set(measurements.map((measurement) => measurement.variable))];
   let rowsSaved = 0;
 
   for (const source of sources) {
     for (const variable of variables) {
-      const subset = measurements.filter(
-        (m) => m.source === source && m.variable === variable
-      );
+      const subset = measurements.filter((measurement) => measurement.source === source && measurement.variable === variable);
       if (subset.length === 0) continue;
 
-      for (const br of breakdowns) {
-        const filtered = br.hourBand === "all"
+      for (const breakdown of breakdowns) {
+        const filtered = breakdown.hourBand === "all"
           ? subset
-          : subset.filter((m) => getHourBand(m.hour) === br.hourBand);
+          : subset.filter((measurement) => getHourBand(measurement.hour) === breakdown.hourBand);
 
         if (filtered.length === 0) continue;
 
-        const group: MetricGroup = {
-          errors: filtered.map((m) => m.error),
-          absErrors: filtered.map((m) => m.absolute_error),
-          sqErrors: filtered.map((m) => m.squared_error),
-        };
-
-        const metrics = computeMetrics(group);
-
-        const hourBand = br.hourBand;
-        const seasons = br.season === "all"
-          ? [...new Set(filtered.map((m) => getSeason(m.month)))]
-          : [br.season];
+        const hourBand = breakdown.hourBand;
+        const seasons = breakdown.season === "all"
+          ? [...new Set(filtered.map((measurement) => getSeason(measurement.month)))]
+          : [breakdown.season];
 
         for (const season of seasons) {
           const seasonFiltered = season === "all"
             ? filtered
-            : filtered.filter((m) => getSeason(m.month) === season);
+            : filtered.filter((measurement) => getSeason(measurement.month) === season);
 
           if (seasonFiltered.length === 0) continue;
 
           const seasonGroup: MetricGroup = {
-            errors: seasonFiltered.map((m) => m.error),
-            absErrors: seasonFiltered.map((m) => m.absolute_error),
-            sqErrors: seasonFiltered.map((m) => m.squared_error),
+            errors: seasonFiltered.map((measurement) => measurement.error),
+            absErrors: seasonFiltered.map((measurement) => measurement.absolute_error),
+            sqErrors: seasonFiltered.map((measurement) => measurement.squared_error),
           };
 
           const seasonMetrics = computeMetrics(seasonGroup);
@@ -145,28 +143,28 @@ export async function runDailyBacktest(targetDate?: Date): Promise<BacktestResul
         }
       }
 
-      for (const hb of ["madrugada", "manana", "mediodia", "tarde", "noche"]) {
-        const hbFiltered = subset.filter((m) => getHourBand(m.hour) === hb);
-        if (hbFiltered.length < 2) continue;
+      for (const hourBand of ["madrugada", "manana", "mediodia", "tarde", "noche"] as const) {
+        const hourBandFiltered = subset.filter((measurement) => getHourBand(measurement.hour) === hourBand);
+        if (hourBandFiltered.length < 2) continue;
 
-        const hbGroup: MetricGroup = {
-          errors: hbFiltered.map((m) => m.error),
-          absErrors: hbFiltered.map((m) => m.absolute_error),
-          sqErrors: hbFiltered.map((m) => m.squared_error),
+        const hourBandGroup: MetricGroup = {
+          errors: hourBandFiltered.map((measurement) => measurement.error),
+          absErrors: hourBandFiltered.map((measurement) => measurement.absolute_error),
+          sqErrors: hourBandFiltered.map((measurement) => measurement.squared_error),
         };
 
-        const hbMetrics = computeMetrics(hbGroup);
+        const hourBandMetrics = computeMetrics(hourBandGroup);
 
         await saveValidationDaily({
           validationDate: dateStr,
           source,
           variable,
-          hourBand: hb,
+          hourBand,
           season: "all",
-          mae: Math.round(hbMetrics.mae * 1000) / 1000,
-          rmse: Math.round(hbMetrics.rmse * 1000) / 1000,
-          bias: Math.round(hbMetrics.bias * 1000) / 1000,
-          sampleCount: hbMetrics.count,
+          mae: Math.round(hourBandMetrics.mae * 1000) / 1000,
+          rmse: Math.round(hourBandMetrics.rmse * 1000) / 1000,
+          bias: Math.round(hourBandMetrics.bias * 1000) / 1000,
+          sampleCount: hourBandMetrics.count,
         });
         rowsSaved++;
       }

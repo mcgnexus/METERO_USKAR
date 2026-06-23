@@ -15,6 +15,7 @@ import NowcastPanel from '@/components/NowcastPanel';
 import RadarPanel from '@/components/RadarPanel';
 import WeatherStationPanel from '@/components/WeatherStationPanel';
 import { RaifPanel } from '@/components/llano/RaifPanel';
+import type { WeatherPayload } from '@/types/weather';
 
 const TemperatureChart = dynamic(() => import('@/components/dashboard/temperature-chart').then(m => ({ default: m.TemperatureChart })), {
   loading: () => (
@@ -41,8 +42,8 @@ function ErrorState({ message }: { message: string }) {
   );
 }
 
-export default function WeatherDashboard() {
-  const { data, error, loading } = useWeatherData('meteo-dashboard');
+export default function WeatherDashboard({ initialData = null }: { initialData?: WeatherPayload | null }) {
+  const { data, error, loading } = useWeatherData('meteo-dashboard', initialData);
   const [activeTab, setActiveTab] = useState<DashboardTab>('forecast');
 
   if (loading) return <LoadingState />;

@@ -1,7 +1,7 @@
-const CACHE = 'meteo-huescar-v2';
-const API_CACHE = 'meteo-huescar-api-v2';
-const STATIC_CACHE_TTL = 7 * 24 * 60 * 60 * 1000;
-const API_CACHE_TTL = 3 * 60 * 1000;
+const STATIC_CACHE = 'meteo-huescar-static-v4';
+const API_CACHE = 'meteo-huescar-api-v4';
+const API_CACHE_TTL = 10 * 60 * 1000;
+const OFFLINE_FALLBACK_URL = '/huescar';
 
 const PRECACHE_URLS = [
   '/',
@@ -18,7 +18,7 @@ const PRECACHE_URLS = [
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE).then((cache) => cache.addAll(PRECACHE_URLS))
+    caches.open(STATIC_CACHE).then((cache) => cache.addAll(PRECACHE_URLS))
   );
   self.skipWaiting();
 });
@@ -28,7 +28,7 @@ self.addEventListener('activate', (event) => {
     caches.keys().then((keys) =>
       Promise.all(
         keys
-          .filter((key) => key !== CACHE && key !== API_CACHE)
+          .filter((key) => key !== STATIC_CACHE && key !== API_CACHE)
           .map((key) => caches.delete(key))
       )
     )
@@ -40,7 +40,7 @@ self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  if (url.origin !== self.location.origin) return;
+  if (request.method !== 'GET' || url.origin !== self.location.origin) return;
 
   if (url.pathname.startsWith('/api/weather/')) {
     event.respondWith(networkFirst(request, API_CACHE, API_CACHE_TTL));
@@ -53,12 +53,12 @@ self.addEventListener('fetch', (event) => {
     request.destination === 'image' ||
     request.destination === 'font'
   ) {
-    event.respondWith(cacheFirst(request, CACHE));
+    event.respondWith(cacheFirst(request, STATIC_CACHE));
     return;
   }
 
   if (request.mode === 'navigate') {
-    event.respondWith(networkFirstWithOffline(request, CACHE, STATIC_CACHE_TTL));
+    event.respondWith(navigationNetworkFirst(request));
     return;
   }
 
@@ -70,10 +70,7 @@ async function networkFirst(request, cacheName, ttl) {
   try {
     const response = await fetch(request);
     if (response.ok) {
-      const cloned = response.clone();
-      const headers = new Headers(cloned.headers);
-      headers.append('sw-cached-at', String(Date.now()));
-      cache.put(request, new Response(cloned.body, { status: cloned.status, statusText: cloned.statusText, headers }));
+      await cache.put(request, withCacheTimestamp(response));
     }
     return response;
   } catch {
@@ -86,21 +83,20 @@ async function networkFirst(request, cacheName, ttl) {
   }
 }
 
-async function networkFirstWithOffline(request, cacheName, ttl) {
-  const cache = await caches.open(cacheName);
+async function navigationNetworkFirst(request) {
+  const cache = await caches.open(STATIC_CACHE);
   try {
     const response = await fetch(request);
     if (response.ok) {
-      cache.put(request, response.clone());
+      await cache.put(request, withCacheTimestamp(response));
     }
     return response;
   } catch {
     const cached = await cache.match(request);
     if (cached) {
-      const cachedTime = parseInt(cached.headers.get('sw-cached-at') || '0', 10);
-      if (Date.now() - cachedTime < ttl) return cached;
+      return cached;
     }
-    return await cache.match('/');
+    return (await cache.match(OFFLINE_FALLBACK_URL)) || Response.error();
   }
 }
 
@@ -111,13 +107,60 @@ async function cacheFirst(request, cacheName) {
   try {
     const response = await fetch(request);
     if (response.ok) {
-      const cloned = response.clone();
-      const headers = new Headers(cloned.headers);
-      headers.append('sw-cached-at', String(Date.now()));
-      cache.put(request, new Response(cloned.body, { status: cloned.status, statusText: cloned.statusText, headers }));
+      await cache.put(request, withCacheTimestamp(response));
     }
     return response;
   } catch {
     return new Response('Sin conexión', { status: 503 });
   }
 }
+
+function withCacheTimestamp(response) {
+  const cloned = response.clone();
+  const headers = new Headers(cloned.headers);
+  headers.set('sw-cached-at', String(Date.now()));
+  return new Response(cloned.body, {
+    status: cloned.status,
+    statusText: cloned.statusText,
+    headers,
+  });
+}
+
+self.addEventListener('push', (event) => {
+  let payload = { title: 'Meteo Huéscar', body: '', url: '/huescar' };
+  try {
+    if (event.data) payload = { ...payload, ...event.data.json() };
+  } catch {
+    if (event.data) payload.body = event.data.text();
+  }
+
+  const options = {
+    body: payload.body,
+    icon: '/icons/icon-192.png',
+    badge: '/icons/icon-192-maskable.png',
+    tag: payload.tag || 'meteo-huescar',
+    renotify: true,
+    data: { url: payload.url || '/huescar' },
+    vibrate: payload.vibrate || [200, 100, 200],
+  };
+
+  event.waitUntil(self.registration.showNotification(payload.title, options));
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const targetUrl = event.notification.data?.url || '/huescar';
+
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      for (const client of clientList) {
+        if (client.url.includes(targetUrl) && 'focus' in client) {
+          return client.focus();
+        }
+      }
+      if (self.clients.openWindow) {
+        return self.clients.openWindow(targetUrl);
+      }
+    })
+  );
+});

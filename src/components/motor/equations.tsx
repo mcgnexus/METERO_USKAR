@@ -1,6 +1,6 @@
 'use client';
 
-import { FormulaChip, fmtNumber, KpiCard } from '@/components/motor/atoms';
+import { FormulaChip, fmtNumber } from '@/components/motor/atoms';
 import type { ClimateCalibrationPayload } from '@/types/climate';
 
 export function EquationsBox({ data }: { data: ClimateCalibrationPayload }) {

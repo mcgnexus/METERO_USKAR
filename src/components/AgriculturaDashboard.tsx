@@ -6,6 +6,8 @@ import { buildAlarms } from '@/components/llano/alarms-logic';
 import { PulseHero } from '@/components/llano/hero';
 import { AgricultureSection } from '@/components/llano/agriculture';
 import { RaifPanel } from '@/components/llano/RaifPanel';
+import type { ClimateCalibrationPayload } from '@/types/climate';
+import type { WeatherPayload } from '@/types/weather';
 
 function LoadingState() {
   return (
@@ -24,9 +26,15 @@ function ErrorState({ message }: { message: string }) {
   );
 }
 
-export default function AgriculturaDashboard() {
-  const climate = useClimateCalibration('agri-pulse-climate');
-  const weather = useWeatherData('agri-pulse-weather');
+export default function AgriculturaDashboard({
+  initialClimateData = null,
+  initialWeatherData = null,
+}: {
+  initialClimateData?: ClimateCalibrationPayload | null;
+  initialWeatherData?: WeatherPayload | null;
+}) {
+  const climate = useClimateCalibration('agri-pulse-climate', initialClimateData);
+  const weather = useWeatherData('agri-pulse-weather', initialWeatherData);
 
   if (climate.loading || weather.loading) {
     return <LoadingState />;

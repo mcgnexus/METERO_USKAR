@@ -2,6 +2,7 @@
 
 import { Bar, Line } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, PointElement, LineElement, Tooltip, Legend, Filler } from 'chart.js';
+import type { WeatherPayload } from '@/types/weather';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, PointElement, LineElement, Tooltip, Legend, Filler);
 
@@ -13,17 +14,17 @@ function ChartBox({ height, children }: { height: number; children: React.ReactN
   return <div className="relative overflow-hidden" style={{ height }}>{children}</div>;
 }
 
-export default function WaterChart({ currentData }: { currentData: any }) {
+export default function WaterChart({ currentData }: { currentData: WeatherPayload | null | undefined }) {
   const daily = currentData?.daily;
   const hourly = currentData?.hourly;
 
-  const labels = daily?.time?.map(fmtDay) ?? [];
+  const labels = daily?.time.map(fmtDay) ?? [];
   const precip = daily?.precipitationSumMm ?? [];
   const prob = daily?.precipitationProbabilityPct ?? [];
 
-  const hourLabels = hourly?.time?.slice(0, 72).map((t: string) =>
-    new Date(t).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })) ?? [];
-  const humidities = hourly?.humidityPct?.slice(0, 72) ?? [];
+  const hourLabels = hourly?.time.slice(0, 72).map((time) =>
+    new Date(time).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })) ?? [];
+  const humidities = hourly?.humidityPct.slice(0, 72) ?? [];
 
   const hasPrecip = labels.length > 0 && precip.length > 0;
   const hasHum = hourLabels.length > 0 && humidities.length > 0;
@@ -33,7 +34,7 @@ export default function WaterChart({ currentData }: { currentData: any }) {
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="text-xs font-bold uppercase tracking-[0.18em] text-sky-700">Agua</p>
-          <h2 className="mt-1 text-2xl font-black text-slate-950">Precipitación y humedad</h2>
+          <h2 className="mt-1 text-2xl font-black text-slate-950">Precipitacion y humedad</h2>
           <p className="mt-1 text-sm text-slate-600">Acumulados diarios y humedad relativa.</p>
         </div>
       </div>
@@ -41,7 +42,7 @@ export default function WaterChart({ currentData }: { currentData: any }) {
       {hasPrecip && (
         <div className="mt-5 grid gap-4 lg:grid-cols-2">
           <div>
-            <p className="mb-2 text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Precipitación (mm)</p>
+            <p className="mb-2 text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Precipitacion (mm)</p>
             <ChartBox height={224}>
               <Bar
                 data={{
@@ -104,7 +105,7 @@ export default function WaterChart({ currentData }: { currentData: any }) {
 
       {hasHum && (
         <div className="mt-6">
-          <p className="mb-2 text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Humedad relativa (%) — 72 horas</p>
+          <p className="mb-2 text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Humedad relativa (%) â€” 72 horas</p>
           <ChartBox height={224}>
             <Line
               data={{

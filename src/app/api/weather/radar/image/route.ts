@@ -9,7 +9,6 @@ const CACHE_TTL_MS = 8 * 60 * 1000; // 8 minutos (AEMET actualiza cada ~10 min)
  * En producción los módulos no se reinician, pero globalThis sigue siendo la forma correcta.
  */
 declare global {
-  // eslint-disable-next-line no-var
   var __radarCache: {
     buffer: Buffer | null;
     contentType: string;

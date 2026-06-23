@@ -661,8 +661,8 @@ function statusLabel(status: CropStatus): string {
   return 'No recomendado';
 }
 
-function CropIcon({ crop, size = 'md' }: { crop: CropProfile; size?: 'md' | 'lg' }) {
-  const className = size === 'lg' ? 'h-14 w-14' : 'h-8 w-8';
+function CropIcon({ crop, size = 'md' }: { crop: CropProfile; size?: 'sm' | 'md' | 'lg' }) {
+  const className = size === 'lg' ? 'h-14 w-14' : size === 'sm' ? 'h-6 w-6' : 'h-8 w-8';
 
   if (crop.name === 'Almendro') {
     return (
@@ -1097,38 +1097,40 @@ export function CropRequirements({ agricultural, soilTemp, frostRisk, et0Cumulat
         </div>
       </div>
 
-      <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+      <div className="mt-4 grid grid-cols-[repeat(auto-fit,minmax(min(100%,220px),1fr))] gap-3">
         {assessments.map((a) => (
           <article
             key={a.crop.name}
-            className={`cursor-pointer rounded-[20px] border p-4 transition-all hover:shadow-lg ${statusTone(a.status)}`}
+            className={`cursor-pointer rounded-[20px] border p-3 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md sm:p-4 ${statusTone(a.status)}`}
             onClick={() => setExpandedCrop(a.crop.name)}
           >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <CropIcon crop={a.crop} />
-                <div>
-                  <p className="text-sm font-black text-slate-950">{a.crop.name}</p>
-                </div>
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex min-w-0 items-center gap-2">
+                <CropIcon crop={a.crop} size="sm" />
+                <p className="truncate text-[13px] font-black leading-tight text-slate-950 sm:text-sm">
+                  {a.crop.name}
+                </p>
               </div>
-              <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${statusBadge(a.status)}`}>
+              <span className={`shrink-0 rounded-full px-2 py-0.5 text-[9px] font-bold ${statusBadge(a.status)}`}>
                 {statusLabel(a.status)}
               </span>
             </div>
 
-            <div className="mt-3 space-y-1 text-xs text-slate-700">
-              <p>
-                <span className="font-bold">Suelo:</span> {fmtN(soilTemp, 1)}°C / mín {a.crop.soilTempMinC}°C
+            <div className="mt-3 space-y-2 text-xs leading-5 text-slate-700">
+              <p className="flex items-center justify-between gap-3 rounded-xl bg-white/70 px-3 py-2">
+                <span className="font-bold text-slate-900">Suelo</span>
+                <span className="text-right">{fmtN(soilTemp, 1)}°C / mín {a.crop.soilTempMinC}°C</span>
               </p>
               {a.currentStage && (
-                <p>
-                  <span className="font-bold">Etapa:</span> {a.currentStage.name}
+                <p className="flex items-start justify-between gap-3 rounded-xl bg-white/70 px-3 py-2">
+                  <span className="font-bold text-slate-900">Etapa</span>
+                  <span className="text-right">{a.currentStage.name}</span>
                 </p>
               )}
               {a.isIrrigationSeason && a.irrigationLitersM2 !== null && (
-                <p className="mt-2 rounded-lg bg-sky-50 p-2">
-                  <span className="font-bold text-sky-900">Riego:</span>
-                  <span className="ml-1 text-sky-700">
+                <p className="flex items-center justify-between gap-3 rounded-xl bg-sky-50 px-3 py-2 text-sky-800">
+                  <span className="font-bold text-sky-900">Riego</span>
+                  <span className="text-right font-semibold">
                     {a.irrigationLitersM2 > 0
                       ? `${a.irrigationLitersM2.toFixed(1)} L/m²`
                       : 'Lluvia suficiente'}
@@ -1136,8 +1138,9 @@ export function CropRequirements({ agricultural, soilTemp, frostRisk, et0Cumulat
                 </p>
               )}
               {!a.isIrrigationSeason && (
-                <p className="mt-2 rounded-lg bg-slate-100 p-2 text-slate-600">
-                  <span className="font-bold">Dormancia</span>
+                <p className="flex items-center justify-between gap-3 rounded-xl bg-slate-100 px-3 py-2 text-slate-600">
+                  <span className="font-bold text-slate-900">Dormancia</span>
+                  <span className="text-right">Sin riego ahora</span>
                 </p>
               )}
             </div>

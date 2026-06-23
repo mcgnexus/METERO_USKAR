@@ -67,9 +67,6 @@ export async function fetchComarcaWeather(aemetObs: SourceObservation | null): P
     const spatialDeltaHum = anchorObs && forecast
       ? forecast.humidityPct - anchorObs.humidityPct
       : 0;
-    const spatialDeltaWind = anchorObs && forecast
-      ? forecast.windSpeedKmh - anchorObs.windSpeedKmh
-      : 0;
     const spatialDeltaPrecip = anchorObs && forecast
       ? forecast.precipitationMm - anchorObs.precipitationMm
       : 0;

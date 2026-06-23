@@ -62,7 +62,6 @@ function classifyRelief(grid: number[][], centerElev: number): ReliefData {
     microclimate = "MIXED_RELIEF";
   }
 
-  const centerCol = grid[1][1];
   const dx = grid[1][2] - grid[1][0];
   const dy = grid[0][1] - grid[2][1];
   const slope = dx !== 0 || dy !== 0 ? (Math.sqrt(dx * dx + dy * dy) / (GRID_SPACING * 111320)) * 100 : 0;

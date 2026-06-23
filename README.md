@@ -1,36 +1,74 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Meteo Huéscar
 
-## Getting Started
+Aplicación Next.js para observación y estimación meteorológica local de Huéscar y su entorno, con foco en microclima, uso móvil y producto municipal/agro.
 
-First, run the development server:
+## Stack
+
+- Next.js 16 App Router
+- React 19
+- TypeScript
+- Tailwind CSS 4
+- Vitest
+
+## Rutas principales
+
+- `/huescar`: portada móvil y resumen local
+- `/huescar/agricultura`: capa agronómica
+- `/huescar/visualizacion`: gráficas y series
+- `/meteo`: panel meteorológico general
+- `/motor-climatico`: transparencia del modelo local
+- `/admin`: consola operativa
+
+## Arquitectura
+
+- `src/app`: rutas, layouts y endpoints API
+- `src/components`: dashboards y paneles UI
+- `src/hooks`: consumo cliente con caché de sesión
+- `src/services`: fusión de fuentes, correcciones y lógica meteorológica
+- `src/lib`: utilidades, caché en memoria y persistencia
+- `public/sw.js`: PWA y estrategia offline
+
+## Fuentes de datos
+
+- AEMET
+- Open-Meteo
+- Miniestaciones locales
+- Radar y nowcast
+- RIA y servicios auxiliares del modelo
+
+## Comandos
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm run build
+npm run test
+npm exec eslint src
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Variables de entorno
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Revisa `.env.example`. Las más relevantes para ejecutar el modelo completo son:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- `AEMET_API_KEY`
+- `AEMET_TIMEOUT_MS`
+- `GROUND_TRUTH_NODE_CODE`
+- credenciales de base de datos y persistencia local
 
-## Learn More
+## Estrategia de renderizado
 
-To learn more about Next.js, take a look at the following resources:
+- La home de `/huescar` hidrata datos iniciales en servidor para reducir espera en móvil.
+- Los hooks cliente reutilizan `sessionStorage` para evitar refetch inmediato.
+- La API `/api/weather/current` devuelve `503` cuando no hay datos operativos, en vez de inventar ceros.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Offline y PWA
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- Precarga de rutas clave e iconos
+- `network-first` para `/api/weather/*`
+- `network-first` para navegación con fallback offline a `/huescar`
+- `cache-first` para assets estáticos
 
-## Deploy on Vercel
+## Estado actual
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Build de producción operativa
+- Suite de tests con Vitest
+- Deuda de lint todavía existente en áreas antiguas del proyecto, sobre todo tipado `any` y algunos componentes legacy

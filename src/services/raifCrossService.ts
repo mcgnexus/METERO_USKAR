@@ -15,11 +15,6 @@ interface WeatherContext {
   daily: DailyWeather;
 }
 
-function avg(arr: number[]): number {
-  if (!arr.length) return 0;
-  return arr.reduce((a, b) => a + b, 0) / arr.length;
-}
-
 function hoursAbove(hourly: HourlyWeather, hoursAhead: number, predicate: (t: number, h: number, p: number) => boolean): number {
   let count = 0;
   for (let i = 0; i < Math.min(hoursAhead, hourly.time.length); i++) {
@@ -32,7 +27,7 @@ function evaluateMildiu(ctx: WeatherContext): RaifCrossEvaluation {
   const hum = ctx.current.humidityPct;
   const temp = ctx.current.temperatureC;
   const rainToday = ctx.daily.precipitationSumMm[0] ?? 0;
-  const humAbove90 = hoursAbove(ctx.hourly, 24, (_t, h, _p) => h > 90);
+  const humAbove90 = hoursAbove(ctx.hourly, 24, (_temperature, humidity) => humidity > 90);
   const favorable = hum > 90 && temp >= 15 && temp <= 25 && (rainToday > 0 || humAbove90 >= 6);
   const moderate = hum > 85 && temp >= 10 && temp <= 28;
 
@@ -56,7 +51,7 @@ function evaluateMildiu(ctx: WeatherContext): RaifCrossEvaluation {
 function evaluateCribadoAlmendro(ctx: WeatherContext): RaifCrossEvaluation {
   const hum = ctx.current.humidityPct;
   const temp = ctx.current.temperatureC;
-  const humContinuous = hoursAbove(ctx.hourly, 24, (_t, h, _p) => h > 70);
+  const humContinuous = hoursAbove(ctx.hourly, 24, (_temperature, humidity) => humidity > 70);
   const tempOk = temp >= 20 && temp <= 25;
   const favorable = humContinuous >= 8 && tempOk;
   const moderate = humContinuous >= 4 && temp >= 15 && temp <= 28;

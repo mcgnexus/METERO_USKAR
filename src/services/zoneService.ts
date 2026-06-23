@@ -122,10 +122,6 @@ export async function fetchZoneWeather(aemetObs: SourceObservation | null): Prom
     const spatialDeltaHum = anchorObs && forecast
       ? forecast.humidityPct - anchorObs.humidityPct
       : 0;
-    const spatialDeltaWind = anchorObs && forecast
-      ? forecast.windSpeedKmh - anchorObs.windSpeedKmh
-      : 0;
-
     const baseTemp = aemetObs
       ? aemetObs.temperatureC + spatialDeltaTemp
       : (forecast?.temperatureC ?? 0);
@@ -158,8 +154,12 @@ export async function fetchZoneWeather(aemetObs: SourceObservation | null): Prom
 
     const mod = getZoneModifier(zone.type, isNight);
 
-    let finalTemp = corrected.temperatureC + vegCorrections.temperatureAdjustmentC + mod.tempAdjC;
-    let finalDew = vegCorrections.dewPointShiftC + mod.dewShiftC;
+    const urbanMicroGradientC = zone.type === "URBAN"
+      ? (zone.elevation - HUESCAR_COORDS.elevation) * 0.0065
+      : 0;
+
+    let finalTemp = corrected.temperatureC + vegCorrections.temperatureAdjustmentC + mod.tempAdjC + urbanMicroGradientC;
+    const finalDew = vegCorrections.dewPointShiftC + mod.dewShiftC;
     let finalHum: number;
 
     const tdBase = dewPoint(corrected.temperatureC, corrected.humidityPct);

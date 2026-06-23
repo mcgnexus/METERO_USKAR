@@ -1,5 +1,12 @@
 import { NextResponse } from "next/server";
 
+interface StationHistoryReading {
+  measured_at: string;
+  temperature: number | null;
+  humidity: number | null;
+  pressure: number | null;
+}
+
 export async function GET(): Promise<NextResponse> {
   const dbUrl = process.env.STATIONS_DATABASE_URL;
   if (!dbUrl) {
@@ -10,7 +17,7 @@ export async function GET(): Promise<NextResponse> {
     const { neon } = await import("@neondatabase/serverless");
     const sql = neon(dbUrl);
 
-    const history: any = await sql.query(`
+    const history = await sql.query(`
       SELECT
         sr.measured_at,
         sr.air_temp_c AS temperature,
@@ -24,7 +31,9 @@ export async function GET(): Promise<NextResponse> {
       LIMIT 48
     `);
 
-    const rows = Array.isArray(history) ? history : history?.rows ?? [];
+    const rows = Array.isArray(history)
+      ? (history as StationHistoryReading[])
+      : (((history as { rows?: StationHistoryReading[] } | null)?.rows) ?? []);
     return NextResponse.json({ readings: rows.reverse() });
   } catch {
     return NextResponse.json({ readings: [], error: "Error fetching station history" });

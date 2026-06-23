@@ -5,6 +5,9 @@ import { useWeatherData } from '@/hooks/useWeatherData';
 import { useForecast } from '@/hooks/useForecast';
 import { useClimateCalibration } from '@/hooks/useClimateCalibration';
 import { useApiData } from '@/hooks/useApiData';
+import type { ZoneEstimation, WeatherPayload } from '@/types/weather';
+import type { ClimateCalibrationPayload } from '@/types/climate';
+import type { ForecastPayload } from '@/types/forecast';
 
 const MiniStationChart = dynamic(() => import('@/components/visualizacion/MiniStationChart'));
 const CurrentGauges = dynamic(() => import('@/components/visualizacion/CurrentGauges'));
@@ -16,19 +19,21 @@ const ZoneChart = dynamic(() => import('@/components/visualizacion/ZoneChart'));
 const ConfidenceGauges = dynamic(() => import('@/components/visualizacion/ConfidenceGauges'));
 const BiasComparisonChart = dynamic(() => import('@/components/visualizacion/BiasComparisonChart'));
 
-function ChartFallback() {
-  return (
-    <div className="surface-card flex min-h-[280px] items-center justify-center rounded-[28px]">
-      <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-slate-400" />
-    </div>
-  );
-}
-
-export default function VisualizacionDashboard() {
-  const { data: currentData, loading: loadingCurrent } = useWeatherData();
-  const { data: forecastData, loading: loadingForecast } = useForecast(7);
-  const { data: calibrationData } = useClimateCalibration();
-  const zones = useApiData<any[]>('/api/weather/zones');
+export default function VisualizacionDashboard({
+  initialCurrentData = null,
+  initialForecastData = null,
+  initialCalibrationData = null,
+  initialZonesData = null,
+}: {
+  initialCurrentData?: WeatherPayload | null;
+  initialForecastData?: ForecastPayload | null;
+  initialCalibrationData?: ClimateCalibrationPayload | null;
+  initialZonesData?: ZoneEstimation[] | null;
+}) {
+  const { data: currentData, loading: loadingCurrent } = useWeatherData('visualizacion-current', initialCurrentData);
+  const { data: forecastData, loading: loadingForecast } = useForecast(7, 'visualizacion-forecast', initialForecastData);
+  const { data: calibrationData } = useClimateCalibration('visualizacion-climate', initialCalibrationData);
+  const zones = useApiData<ZoneEstimation[]>('/api/weather/zones', 'visualizacion-zones', initialZonesData);
 
   const loading = loadingCurrent || loadingForecast;
 

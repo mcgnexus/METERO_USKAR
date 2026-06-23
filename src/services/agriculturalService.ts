@@ -2,8 +2,7 @@ import type { HourlyWeather, DailyWeather, AgriculturalData } from "@/types/weat
 
 export function computeAgriculturalData(
   hourly: HourlyWeather,
-  daily: DailyWeather,
-  currentTemp: number
+  daily: DailyWeather
 ): AgriculturalData {
   const et0CumulativeMm = daily.et0Mm.reduce((sum, v) => sum + v, 0);
 

@@ -3,6 +3,7 @@
 import { Doughnut } from 'react-chartjs-2';
 import { Chart as ChartJS, ArcElement, Tooltip } from 'chart.js';
 import { dewPoint } from '@/lib/dewPoint';
+import type { WeatherPayload } from '@/types/weather';
 
 ChartJS.register(ArcElement, Tooltip);
 
@@ -31,7 +32,7 @@ function Gauge({ value, label, unit, min, max, color, decimals = 1 }: { value: n
           options={{ responsive: true, maintainAspectRatio: true, cutout: '75%', plugins: { tooltip: { enabled: false } } }}
         />
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-lg font-black text-slate-950 sm:text-xl">{value !== null ? safeValue.toFixed(decimals) : '—'}</span>
+          <span className="text-lg font-black text-slate-950 sm:text-xl">{value !== null ? safeValue.toFixed(decimals) : 'â€”'}</span>
           <span className="text-[9px] font-bold text-slate-500">{unit}</span>
         </div>
       </div>
@@ -39,12 +40,14 @@ function Gauge({ value, label, unit, min, max, color, decimals = 1 }: { value: n
   );
 }
 
-export default function CurrentGauges({ data }: { data: any }) {
+export default function CurrentGauges({ data }: { data: WeatherPayload | null | undefined }) {
   if (!data?.current) return null;
-  const c = data.current;
-  const h = c.humidityPct ?? null;
-  const dew = c.temperatureC != null && h != null
-    ? dewPoint(c.temperatureC, h) : null;
+  const current = data.current;
+  const humidity = current.humidityPct ?? null;
+  const dew = current.temperatureC != null && humidity != null
+    ? dewPoint(current.temperatureC, humidity)
+    : null;
+
   return (
     <section className="surface-card-strong rounded-[28px] p-5 sm:p-6">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
@@ -55,10 +58,10 @@ export default function CurrentGauges({ data }: { data: any }) {
         </div>
       </div>
       <div className="mt-6 grid grid-cols-2 gap-6 sm:grid-cols-4">
-        <Gauge value={c.temperatureC ?? null} label="Temperatura" unit="°C" min={-10} max={45} color={COLORS.temp} />
-        <Gauge value={h} label="Humedad" unit="%" min={0} max={100} color={COLORS.hum} decimals={0} />
-        <Gauge value={c.windSpeedKmh ?? null} label="Viento" unit="km/h" min={0} max={80} color={COLORS.wind} />
-        <Gauge value={dew} label="Punto de rocío" unit="°C" min={-15} max={30} color={COLORS.pressure} />
+        <Gauge value={current.temperatureC ?? null} label="Temperatura" unit="C" min={-10} max={45} color={COLORS.temp} />
+        <Gauge value={humidity} label="Humedad" unit="%" min={0} max={100} color={COLORS.hum} decimals={0} />
+        <Gauge value={current.windSpeedKmh ?? null} label="Viento" unit="km/h" min={0} max={80} color={COLORS.wind} />
+        <Gauge value={dew} label="Punto de rocio" unit="C" min={-15} max={30} color={COLORS.pressure} />
       </div>
       <p className="mt-4 text-[10px] text-slate-400">Fuente: /api/weather/current &mdash; Open-Meteo + AEMET</p>
     </section>

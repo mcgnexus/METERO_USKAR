@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { computeClimateCalibration } from "@/services/climateCalibrationService";
+import { getClimateCalibrationPayload } from "@/services/climateCalibrationPayloadService";
 import { initializeDatabase, saveModelResidual, upsertCurrentWeatherLlano } from "@/lib/weatherStore";
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
-  const result = await computeClimateCalibration();
+  const result = await getClimateCalibrationPayload();
   const persist = request.nextUrl.searchParams.get("persist") === "1";
 
   if (persist) {

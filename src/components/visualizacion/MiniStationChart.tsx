@@ -1,12 +1,24 @@
 'use client';
 
+import { useMemo, useState } from 'react';
 import { useClimateCalibration } from '@/hooks/useClimateCalibration';
 import { useApiData } from '@/hooks/useApiData';
-import { Line, Bar } from 'react-chartjs-2';
+import type { ClimateNode } from '@/types/climate';
+import { Line } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement, Tooltip, Legend, Filler } from 'chart.js';
-import { useMemo } from 'react';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Tooltip, Legend, Filler);
+
+interface StationHistoryReading {
+  measured_at: string;
+  temperature: number | null;
+  humidity: number | null;
+  pressure: number | null;
+}
+
+interface StationHistoryPayload {
+  readings: StationHistoryReading[];
+}
 
 function ChartBox({ height, children }: { height: number; children: React.ReactNode }) {
   return <div className="relative overflow-hidden" style={{ height }}>{children}</div>;
@@ -23,22 +35,23 @@ function fmtDayHour(iso: string): string {
 
 export default function MiniStationChart() {
   const { data: climate } = useClimateCalibration();
-  const station = climate?.nodes?.localStation;
-  const { data: historyData } = useApiData<{ readings: any[] }>('/api/weather/stations/history', 'station-history');
-  const readings = historyData?.readings ?? [];
+  const station: ClimateNode | null = climate?.nodes?.localStation ?? null;
+  const { data: historyData } = useApiData<StationHistoryPayload>('/api/weather/stations/history', 'station-history');
+  const readings = useMemo(() => historyData?.readings ?? [], [historyData?.readings]);
+  const [nowMs] = useState(() => Date.now());
 
   const stationAgeMin = station?.time
-    ? Math.max(0, Math.round((Date.now() - new Date(station.time).getTime()) / 60000))
+    ? Math.max(0, Math.round((nowMs - new Date(station.time).getTime()) / 60000))
     : null;
   const hasStation = station?.status === 'OK' && stationAgeMin !== null && stationAgeMin < 180;
   const isStale = station?.status === 'OK' && stationAgeMin !== null && stationAgeMin >= 180;
   const hasHistory = readings.length >= 2;
 
-  const labels = useMemo(() => readings.map((r: any) => fmtDayHour(r.measured_at)), [readings]);
-  const temps = useMemo(() => readings.map((r: any) => r.temperature), [readings]);
-  const hums = useMemo(() => readings.map((r: any) => r.humidity), [readings]);
-  const pressures = useMemo(() => readings.map((r: any) => r.pressure), [readings]);
-  const hasPressure = pressures.some((p: any) => p != null);
+  const labels = useMemo(() => readings.map((reading) => fmtDayHour(reading.measured_at)), [readings]);
+  const temps = useMemo(() => readings.map((reading) => reading.temperature), [readings]);
+  const hums = useMemo(() => readings.map((reading) => reading.humidity), [readings]);
+  const pressures = useMemo(() => readings.map((reading) => reading.pressure), [readings]);
+  const hasPressure = pressures.some((pressure) => pressure != null);
 
   return (
     <section className="surface-card-strong rounded-[28px] p-5 sm:p-6">

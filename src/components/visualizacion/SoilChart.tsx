@@ -2,6 +2,7 @@
 
 import { Line, Bar } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement, Tooltip, Legend, Filler } from 'chart.js';
+import type { ForecastPayload } from '@/hooks/useForecast';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Tooltip, Legend, Filler);
 
@@ -9,25 +10,25 @@ function ChartBox({ height, children }: { height: number; children: React.ReactN
   return <div className="relative overflow-hidden" style={{ height }}>{children}</div>;
 }
 
-export default function SoilChart({ forecastData }: { forecastData: any }) {
+export default function SoilChart({ forecastData }: { forecastData: ForecastPayload | null | undefined }) {
   const forecastDays = forecastData?.forecastDays ?? [];
-  const labels = forecastDays.map((d: any) =>
-    new Date(d.date).toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric' }));
-  const soil10 = forecastDays.map((d: any) => d.dailySummary?.soilTemp10cmMeanC);
-  const soil40 = forecastDays.map((d: any) => d.dailySummary?.soilTemp40cmMeanC);
-  const eto = forecastDays.map((d: any) => d.dailySummary?.et0TotalMm);
-  const radiation = forecastDays.map((d: any) => d.dailySummary?.radiationTotalMJm2);
+  const labels = forecastDays.map((day) =>
+    new Date(day.date).toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric' }));
+  const soil10 = forecastDays.map((day) => day.dailySummary?.soilTemp10cmMeanC);
+  const soil40 = forecastDays.map((day) => day.dailySummary?.soilTemp40cmMeanC);
+  const eto = forecastDays.map((day) => day.dailySummary?.et0TotalMm);
+  const radiation = forecastDays.map((day) => day.dailySummary?.radiationTotalMJm2);
 
-  const hasSoil = soil10.some((v: any) => v != null);
-  const hasEto = eto.some((v: any) => v != null);
-  const hasRad = radiation.some((v: any) => v != null);
+  const hasSoil = soil10.some((value) => value != null);
+  const hasEto = eto.some((value) => value != null);
+  const hasRad = radiation.some((value) => value != null);
 
   return (
     <section className="surface-card-strong rounded-[28px] p-5 sm:p-6">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-sky-700">Suelo y energía</p>
-          <h2 className="mt-1 text-2xl font-black text-slate-950">Temperatura del suelo, radiación y ETo</h2>
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-sky-700">Suelo y energia</p>
+          <h2 className="mt-1 text-2xl font-black text-slate-950">Temperatura del suelo, radiacion y ETo</h2>
           <p className="mt-1 text-sm text-slate-600">Datos diarios pronosticados (Open-Meteo corregido).</p>
         </div>
       </div>
@@ -72,7 +73,7 @@ export default function SoilChart({ forecastData }: { forecastData: any }) {
                 },
                 scales: {
                   x: { ticks: { font: { size: 10 } }, grid: { display: false } },
-                  y: { ticks: { font: { size: 10 } }, grid: { color: 'rgba(0,0,0,0.04)' }, title: { display: true, text: '°C', font: { size: 10 } } },
+                    y: { ticks: { font: { size: 10 } }, grid: { color: 'rgba(0,0,0,0.04)' }, title: { display: true, text: 'C', font: { size: 10 } } },
                 },
               }}
             />
@@ -83,7 +84,7 @@ export default function SoilChart({ forecastData }: { forecastData: any }) {
       <div className="mt-6 grid gap-6 lg:grid-cols-2">
         {hasEto && (
           <div>
-            <p className="mb-2 text-xs font-bold uppercase tracking-[0.12em] text-slate-500">ETo (mm/día)</p>
+            <p className="mb-2 text-xs font-bold uppercase tracking-[0.12em] text-slate-500">ETo (mm/dia)</p>
             <ChartBox height={192}>
               <Bar
                 data={{
@@ -113,13 +114,13 @@ export default function SoilChart({ forecastData }: { forecastData: any }) {
         )}
         {hasRad && (
           <div>
-            <p className="mb-2 text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Radiación solar (MJ/m²)</p>
+            <p className="mb-2 text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Radiacion solar (MJ/m2)</p>
             <ChartBox height={192}>
               <Bar
                 data={{
                   labels,
                   datasets: [{
-                    label: 'Radiación',
+                    label: 'Radiacion',
                     data: radiation,
                     backgroundColor: 'rgba(245,158,11,0.5)',
                     borderColor: '#f59e0b',

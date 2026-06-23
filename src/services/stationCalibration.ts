@@ -2,16 +2,15 @@ import {
   saveStationComparison,
   getRecentStationComparisons,
   upsertStationCalibration,
-  getStationCalibrations,
 } from "@/lib/weatherStore";
 
 interface StationReading {
   node_code?: string;
-  id?: string;
+  id?: string | number;
   temperature?: number;
   humidity?: number;
   measured_at?: string;
-  [key: string]: unknown;
+  updated_at?: string;
 }
 
 interface StationBias {

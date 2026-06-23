@@ -29,7 +29,7 @@ function trajectoryLabel(traj: string): { text: string; emoji: string } {
   }
 }
 
-export default function NowcastPanel({ nowcast, variant = 'neutral' }: Props) {
+export default function NowcastPanel({ nowcast }: Props) {
   const c = levelColors(nowcast.level);
   const traj = trajectoryLabel(nowcast.trajectory);
   const maxBarHeight = 60;

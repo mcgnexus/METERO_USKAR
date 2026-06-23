@@ -106,7 +106,7 @@ function parseAemetStation(raw: Record<string, unknown>): SourceObservation | nu
   return {
     source: "AEMET",
     stationId: effectiveId,
-    locationName: "Huéscar",
+    locationName: "Huéscar-Embalse de San Clemente",
     time: timeStr,
     observationPeriod: "current",
     dataAgeMinutes: 0,

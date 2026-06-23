@@ -1,9 +1,16 @@
-'use client';
-
 import Link from 'next/link';
 import AgriculturaDashboard from '@/components/AgriculturaDashboard';
+import { getClimateCalibrationPayload } from '@/services/climateCalibrationPayloadService';
+import { getCurrentWeatherPayload } from '@/services/currentWeatherService';
 
-export default function AgriculturaPage() {
+export const dynamic = 'force-dynamic';
+
+export default async function AgriculturaPage() {
+  const [climateResult, weatherResult] = await Promise.allSettled([
+    getClimateCalibrationPayload(),
+    getCurrentWeatherPayload(),
+  ]);
+
   return (
     <div className="min-h-screen py-6 sm:py-8">
       <div className="app-shell space-y-6">
@@ -18,7 +25,12 @@ export default function AgriculturaPage() {
             <Link href="/motor-climatico" className="rounded-full border border-slate-200 bg-white/70 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-white">Motor climático</Link>
           </div>
         </header>
-        <main><AgriculturaDashboard /></main>
+        <main>
+          <AgriculturaDashboard
+            initialClimateData={climateResult.status === 'fulfilled' ? climateResult.value : null}
+            initialWeatherData={weatherResult.status === 'fulfilled' ? weatherResult.value : null}
+          />
+        </main>
       </div>
     </div>
   );

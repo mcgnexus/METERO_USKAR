@@ -1,36 +1,26 @@
 import { NextResponse } from "next/server";
-import { aggregateWeather } from "@/services/weatherAggregator";
-import { fetchLightningData } from "@/services/lightningService";
-import { fetchRadarPrecipitation } from "@/services/radarService";
-import { fetchNowcast } from "@/services/nowcastService";
-import { HUESCAR_COORDS } from "@/lib/geo";
+import {
+  getCurrentWeatherPayload,
+  WeatherUnavailableError,
+} from "@/services/currentWeatherService";
 
 export async function GET(): Promise<NextResponse> {
-  const weather = await aggregateWeather();
+  try {
+    const payload = await getCurrentWeatherPayload();
+    const response = NextResponse.json(payload);
+    response.headers.set(
+      "Cache-Control",
+      "public, max-age=60, s-maxage=120, stale-while-revalidate=300"
+    );
+    return response;
+  } catch (error) {
+    const message = error instanceof WeatherUnavailableError
+      ? error.message
+      : "No se pudo obtener el tiempo actual.";
 
-  const lightning = await fetchLightningData(HUESCAR_COORDS.lat, HUESCAR_COORDS.lon, 20).catch(() => null);
-
-  const [radar, nowcast] = await Promise.all([
-    fetchRadarPrecipitation(HUESCAR_COORDS.lat, HUESCAR_COORDS.lon).catch(() => null),
-    fetchNowcast(
-      HUESCAR_COORDS.lat,
-      HUESCAR_COORDS.lon,
-      weather.current.windDirectionDeg ?? undefined,
-      lightning
-    ).catch(() => null),
-  ]);
-
-  const payload = {
-    ...weather,
-    lightning: lightning ?? undefined,
-    radar: radar ?? undefined,
-    nowcast: nowcast ?? undefined,
-  };
-
-  const response = NextResponse.json(payload);
-  response.headers.set(
-    "Cache-Control",
-    "public, max-age=60, s-maxage=120, stale-while-revalidate=300"
-  );
-  return response;
+    return NextResponse.json(
+      { error: message },
+      { status: 503, headers: { "Cache-Control": "no-store" } }
+    );
+  }
 }

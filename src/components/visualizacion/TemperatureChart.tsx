@@ -2,6 +2,7 @@
 
 import { Line } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Filler, Tooltip, Legend } from 'chart.js';
+import type { WeatherPayload } from '@/types/weather';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Filler, Tooltip, Legend);
 
@@ -17,14 +18,14 @@ function ChartBox({ height, children }: { height: number; children: React.ReactN
   return <div className="relative overflow-hidden" style={{ height }}>{children}</div>;
 }
 
-export default function TemperatureChart({ currentData }: { currentData: any }) {
+export default function TemperatureChart({ currentData }: { currentData: WeatherPayload | null | undefined }) {
   const hourly = currentData?.hourly;
   const daily = currentData?.daily;
 
-  const hourlyTimes = hourly?.time?.slice(0, 48) ?? [];
-  const hourlyTemps = hourly?.temperatureC?.slice(0, 48) ?? [];
+  const hourlyTimes = hourly?.time.slice(0, 48) ?? [];
+  const hourlyTemps = hourly?.temperatureC.slice(0, 48) ?? [];
 
-  const dailyLabels = daily?.time?.map(fmtDay) ?? [];
+  const dailyLabels = daily?.time.map(fmtDay) ?? [];
   const dailyMax = daily?.temperatureMaxC ?? [];
   const dailyMin = daily?.temperatureMinC ?? [];
 
@@ -35,8 +36,8 @@ export default function TemperatureChart({ currentData }: { currentData: any }) 
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="text-xs font-bold uppercase tracking-[0.18em] text-sky-700">Temperatura</p>
-          <h2 className="mt-1 text-2xl font-black text-slate-950">Evolución térmica</h2>
-          <p className="mt-1 text-sm text-slate-600">48 horas hora a hora + mín/máx diarias (7 días).</p>
+          <h2 className="mt-1 text-2xl font-black text-slate-950">Evolucion termica</h2>
+          <p className="mt-1 text-sm text-slate-600">48 horas hora a hora + min/max diarias (7 dias).</p>
         </div>
       </div>
 
@@ -45,16 +46,16 @@ export default function TemperatureChart({ currentData }: { currentData: any }) 
           <ChartBox height={288}>
             <Line
               data={{
-                labels: hourlyTimes.map((t: string) => fmtHour(t)),
+                labels: hourlyTimes.map(fmtHour),
                 datasets: [{
                   label: 'Temperatura',
                   data: hourlyTemps,
                   borderColor: '#f97316',
                   backgroundColor: (ctx) => {
-                    const g = ctx.chart.ctx.createLinearGradient(0, 0, 0, 300);
-                    g.addColorStop(0, 'rgba(249,115,22,0.3)');
-                    g.addColorStop(1, 'rgba(249,115,22,0.01)');
-                    return g;
+                    const gradient = ctx.chart.ctx.createLinearGradient(0, 0, 0, 300);
+                    gradient.addColorStop(0, 'rgba(249,115,22,0.3)');
+                    gradient.addColorStop(1, 'rgba(249,115,22,0.01)');
+                    return gradient;
                   },
                   fill: true,
                   tension: 0.3,
@@ -88,7 +89,7 @@ export default function TemperatureChart({ currentData }: { currentData: any }) 
                 labels: dailyLabels,
                 datasets: [
                   {
-                    label: 'Máxima',
+                    label: 'Maxima',
                     data: dailyMax,
                     borderColor: '#ef4444',
                     backgroundColor: 'rgba(239,68,68,0.08)',
@@ -99,7 +100,7 @@ export default function TemperatureChart({ currentData }: { currentData: any }) 
                     borderWidth: 2,
                   },
                   {
-                    label: 'Mínima',
+                    label: 'Minima',
                     data: dailyMin,
                     borderColor: '#3b82f6',
                     backgroundColor: 'rgba(59,130,246,0.08)',

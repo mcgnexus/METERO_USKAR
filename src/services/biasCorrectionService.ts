@@ -64,6 +64,7 @@ export interface CorrectedHour {
   solarRadiationWm2: number | null;
   directRadiationWm2: number | null;
   diffuseRadiationWm2: number | null;
+  windSpeed10mKmh: number | null;
   windSpeed2mKmh: number | null;
   cloudCoverPct: number | null;
   visibilityM: number | null;
@@ -128,8 +129,11 @@ export function correctForecastHour(raw: RawHour, bias: OpenMeteoBiasSet): Corre
   const correctedHum = raw.humidityPct !== null
     ? Math.min(100, Math.max(0, raw.humidityPct - bias.humidityAll))
     : null;
-  const correctedWind = raw.windSpeed10mKmh !== null
+  const correctedWind10m = raw.windSpeed10mKmh !== null
     ? Math.round((raw.windSpeed10mKmh - bias.windAll) * 100) / 100
+    : null;
+  const correctedWind2m = correctedWind10m !== null
+    ? Math.round(correctedWind10m * 0.748 * 100) / 100
     : null;
   const correctedRad = raw.solarRadiationWm2 !== null
     ? Math.max(0, raw.solarRadiationWm2 - bias.radiationAll)
@@ -145,7 +149,8 @@ export function correctForecastHour(raw: RawHour, bias: OpenMeteoBiasSet): Corre
     solarRadiationWm2: correctedRad,
     directRadiationWm2: raw.directRadiationWm2 ?? null,
     diffuseRadiationWm2: raw.diffuseRadiationWm2 ?? null,
-    windSpeed2mKmh: correctedWind,
+    windSpeed10mKmh: correctedWind10m,
+    windSpeed2mKmh: correctedWind2m,
     cloudCoverPct: raw.cloudCoverPct,
     visibilityM: raw.visibilityM ?? null,
     uvIndex: raw.uvIndex ?? null,

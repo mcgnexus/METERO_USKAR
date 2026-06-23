@@ -3,6 +3,10 @@
     {
       "path": "/api/cron/weather-capture",
       "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/cron/notify-alarms",
+      "schedule": "0 7 * * *"
     }
   ]
 }

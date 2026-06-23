@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { type PulseAlarm, levelBadge, levelClass, levelLabel, levelEmoji, sourceEmoji, audienceEmoji } from '@/components/llano/alarms-logic';
+import { type PulseAlarm, levelBadge, levelClass, levelLabel, levelEmoji, audienceEmoji } from '@/components/llano/alarms-logic';
 
 const SOURCE_META = {
   aemet: { label: '🏛️ AEMET', tone: 'bg-rose-100 text-rose-800', desc: 'Alerta oficial de la Agencia Estatal de Meteorología' },

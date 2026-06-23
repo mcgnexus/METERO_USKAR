@@ -141,12 +141,10 @@ export function Forecast5d({ forecast, daily }: { forecast: ForecastPayload | nu
         </span>
       </div>
 
-      <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+      <div className="mt-5 flex gap-2.5 overflow-x-auto pb-2 sm:grid sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5 sm:overflow-visible">
         {days.slice(0, 5).map((d) => {
           const min = d.dailySummary.tempMinC;
           const max = d.dailySummary.tempMaxC;
-          const radiation = d.dailySummary.radiationTotalMJm2;
-          const tempRange = min !== null && max !== null ? max - min : null;
           const dd = dailyDataFor(d.date);
           const wCode = dd?.weatherCode ?? null;
           const precipProb = dd?.precipProb ?? null;
@@ -161,14 +159,14 @@ export function Forecast5d({ forecast, daily }: { forecast: ForecastPayload | nu
               : 'Temperatura no disponible',
             metrics: [
               { label: 'Media térmica', value: d.dailySummary.tempMeanC !== null ? `${d.dailySummary.tempMeanC.toFixed(1)}°C` : 'Sin dato', tone: 'slate' },
-              { label: 'Amplitud', value: tempRange !== null ? `${tempRange.toFixed(1)}°C` : 'Sin dato', tone: tempRange !== null && tempRange >= 25 ? 'amber' : 'slate' },
+              { label: 'Amplitud', value: min !== null && max !== null ? `${(max - min).toFixed(1)}°C` : 'Sin dato', tone: min !== null && max !== null && max - min >= 25 ? 'amber' : 'slate' },
               { label: 'HR media', value: d.dailySummary.humidityMeanPct !== null ? `${d.dailySummary.humidityMeanPct.toFixed(0)}%` : 'Sin dato', tone: 'sky' },
               { label: 'Viento medio', value: d.dailySummary.windMeanKmh !== null ? `${d.dailySummary.windMeanKmh.toFixed(1)} km/h` : 'Sin dato', tone: 'slate' },
               { label: 'Rachas máx', value: windGust !== null ? `${windGust.toFixed(0)} km/h` : 'Sin dato', tone: windGust !== null && windGust >= 60 ? 'rose' : 'slate' },
               { label: 'Prob. lluvia', value: precipProb !== null ? `${precipProb.toFixed(0)}%` : 'Sin dato', tone: precipProb !== null && precipProb >= 50 ? 'sky' : 'slate' },
               { label: 'Lluvia', value: precipMm !== null ? `${precipMm.toFixed(1)} mm` : 'Sin dato', tone: 'sky' },
               { label: 'ET0', value: `${fmtN(d.dailySummary.et0TotalMm, 1)} mm`, tone: (d.dailySummary.et0TotalMm ?? 0) >= 5 ? 'amber' : 'emerald' },
-              { label: 'Radiación', value: radiation !== null ? `${radiation.toFixed(1)} MJ/m²` : 'Sin dato', tone: 'sky' },
+              { label: 'Radiación', value: d.dailySummary.radiationTotalMJm2 !== null ? `${d.dailySummary.radiationTotalMJm2.toFixed(1)} MJ/m²` : 'Sin dato', tone: 'sky' },
             ],
             sections: [
               {
@@ -185,8 +183,8 @@ export function Forecast5d({ forecast, daily }: { forecast: ForecastPayload | nu
               },
               {
                 title: 'Riesgo térmico',
-                emphasis: tempRange !== null && tempRange >= 25 ? 'Día con mucha oscilación térmica' : 'Oscilación térmica contenida',
-                body: tempRange !== null && tempRange >= 25
+                emphasis: min !== null && max !== null && max - min >= 25 ? 'Día con mucha oscilación térmica' : 'Oscilación térmica contenida',
+                body: min !== null && max !== null && max - min >= 25
                   ? 'Una amplitud alta puede combinar frío nocturno con estrés diurno. Vigilar cultivos recién trasplantados, floración y animales en exterior.'
                   : 'No se detecta una amplitud extrema. Aun así, revisar mínima si hay cultivos sensibles o zonas bajas con inversión térmica.',
               },
@@ -209,25 +207,17 @@ export function Forecast5d({ forecast, daily }: { forecast: ForecastPayload | nu
           };
           return (
             <ForecastClickable key={d.date} detail={detail} onOpen={setExpandedDetail}>
-              <article className="rounded-[22px] border border-slate-100 bg-slate-50 p-4 text-center">
-                <p className="text-xs font-bold uppercase tracking-[0.12em] text-slate-500">{dayLabel(d.date)}</p>
+              <article className="flex w-[110px] shrink-0 flex-col items-center rounded-[20px] border border-slate-100 bg-slate-50 p-3 text-center sm:w-full">
+                <p className="text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500">{dayLabel(d.date)}</p>
                 {wCode !== null && (
-                  <p className="mt-1 text-2xl">{weatherEmoji(wCode)}</p>
+                  <p className="mt-1 text-[1.6rem] leading-none">{weatherEmoji(wCode)}</p>
                 )}
-                <p className="mt-2 text-2xl font-black text-slate-950">
+                <p className="mt-1 text-lg font-black leading-tight text-slate-950">
                   {min !== null && max !== null ? `${min.toFixed(0)}° / ${max.toFixed(0)}°` : '—'}
                 </p>
-                <p className="mt-1 text-xs text-slate-600">
-                  Media {d.dailySummary.tempMeanC !== null ? `${d.dailySummary.tempMeanC.toFixed(1)}°C` : '—'}
-                </p>
-                {wCode !== null && (
-                  <p className="mt-1 text-[10px] leading-3 text-slate-500">{weatherCodeDescription(wCode)}</p>
-                )}
-                <div className="mt-2 space-y-0.5">
-                  <p className="text-[11px] font-bold text-sky-700">💧 {precipProb !== null ? `${precipProb.toFixed(0)}%` : '—'}{precipMm !== null && precipMm > 0 ? ` · ${precipMm.toFixed(1)}mm` : ''}</p>
-                  <p className="text-[11px] font-bold text-emerald-700">💨 {windGust !== null ? `${windGust.toFixed(0)} km/h` : '—'}</p>
-                  <p className="text-[11px] font-bold text-slate-600">HR: {d.dailySummary.humidityMeanPct !== null ? `${d.dailySummary.humidityMeanPct.toFixed(0)}%` : '—'}</p>
-                  <p className="text-[11px] font-bold text-emerald-700">ETo: {fmtN(d.dailySummary.et0TotalMm, 1)} mm</p>
+                <div className="mt-1.5 space-y-0.5">
+                  <p className="text-[11px] font-bold text-sky-700">💧 {precipProb !== null ? `${precipProb.toFixed(0)}%` : '—'}</p>
+                  <p className="text-[11px] font-bold text-slate-500">💨 {windGust !== null ? `${windGust.toFixed(0)}` : '—'}</p>
                 </div>
               </article>
             </ForecastClickable>
@@ -245,12 +235,12 @@ export function Forecast5d({ forecast, daily }: { forecast: ForecastPayload | nu
             headline: `${fmtN(totalEto, 1)} mm de demanda atmosférica`,
             metrics: [{ label: 'ET0 acumulada', value: `${fmtN(totalEto, 1)} mm`, tone: totalEto >= 20 ? 'amber' : 'sky' }],
             sections: [
-              { title: 'Qué significa', emphasis: totalEto >= 20 ? 'Demanda alta en 5 días' : 'Demanda contenida', body: 'Este valor suma la evaporación/transpiración potencial de los próximos días. Sirve para anticipar necesidades de riego antes de que el suelo entre en déficit.' },
-              { title: 'Uso práctico', body: 'Multiplicar por el Kc de cada cultivo y descontar lluvia efectiva. En cultivos en fase media el consumo real se acerca más a esta demanda.' },
+              { title: 'Qué significa', emphasis: totalEto >= 20 ? 'Demanda alta en 5 días' : 'Demanda contenida', body: 'Suma la demanda atmosférica de los próximos días para anticipar riego.' },
+              { title: 'Uso práctico', body: 'Multiplica por el Kc del cultivo y descuenta la lluvia efectiva.' },
             ],
           }}
         >
-          <KpiChip label="ET0 total 5d" value={fmtN(totalEto, 1)} unit="mm" caption="Evapotranspiración de referencia acumulada" tone="accent" />
+          <KpiChip label="ET0 total 5d" value={fmtN(totalEto, 1)} unit="mm" caption="Demanda atmosférica acumulada" tone="accent" />
         </ForecastClickable>
         <ForecastClickable
           onOpen={setExpandedDetail}

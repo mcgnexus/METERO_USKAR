@@ -1,5 +1,6 @@
 import { fetchAEMETObservations } from "@/services/aemetClient";
 import { fetchComarcaWeather } from "@/services/comarcaService";
+import { fetchObservationLayer } from "@/services/layerObservation";
 import type { ComarcaEstimation, SourceObservation } from "@/types/weather";
 
 export async function fetchComarcaLayer(
@@ -12,7 +13,7 @@ export async function fetchComarcaLayer(
     if (aemetTemp !== null && aemetTime !== null) {
       aemetObs = {
         source: "AEMET",
-        locationName: "Huéscar",
+        locationName: "Huéscar-Embalse de San Clemente",
         time: aemetTime.toISOString(),
         observationPeriod: "current",
         dataAgeMinutes: (Date.now() - aemetTime.getTime()) / 60000,
@@ -25,9 +26,15 @@ export async function fetchComarcaLayer(
         windGustKmh: 0,
       } as SourceObservation;
     } else {
-      const aemetResult = await fetchAEMETObservations().catch(() => ({ observations: [] }));
-      if (aemetResult.observations.length > 0) {
-        aemetObs = aemetResult.observations[0];
+      const observationLayer = await fetchObservationLayer().catch(() => null);
+      const correctedAemet = observationLayer?.sources.find((source) => source.source === "AEMET") ?? null;
+      if (correctedAemet) {
+        aemetObs = correctedAemet;
+      } else {
+        const aemetResult = await fetchAEMETObservations().catch(() => ({ observations: [] }));
+        if (aemetResult.observations.length > 0) {
+          aemetObs = aemetResult.observations[0];
+        }
       }
     }
 

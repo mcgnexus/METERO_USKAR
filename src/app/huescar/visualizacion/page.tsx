@@ -1,9 +1,27 @@
-'use client';
-
 import Link from 'next/link';
 import VisualizacionDashboard from '@/components/VisualizacionDashboard';
+import { getCurrentWeatherPayload } from '@/services/currentWeatherService';
+import { getClimateCalibrationPayload } from '@/services/climateCalibrationPayloadService';
+import { getForecastPayload } from '@/services/forecastPayloadService';
+import { getLatestSourceObservation } from '@/lib/weatherStore';
+import { fetchZoneWeather } from '@/services/zoneService';
+import type { SourceObservation } from '@/types/weather';
 
-export default function VisualizacionPage() {
+export const dynamic = 'force-dynamic';
+
+export default async function VisualizacionPage() {
+  const [currentResult, forecastResult, climateResult, aemetResult] = await Promise.allSettled([
+    getCurrentWeatherPayload(),
+    getForecastPayload(7),
+    getClimateCalibrationPayload(),
+    getLatestSourceObservation('AEMET'),
+  ]);
+
+  const aemetObs = aemetResult.status === 'fulfilled' && aemetResult.value
+    ? (aemetResult.value as SourceObservation)
+    : null;
+  const zonesResult = await Promise.allSettled([fetchZoneWeather(aemetObs)]);
+
   return (
     <div className="min-h-screen py-6 sm:py-8">
       <div className="app-shell space-y-6">
@@ -18,7 +36,14 @@ export default function VisualizacionPage() {
             <Link href="/huescar/agricultura" className="rounded-full border border-slate-200 bg-white/70 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-white">Capa agronómica</Link>
           </div>
         </header>
-        <main><VisualizacionDashboard /></main>
+        <main>
+          <VisualizacionDashboard
+            initialCurrentData={currentResult.status === 'fulfilled' ? currentResult.value : null}
+            initialForecastData={forecastResult.status === 'fulfilled' ? forecastResult.value : null}
+            initialCalibrationData={climateResult.status === 'fulfilled' ? climateResult.value : null}
+            initialZonesData={zonesResult[0].status === 'fulfilled' ? zonesResult[0].value : null}
+          />
+        </main>
       </div>
     </div>
   );

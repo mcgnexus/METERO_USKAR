@@ -3,15 +3,11 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import type { RadarData } from '@/types/weather';
 
-/* ── Coordenadas exactas de Huéscar (Wikipedia: 37°48′34″N 2°32′22″O) ── */
 const HUESCAR = { lat: 37.809444, lon: -2.539444 };
-
-/* ── Bounding box aproximado del radar regional de AEMET (Almería/Granada) ──
-   Ajusta estos valores si la imagen de AEMET cubre otra zona.               */
 const BBOX = { minLon: -5.2, maxLon: -0.8, minLat: 36.0, maxLat: 40.5 };
-const BBOX_WIDTH = BBOX.maxLon - BBOX.minLon;   // 4.4
-const BBOX_HEIGHT = BBOX.maxLat - BBOX.minLat;  // 4.5
-const BBOX_ASPECT = BBOX_WIDTH / BBOX_HEIGHT;   // ~0.978
+const BBOX_WIDTH = BBOX.maxLon - BBOX.minLon;
+const BBOX_HEIGHT = BBOX.maxLat - BBOX.minLat;
+const BBOX_ASPECT = BBOX_WIDTH / BBOX_HEIGHT;
 
 function latLonToPercent(lat: number, lon: number) {
   const x = (lon - BBOX.minLon) / (BBOX.maxLon - BBOX.minLon);
@@ -24,16 +20,14 @@ const HUESCAR_PCT = latLonToPercent(HUESCAR.lat, HUESCAR.lon);
 const MIN_ZOOM = 1;
 const MAX_ZOOM = 6;
 const ZOOM_STEP = 0.4;
-const REFRESH_INTERVAL_MS = 5 * 60 * 1000; // 5 minutos
+const REFRESH_INTERVAL_MS = 5 * 60 * 1000;
 
-function timeAgo(isoString: string): string {
-  const diffMin = Math.floor((Date.now() - new Date(isoString).getTime()) / 60000);
+function timeAgo(isoString: string, nowMs: number): string {
+  const diffMin = Math.floor((nowMs - new Date(isoString).getTime()) / 60000);
   if (diffMin < 1) return 'Ahora mismo';
   if (diffMin < 60) return `Hace ${diffMin} min`;
   return `Hace ${Math.floor(diffMin / 60)} h`;
 }
-
-/* ─────────────────────────────────────────────────────────────────────────── */
 
 export default function RadarPanel({
   radar,
@@ -43,30 +37,29 @@ export default function RadarPanel({
   variant?: 'neutral' | 'ayto';
 }) {
   const [showRadarMap, setShowRadarMap] = useState(false);
-  const [scale, setScale]   = useState(1);
+  const [scale, setScale] = useState(1);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [imgError, setImgError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [nowMs] = useState(() => Date.now());
 
-  const containerRef    = useRef<HTMLDivElement>(null);
-  const dragging        = useRef(false);
-  const lastMouse       = useRef({ x: 0, y: 0 });
-  const lastPinchDist   = useRef<number | null>(null);
-  const scaleRef        = useRef(scale);
-  const offsetRef       = useRef(offset);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const dragging = useRef(false);
+  const lastMouse = useRef({ x: 0, y: 0 });
+  const lastPinchDist = useRef<number | null>(null);
+  const scaleRef = useRef(scale);
 
-  // Mantener refs sincronizados con el estado (para callbacks nativos sin stale closure)
-  useEffect(() => { scaleRef.current = scale; }, [scale]);
-  useEffect(() => { offsetRef.current = offset; }, [offset]);
+  useEffect(() => {
+    scaleRef.current = scale;
+  }, [scale]);
 
-  /* ── Clamp offset para no salir del área visible ── */
   const clampOffset = useCallback((ox: number, oy: number, s: number) => {
-    const el = containerRef.current;
-    if (!el) return { x: ox, y: oy };
-    const maxX = (el.clientWidth  * (s - 1)) / 2;
-    const maxY = (el.clientHeight * (s - 1)) / 2;
+    const element = containerRef.current;
+    if (!element) return { x: ox, y: oy };
+    const maxX = (element.clientWidth * (s - 1)) / 2;
+    const maxY = (element.clientHeight * (s - 1)) / 2;
     return {
       x: Math.max(-maxX, Math.min(maxX, ox)),
       y: Math.max(-maxY, Math.min(maxY, oy)),
@@ -74,9 +67,9 @@ export default function RadarPanel({
   }, []);
 
   const changeZoom = useCallback((delta: number) => {
-    setScale(prev => {
+    setScale((prev) => {
       const next = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, prev + delta));
-      setOffset(o => clampOffset(o.x, o.y, next));
+      setOffset((current) => clampOffset(current.x, current.y, next));
       return next;
     });
   }, [clampOffset]);
@@ -86,79 +79,97 @@ export default function RadarPanel({
     setOffset({ x: 0, y: 0 });
   }, []);
 
-  /* ── Auto-refresco de la imagen cada 5 min ── */
+  const openRadarMap = useCallback(() => {
+    setImgError(null);
+    setIsLoading(true);
+    setShowRadarMap(true);
+  }, []);
+
+  const closeRadarMap = useCallback(() => {
+    dragging.current = false;
+    lastPinchDist.current = null;
+    setIsDragging(false);
+    setShowRadarMap(false);
+    resetView();
+    setImgError(null);
+    setIsLoading(false);
+  }, [resetView]);
+
+  const toggleRadarMap = useCallback(() => {
+    if (showRadarMap) {
+      closeRadarMap();
+      return;
+    }
+    openRadarMap();
+  }, [closeRadarMap, openRadarMap, showRadarMap]);
+
   useEffect(() => {
     if (!showRadarMap) return;
-    setIsLoading(true);
-    const interval = setInterval(() => setRefreshKey(k => k + 1), REFRESH_INTERVAL_MS);
+    const interval = setInterval(() => setRefreshKey((key) => key + 1), REFRESH_INTERVAL_MS);
     return () => clearInterval(interval);
   }, [showRadarMap]);
 
-  /* ── Atajos de teclado cuando el mapa está visible ── */
   useEffect(() => {
     if (!showRadarMap) return;
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === '+' || e.key === '=') { e.preventDefault(); changeZoom(ZOOM_STEP); }
-      if (e.key === '-') { e.preventDefault(); changeZoom(-ZOOM_STEP); }
-      if (e.key === '0') { e.preventDefault(); resetView(); }
+    const handler = (event: KeyboardEvent) => {
+      if (event.key === '+' || event.key === '=') { event.preventDefault(); changeZoom(ZOOM_STEP); }
+      if (event.key === '-') { event.preventDefault(); changeZoom(-ZOOM_STEP); }
+      if (event.key === '0') { event.preventDefault(); resetView(); }
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
   }, [showRadarMap, changeZoom, resetView]);
 
-  /* ── Listeners nativos con passive:false (wheel + touchmove) ── */
   useEffect(() => {
-    const el = containerRef.current;
-    if (!el || !showRadarMap) return;
+    const element = containerRef.current;
+    if (!element || !showRadarMap) return;
 
-    /* Wheel → zoom */
-    const handleWheel = (e: WheelEvent) => {
-      e.preventDefault();
-      const delta = e.deltaY < 0 ? ZOOM_STEP : -ZOOM_STEP;
-      setScale(prev => {
+    const handleWheel = (event: WheelEvent) => {
+      event.preventDefault();
+      const delta = event.deltaY < 0 ? ZOOM_STEP : -ZOOM_STEP;
+      setScale((prev) => {
         const next = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, prev + delta));
-        setOffset(o => {
-          const maxX = (el.clientWidth  * (next - 1)) / 2;
-          const maxY = (el.clientHeight * (next - 1)) / 2;
+        setOffset((current) => {
+          const maxX = (element.clientWidth * (next - 1)) / 2;
+          const maxY = (element.clientHeight * (next - 1)) / 2;
           return {
-            x: Math.max(-maxX, Math.min(maxX, o.x)),
-            y: Math.max(-maxY, Math.min(maxY, o.y)),
+            x: Math.max(-maxX, Math.min(maxX, current.x)),
+            y: Math.max(-maxY, Math.min(maxY, current.y)),
           };
         });
         return next;
       });
     };
 
-    /* TouchMove → pan + pinch */
-    const handleTouchMove = (e: TouchEvent) => {
-      e.preventDefault();
-      if (e.touches.length === 1 && dragging.current) {
-        const dx = e.touches[0].clientX - lastMouse.current.x;
-        const dy = e.touches[0].clientY - lastMouse.current.y;
-        lastMouse.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-        setOffset(o => {
-          const s = scaleRef.current;
-          const maxX = (el.clientWidth  * (s - 1)) / 2;
-          const maxY = (el.clientHeight * (s - 1)) / 2;
+    const handleTouchMove = (event: TouchEvent) => {
+      event.preventDefault();
+      if (event.touches.length === 1 && dragging.current) {
+        const dx = event.touches[0].clientX - lastMouse.current.x;
+        const dy = event.touches[0].clientY - lastMouse.current.y;
+        lastMouse.current = { x: event.touches[0].clientX, y: event.touches[0].clientY };
+        setOffset((current) => {
+          const currentScale = scaleRef.current;
+          const maxX = (element.clientWidth * (currentScale - 1)) / 2;
+          const maxY = (element.clientHeight * (currentScale - 1)) / 2;
           return {
-            x: Math.max(-maxX, Math.min(maxX, o.x + dx)),
-            y: Math.max(-maxY, Math.min(maxY, o.y + dy)),
+            x: Math.max(-maxX, Math.min(maxX, current.x + dx)),
+            y: Math.max(-maxY, Math.min(maxY, current.y + dy)),
           };
         });
-      } else if (e.touches.length === 2 && lastPinchDist.current !== null) {
-        const dx   = e.touches[0].clientX - e.touches[1].clientX;
-        const dy   = e.touches[0].clientY - e.touches[1].clientY;
-        const dist = Math.hypot(dx, dy);
-        const ratio = dist / lastPinchDist.current;
-        lastPinchDist.current = dist;
-        setScale(prev => {
+      } else if (event.touches.length === 2 && lastPinchDist.current !== null) {
+        const dx = event.touches[0].clientX - event.touches[1].clientX;
+        const dy = event.touches[0].clientY - event.touches[1].clientY;
+        const distance = Math.hypot(dx, dy);
+        const ratio = distance / lastPinchDist.current;
+        lastPinchDist.current = distance;
+        setScale((prev) => {
           const next = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, prev * ratio));
-          setOffset(o => {
-            const maxX = (el.clientWidth  * (next - 1)) / 2;
-            const maxY = (el.clientHeight * (next - 1)) / 2;
+          setOffset((current) => {
+            const maxX = (element.clientWidth * (next - 1)) / 2;
+            const maxY = (element.clientHeight * (next - 1)) / 2;
             return {
-              x: Math.max(-maxX, Math.min(maxX, o.x)),
-              y: Math.max(-maxY, Math.min(maxY, o.y)),
+              x: Math.max(-maxX, Math.min(maxX, current.x)),
+              y: Math.max(-maxY, Math.min(maxY, current.y)),
             };
           });
           return next;
@@ -166,28 +177,27 @@ export default function RadarPanel({
       }
     };
 
-    el.addEventListener('wheel',      handleWheel,     { passive: false });
-    el.addEventListener('touchmove',  handleTouchMove, { passive: false });
+    element.addEventListener('wheel', handleWheel, { passive: false });
+    element.addEventListener('touchmove', handleTouchMove, { passive: false });
 
     return () => {
-      el.removeEventListener('wheel',     handleWheel);
-      el.removeEventListener('touchmove', handleTouchMove);
+      element.removeEventListener('wheel', handleWheel);
+      element.removeEventListener('touchmove', handleTouchMove);
     };
-  }, [showRadarMap]); // re-registrar solo cuando el mapa se muestra/oculta
+  }, [showRadarMap]);
 
-  /* ── Handlers de ratón (React JSX – no necesitan passive:false) ── */
-  const onMouseDown = (e: React.MouseEvent) => {
+  const onMouseDown = (event: React.MouseEvent) => {
     dragging.current = true;
     setIsDragging(true);
-    lastMouse.current = { x: e.clientX, y: e.clientY };
+    lastMouse.current = { x: event.clientX, y: event.clientY };
   };
 
-  const onMouseMove = useCallback((e: React.MouseEvent) => {
+  const onMouseMove = useCallback((event: React.MouseEvent) => {
     if (!dragging.current) return;
-    const dx = e.clientX - lastMouse.current.x;
-    const dy = e.clientY - lastMouse.current.y;
-    lastMouse.current = { x: e.clientX, y: e.clientY };
-    setOffset(o => clampOffset(o.x + dx, o.y + dy, scaleRef.current));
+    const dx = event.clientX - lastMouse.current.x;
+    const dy = event.clientY - lastMouse.current.y;
+    lastMouse.current = { x: event.clientX, y: event.clientY };
+    setOffset((current) => clampOffset(current.x + dx, current.y + dy, scaleRef.current));
   }, [clampOffset]);
 
   const onMouseUp = () => {
@@ -195,15 +205,14 @@ export default function RadarPanel({
     setIsDragging(false);
   };
 
-  /* ── Touch start / end (React JSX) ── */
-  const onTouchStart = (e: React.TouchEvent) => {
-    if (e.touches.length === 1) {
+  const onTouchStart = (event: React.TouchEvent) => {
+    if (event.touches.length === 1) {
       dragging.current = true;
-      lastMouse.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-    } else if (e.touches.length === 2) {
+      lastMouse.current = { x: event.touches[0].clientX, y: event.touches[0].clientY };
+    } else if (event.touches.length === 2) {
       dragging.current = false;
-      const dx = e.touches[0].clientX - e.touches[1].clientX;
-      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      const dx = event.touches[0].clientX - event.touches[1].clientX;
+      const dy = event.touches[0].clientY - event.touches[1].clientY;
       lastPinchDist.current = Math.hypot(dx, dy);
     }
   };
@@ -213,126 +222,111 @@ export default function RadarPanel({
     lastPinchDist.current = null;
   };
 
-  /* Reset al ocultar el mapa */
-  useEffect(() => {
-    if (!showRadarMap) {
-      resetView();
-      setImgError(null);
-      setIsLoading(false);
-    }
-  }, [showRadarMap, resetView]);
-
-  /* ── Estilos ── */
   if (!radar) return null;
 
-  const isAyto  = variant === 'ayto';
-  const border  = isAyto ? 'border-[#e8e4d8]' : 'border-slate-200';
+  const isAyto = variant === 'ayto';
+  const border = isAyto ? 'border-[#e8e4d8]' : 'border-slate-200';
   const primary = isAyto ? 'text-[#1B3668]' : 'text-slate-800';
 
   const levelColors: Record<RadarData['level'], string> = {
     ninguno: 'text-green-700 bg-green-50 border-green-200',
-    aviso:   'text-yellow-700 bg-yellow-50 border-yellow-200',
-    alerta:  'text-orange-700 bg-orange-50 border-orange-200',
+    aviso: 'text-yellow-700 bg-yellow-50 border-yellow-200',
+    alerta: 'text-orange-700 bg-orange-50 border-orange-200',
     peligro: 'text-red-700 bg-red-50 border-red-200',
   };
 
   const alarmIcons: Record<RadarData['level'], string> = {
-    ninguno: '☔', aviso: '⚠️', alerta: '🌧️', peligro: '🌩️',
+    ninguno: 'â˜”', aviso: 'âš ï¸', alerta: 'ðŸŒ§ï¸', peligro: 'ðŸŒ©ï¸',
   };
 
   const levelBadges: Record<RadarData['level'], string> = {
     ninguno: 'bg-green-500 text-white',
-    aviso:   'bg-yellow-500 text-black',
-    alerta:  'bg-orange-600 text-white',
+    aviso: 'bg-yellow-500 text-black',
+    alerta: 'bg-orange-600 text-white',
     peligro: 'bg-red-600 text-white',
   };
 
   return (
-    <div className={`rounded-xl border ${border} p-4 bg-white shadow-sm transition-all duration-300`}>
-      {/* Cabecera */}
-      <div className="flex items-center justify-between mb-3">
-        <h3 className={`font-semibold ${primary} flex items-center gap-1.5`}>
+    <div className={`rounded-xl border ${border} bg-white p-4 shadow-sm transition-all duration-300`}>
+      <div className="mb-3 flex items-center justify-between">
+        <h3 className={`flex items-center gap-1.5 font-semibold ${primary}`}>
           <span>Radar regional</span>
           {radar.level !== 'ninguno' && (
-            <span className={`px-1.5 py-0.5 rounded text-xs font-bold ${levelColors[radar.level]}`}>
+            <span className={`rounded px-1.5 py-0.5 text-xs font-bold ${levelColors[radar.level]}`}>
               {alarmIcons[radar.level]} Alarma de Lluvia
             </span>
           )}
         </h3>
-        <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-full ${levelBadges[radar.level]}`}>
+        <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${levelBadges[radar.level]}`}>
           {radar.level}
         </span>
       </div>
 
-      {/* Mensaje de estado */}
-      <div className={`rounded-lg border p-3 text-xs mb-3 ${levelColors[radar.level]}`}>
+      <div className={`mb-3 rounded-lg border p-3 text-xs ${levelColors[radar.level]}`}>
         <p className="font-medium">{radar.message}</p>
         {radar.minutesToRain !== null && (
           <div className="mt-2 flex items-center gap-2">
             <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500" />
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-red-500" />
             </span>
-            <span className="font-bold text-red-600 animate-pulse">
+            <span className="animate-pulse font-bold text-red-600">
               Inicio estimado: en {radar.minutesToRain} minutos
             </span>
           </div>
         )}
       </div>
 
-      {/* Radar interactivo */}
       <div>
         <button
-          onClick={() => setShowRadarMap(!showRadarMap)}
-          className={`w-full text-center text-xs font-semibold py-2 px-4 rounded-lg border transition-all ${
+          onClick={toggleRadarMap}
+          className={`w-full rounded-lg border px-4 py-2 text-center text-xs font-semibold transition-all ${
             showRadarMap
-              ? 'bg-slate-800 text-white border-slate-800'
+              ? 'border-slate-800 bg-slate-800 text-white'
               : isAyto
-                ? 'bg-[#1B3668]/10 text-[#1B3668] border-[#1B3668]/20 hover:bg-[#1B3668]/20'
-                : 'bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200'
+                ? 'border-[#1B3668]/20 bg-[#1B3668]/10 text-[#1B3668] hover:bg-[#1B3668]/20'
+                : 'border-slate-200 bg-slate-100 text-slate-700 hover:bg-slate-200'
           }`}
         >
           {showRadarMap ? 'Ocultar Radar Regional' : 'Ver Radar Regional AEMET'}
         </button>
 
         {showRadarMap && (
-          <div className="mt-3 rounded-lg border border-slate-200 bg-slate-900 overflow-hidden select-none">
-            {/* Barra de controles */}
-            <div className="flex items-center justify-between px-3 py-1.5 bg-slate-800 text-white text-[11px]">
+          <div className="mt-3 select-none overflow-hidden rounded-lg border border-slate-200 bg-slate-900">
+            <div className="flex items-center justify-between bg-slate-800 px-3 py-1.5 text-[11px] text-white">
               <div className="flex items-center gap-2">
                 <button
                   type="button"
                   onClick={() => changeZoom(ZOOM_STEP)}
-                  className="w-6 h-6 rounded bg-slate-600 hover:bg-slate-500 flex items-center justify-center font-bold text-sm leading-none"
+                  className="flex h-6 w-6 items-center justify-center rounded bg-slate-600 text-sm font-bold leading-none hover:bg-slate-500"
                   aria-label="Ampliar"
                   title="Ampliar (+)"
                 >+</button>
                 <button
                   type="button"
                   onClick={() => changeZoom(-ZOOM_STEP)}
-                  className="w-6 h-6 rounded bg-slate-600 hover:bg-slate-500 flex items-center justify-center font-bold text-sm leading-none"
+                  className="flex h-6 w-6 items-center justify-center rounded bg-slate-600 text-sm font-bold leading-none hover:bg-slate-500"
                   aria-label="Reducir"
                   title="Reducir (-)"
-                >−</button>
+                >âˆ’</button>
                 <button
                   type="button"
                   onClick={resetView}
-                  className="px-2 h-6 rounded bg-slate-600 hover:bg-slate-500 text-[10px] font-semibold"
+                  className="h-6 rounded bg-slate-600 px-2 text-[10px] font-semibold hover:bg-slate-500"
                   aria-label="Restablecer vista"
                   title="Restablecer vista (0)"
-                >↺ Reset</button>
+                >â†º Reset</button>
                 <span className="text-slate-400">{Math.round(scale * 100)}%</span>
               </div>
               <div className="flex items-center gap-2 text-slate-300">
-                <span>📍 Huéscar</span>
-                <span>🕐 {timeAgo(radar.lastUpdated)}</span>
+                <span>ðŸ“ HuÃ©scar</span>
+                <span>ðŸ• {timeAgo(radar.lastUpdated, nowMs)}</span>
               </div>
             </div>
 
-            {/* Contenedor del mapa — wheel y touchmove se registran via useEffect */}
             <div
               ref={containerRef}
-              className="relative overflow-hidden bg-slate-900 h-[300px] sm:h-[400px] lg:h-[480px]"
+              className="relative h-[300px] overflow-hidden bg-slate-900 sm:h-[400px] lg:h-[480px]"
               style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
               onMouseDown={onMouseDown}
               onMouseMove={onMouseMove}
@@ -341,7 +335,6 @@ export default function RadarPanel({
               onTouchStart={onTouchStart}
               onTouchEnd={onTouchEnd}
             >
-              {/* Capa transformada (zoom + pan) */}
               <div
                 style={{
                   transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`,
@@ -352,9 +345,7 @@ export default function RadarPanel({
                   position: 'relative',
                 }}
               >
-                {/* Centrado para mantener aspect ratio correcto */}
                 <div className="absolute inset-0 flex items-center justify-center">
-                  {/* Contenedor con aspect ratio real del radar */}
                   <div
                     className="relative max-h-full max-w-full"
                     style={{ aspectRatio: `${BBOX_ASPECT}` }}
@@ -368,36 +359,56 @@ export default function RadarPanel({
                       style={{ objectFit: 'contain', display: imgError ? 'none' : 'block' }}
                       onError={() => {
                         setIsLoading(false);
-                        setImgError('El radar de AEMET no está disponible ahora mismo (límite de peticiones). Inténtalo en 1 minuto.');
+                        setImgError('El radar de AEMET no estÃ¡ disponible ahora mismo (lÃ­mite de peticiones). IntÃ©ntalo en 1 minuto.');
                       }}
-                      onLoad={() => { setIsLoading(false); setImgError(null); }}
+                      onLoad={() => {
+                        setIsLoading(false);
+                        setImgError(null);
+                      }}
                     />
                     {imgError && (
-                      <div style={{
-                        position: 'absolute', inset: 0,
-                        display: 'flex', flexDirection: 'column',
-                        alignItems: 'center', justifyContent: 'center',
-                        background: 'rgba(15,23,42,0.85)', color: '#94a3b8',
-                        fontSize: '11px', textAlign: 'center', padding: '16px',
-                        gap: '8px',
-                      }}>
-                        <span style={{ fontSize: '28px' }}>🛰️</span>
+                      <div
+                        style={{
+                          position: 'absolute',
+                          inset: 0,
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          background: 'rgba(15,23,42,0.85)',
+                          color: '#94a3b8',
+                          fontSize: '11px',
+                          textAlign: 'center',
+                          padding: '16px',
+                          gap: '8px',
+                        }}
+                      >
+                        <span style={{ fontSize: '28px' }}>ðŸ›°ï¸</span>
                         <span>{imgError}</span>
                         <button
                           type="button"
-                          onClick={() => { setImgError(null); setRefreshKey(k => k + 1); }}
+                          onClick={() => {
+                            setImgError(null);
+                            setIsLoading(true);
+                            setRefreshKey((key) => key + 1);
+                          }}
                           style={{
-                            marginTop: '4px', fontSize: '10px', fontWeight: 700,
-                            padding: '4px 10px', borderRadius: '6px',
-                            background: '#334155', color: '#e2e8f0', border: 'none', cursor: 'pointer',
+                            marginTop: '4px',
+                            fontSize: '10px',
+                            fontWeight: 700,
+                            padding: '4px 10px',
+                            borderRadius: '6px',
+                            background: '#334155',
+                            color: '#e2e8f0',
+                            border: 'none',
+                            cursor: 'pointer',
                           }}
                         >
-                          🔄 Reintentar
+                          ðŸ”„ Reintentar
                         </button>
                       </div>
                     )}
 
-                    {/* Marcador Huéscar — ahora posicionado sobre el área real de la imagen */}
                     <div
                       style={{
                         position: 'absolute',
@@ -408,79 +419,58 @@ export default function RadarPanel({
                       }}
                     >
                       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                        <div style={{
-                          background: '#1B3668',
-                          color: 'white',
-                          fontSize: '9px',
-                          fontWeight: 700,
-                          padding: '2px 5px',
-                          borderRadius: '4px',
-                          whiteSpace: 'nowrap',
-                          boxShadow: '0 1px 4px rgba(0,0,0,0.6)',
-                          marginBottom: '2px',
-                        }}>
-                          📍 Huéscar
+                        <div
+                          style={{
+                            background: '#1B3668',
+                            color: 'white',
+                            fontSize: '9px',
+                            fontWeight: 700,
+                            padding: '2px 5px',
+                            borderRadius: '4px',
+                            whiteSpace: 'nowrap',
+                            boxShadow: '0 1px 4px rgba(0,0,0,0.6)',
+                            marginBottom: '2px',
+                          }}
+                        >
+                          ðŸ“ HuÃ©scar
                         </div>
-                        <div style={{
-                          width: 0, height: 0,
-                          borderLeft:  '5px solid transparent',
-                          borderRight: '5px solid transparent',
-                          borderTop:   '7px solid #1B3668',
-                        }} />
+                        <div
+                          style={{
+                            width: 0,
+                            height: 0,
+                            borderLeft: '5px solid transparent',
+                            borderRight: '5px solid transparent',
+                            borderTop: '7px solid #1B3668',
+                          }}
+                        />
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* Loading overlay */}
               {isLoading && !imgError && (
                 <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-slate-900/80">
                   <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-white" />
-                  <span className="mt-3 text-sm font-medium text-white">Cargando imagen del radar…</span>
+                  <span className="mt-3 text-sm font-medium text-white">Cargando imagen del radarâ€¦</span>
                 </div>
               )}
             </div>
 
-            {/* Leyenda de colores — escala europea AEMET/CEDRE (dBZ) */}
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 px-3 py-2 bg-slate-800 text-[10px] text-slate-300">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 bg-slate-800 px-3 py-2 text-[10px] text-slate-300">
               <span className="mr-1 font-semibold text-slate-400">dBZ:</span>
-              <span className="flex items-center gap-1">
-                <span className="inline-block h-2.5 w-5 rounded-sm bg-green-300" />
-                <span>10</span>
-              </span>
-              <span className="flex items-center gap-1">
-                <span className="inline-block h-2.5 w-5 rounded-sm bg-green-500" />
-                <span>20</span>
-              </span>
-              <span className="flex items-center gap-1">
-                <span className="inline-block h-2.5 w-5 rounded-sm bg-yellow-400" />
-                <span>30</span>
-              </span>
-              <span className="flex items-center gap-1">
-                <span className="inline-block h-2.5 w-5 rounded-sm bg-orange-400" />
-                <span>40</span>
-              </span>
-              <span className="flex items-center gap-1">
-                <span className="inline-block h-2.5 w-5 rounded-sm bg-orange-600" />
-                <span>50</span>
-              </span>
-              <span className="flex items-center gap-1">
-                <span className="inline-block h-2.5 w-5 rounded-sm bg-red-600" />
-                <span>60</span>
-              </span>
-              <span className="flex items-center gap-1">
-                <span className="inline-block h-2.5 w-5 rounded-sm bg-pink-600" />
-                <span>70</span>
-              </span>
-              <span className="flex items-center gap-1.5 ml-1 text-slate-400">
-                &gt; 75 = Granizo
-              </span>
+              <span className="flex items-center gap-1"><span className="inline-block h-2.5 w-5 rounded-sm bg-green-300" /><span>10</span></span>
+              <span className="flex items-center gap-1"><span className="inline-block h-2.5 w-5 rounded-sm bg-green-500" /><span>20</span></span>
+              <span className="flex items-center gap-1"><span className="inline-block h-2.5 w-5 rounded-sm bg-yellow-400" /><span>30</span></span>
+              <span className="flex items-center gap-1"><span className="inline-block h-2.5 w-5 rounded-sm bg-orange-400" /><span>40</span></span>
+              <span className="flex items-center gap-1"><span className="inline-block h-2.5 w-5 rounded-sm bg-orange-600" /><span>50</span></span>
+              <span className="flex items-center gap-1"><span className="inline-block h-2.5 w-5 rounded-sm bg-red-600" /><span>60</span></span>
+              <span className="flex items-center gap-1"><span className="inline-block h-2.5 w-5 rounded-sm bg-pink-600" /><span>70</span></span>
+              <span className="ml-1 flex items-center gap-1.5 text-slate-400">&gt; 75 = Granizo</span>
             </div>
 
-            {/* Pie del mapa */}
-            <div className="flex items-center justify-between px-3 py-1 bg-slate-800 text-[9px] text-slate-400">
-              <span>Radar AEMET · Almería/Granada</span>
+            <div className="flex items-center justify-between bg-slate-800 px-3 py-1 text-[9px] text-slate-400">
+              <span>Radar AEMET Â· AlmerÃ­a/Granada</span>
               <span>Fuente: Open-Meteo + AEMET</span>
             </div>
           </div>

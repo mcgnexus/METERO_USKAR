@@ -14,13 +14,13 @@ export function KpiChip({ label, value, unit, caption, tone = 'default' }: {
           : tone === 'success' ? 'border-emerald-200 bg-emerald-50/80'
             : 'border-slate-200 bg-white';
   return (
-    <div className={`rounded-[22px] border p-4 shadow-sm ${toneClass}`}>
+    <div className={`min-w-0 overflow-hidden rounded-[22px] border p-4 shadow-sm ${toneClass}`}>
       <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">{label}</p>
-      <p className="mt-2 text-2xl font-black text-slate-950">
+      <p className="mt-2 text-2xl font-black leading-tight text-slate-950">
         {value}
         {unit && <span className="ml-1 text-sm font-bold text-slate-500">{unit}</span>}
       </p>
-      {caption && <p className="mt-1 text-xs leading-5 text-slate-600">{caption}</p>}
+      {caption && <p className="mt-1 break-words text-xs leading-4 text-slate-600">{caption}</p>}
     </div>
   );
 }

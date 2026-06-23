@@ -1,6 +1,6 @@
 'use client';
 
-import { FormulaChip, fmtNumber, KpiCard } from '@/components/motor/atoms';
+import { fmtNumber, KpiCard } from '@/components/motor/atoms';
 import type { ClimateCalibrationPayload } from '@/types/climate';
 
 export function EtoBreakdown({ data, dewPointC }: { data: ClimateCalibrationPayload; dewPointC: number | null }) {

@@ -1,4 +1,3 @@
-import { haversineKm, bearing, toRad, toDeg } from "@/lib/geo";
 import { cacheGet, cacheSet } from "@/lib/inMemoryCache";
 import type { LightningData } from "@/types/weather";
 

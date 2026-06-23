@@ -1,9 +1,12 @@
-'use client';
-
 import Link from 'next/link';
 import WeatherDashboard from '@/components/WeatherDashboard';
+import { getCurrentWeatherPayload } from '@/services/currentWeatherService';
 
-export default function MeteoPage() {
+export const dynamic = 'force-dynamic';
+
+export default async function MeteoPage() {
+  const weatherResult = await Promise.allSettled([getCurrentWeatherPayload()]);
+
   return (
     <div className="min-h-screen py-4 sm:py-8">
       <div className="app-shell space-y-4 sm:space-y-6">
@@ -28,7 +31,7 @@ export default function MeteoPage() {
         </header>
 
         <main>
-          <WeatherDashboard />
+          <WeatherDashboard initialData={weatherResult[0].status === 'fulfilled' ? weatherResult[0].value : null} />
         </main>
       </div>
     </div>

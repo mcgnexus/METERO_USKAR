@@ -14,6 +14,7 @@ import {
 import { fetchAEMETObservations } from "@/services/aemetClient";
 import { getModelParam } from "@/services/modelParameterService";
 import { fetchCurrentCloudCover } from "@/services/openMeteoForecastService";
+import type { ZoneType } from "@/lib/geo";
 
 const AEMET_API_KEY = process.env.AEMET_API_KEY || "";
 const AEMET_TIMEOUT_MS = parseInt(process.env.AEMET_TIMEOUT_MS || "12000");
@@ -158,6 +159,14 @@ export interface ClimateCalibrationResult {
   quality: {
     confidencePct: number;
     warnings: string[];
+    breakdown?: {
+      basePct: number;
+      missingPenalty: number;
+      localStationPenalty: number;
+      agePenalty: number;
+      maxSourceAgeMin: number;
+      structuralWarnings: string[];
+    };
   };
 }
 
@@ -438,10 +447,28 @@ interface LlanoMicroclimate {
   isNighttime: boolean;
 }
 
+function getZoneDrainageFactor(zoneType: ZoneType): number {
+  switch (zoneType) {
+    case "URBAN":
+      return getModelParam("cold_air_drainage_factor_urban_center");
+    case "VEGA":
+      return getModelParam("cold_air_drainage_factor_vega");
+    case "MONTE":
+      return getModelParam("cold_air_drainage_factor_monte");
+    case "RESERVOIR":
+      return getModelParam("cold_air_drainage_factor_reservoir");
+    case "SECANO":
+      return getModelParam("cold_air_drainage_factor_urban_barrio");
+    default:
+      return 0.5;
+  }
+}
+
 function computeLlanoMicroclimate(
   rawEstimatedTempC: number,
   windSpeed2mMs: number,
   cloudCoverPct?: number | null,
+  zoneType: ZoneType = "URBAN",
 ): LlanoMicroclimate {
   const hourMadrid = getHourMadrid();
   const isNighttime = hourMadrid < 8 || hourMadrid >= 20;
@@ -452,9 +479,10 @@ function computeLlanoMicroclimate(
 
   if (isNighttime) {
     const amplitude = Math.abs(getModelParam("cold_air_drainage_max_c"));
+    const zoneFactor = getZoneDrainageFactor(zoneType);
     const F_viento = Math.max(0, 1 - windSpeed2mMs / windThreshold);
     const F_cielo = cloudCoverPct != null ? Math.max(0, 1 - cloudCoverPct / 100) : 0.7;
-    coldAirDrainageC = Math.round(-amplitude * F_viento * F_cielo * 10) / 10;
+    coldAirDrainageC = Math.round(-amplitude * zoneFactor * F_viento * F_cielo * 10) / 10;
     urbanHeatIslandC = getModelParam("urban_heat_island_night_c");
   } else {
     urbanHeatIslandC = getModelParam("urban_heat_island_day_c");
@@ -639,7 +667,12 @@ async function fetchRadiationWind(): Promise<RadiationWindReading> {
   };
 }
 
-async function fetchGroundTruth(): Promise<ClimateNodeReading | null> {
+interface GroundTruthResult {
+  reading: ClimateNodeReading;
+  ageMin: number;
+}
+
+async function fetchGroundTruth(): Promise<GroundTruthResult | null> {
   const rawStations = await fetchLocalStations().catch(() => []);
   const stations = [...rawStations].sort((a, b) => {
     if (!GROUND_TRUTH_NODE_CODE) return 0;
@@ -655,17 +688,20 @@ async function fetchGroundTruth(): Promise<ClimateNodeReading | null> {
     const ageMin = time ? (now - new Date(time).getTime()) / 60000 : 9999;
     const temperature = parseNumber(station.temperature, station.temperatura, station.temp, station.air_temp_c, station.raw?.air_temp_c);
     const humidity = parseNumber(station.humidity, station.humedad, station.hr, station.air_humidity_pct, station.raw?.air_humidity_pct);
-    if (ageMin > 180 || temperature === null || humidity === null) continue;
+    if (ageMin > 360 || temperature === null || humidity === null) continue;
     return {
-      source: "LOCAL_STATION",
-      stationId,
-      name: String(station.name ?? station.location_name ?? "Estación propia"),
-      time: new Date(time ?? Date.now()).toISOString(),
-      temperatureC: temperature,
-      humidityPct: humidity,
-      pressureHPa: parseNumber(station.pressure_hpa, station.presion, station.pressure, station.raw?.pressure_hpa),
-      elevationM: parseNumber(station.elevation, station.altitude, station.raw?.elevation) ?? LLANO.elevation,
-      status: "OK",
+      reading: {
+        source: "LOCAL_STATION",
+        stationId,
+        name: String(station.name ?? station.location_name ?? "Estación propia"),
+        time: new Date(time ?? Date.now()).toISOString(),
+        temperatureC: temperature,
+        humidityPct: humidity,
+        pressureHPa: parseNumber(station.pressure_hpa, station.presion, station.pressure, station.raw?.pressure_hpa),
+        elevationM: parseNumber(station.elevation, station.altitude, station.raw?.elevation) ?? LLANO.elevation,
+        status: "OK",
+      },
+      ageMin,
     };
   }
   return null;
@@ -675,7 +711,7 @@ export function computeDynamicGradient(bazaTempC: number, sanClementeTempC: numb
   const deltaH = REFERENCE_NODES.sanClemente.elevation - REFERENCE_NODES.baza.elevation;
   const rawGamma = (bazaTempC - sanClementeTempC) / deltaH;
   return {
-    gammaCPerM: Math.max(-0.015, Math.min(0.012, rawGamma || 0.0065)),
+    gammaCPerM: Math.max(-0.015, Math.min(0.012, Number.isFinite(rawGamma) ? rawGamma : 0.0065)),
     inversionDetected: bazaTempC < sanClementeTempC,
   };
 }
@@ -784,9 +820,50 @@ function buildExtrapolation(
   };
 }
 
+function nodeAgeMin(node: ClimateNodeReading): number {
+  if (!node.time) return 9999;
+  const age = (Date.now() - new Date(node.time).getTime()) / 60000;
+  return Number.isFinite(age) ? Math.max(0, age) : 9999;
+}
+
+function sensorWeightByAge(ageMin: number): number {
+  const freshThreshold = getModelParam("sensor_fresh_threshold_min");
+  const mediumThreshold = getModelParam("sensor_medium_threshold_min");
+  const decayRange = getModelParam("sensor_medium_decay_min");
+
+  if (ageMin <= freshThreshold) {
+    return getModelParam("sensor_blend_weight_fresh");
+  }
+  if (ageMin <= mediumThreshold) {
+    return getModelParam("sensor_blend_weight_medium");
+  }
+  if (ageMin <= mediumThreshold + decayRange) {
+    const t = (ageMin - mediumThreshold) / decayRange;
+    return getModelParam("sensor_blend_weight_medium") * (1 - t);
+  }
+  return 0;
+}
+
+function temporalSmoothedTemp(newTempC: number): number {
+  const prev = cacheGet<number>("climate:llano:smoothed_temp");
+  if (prev === null) return newTempC;
+  const alpha = getModelParam("temporal_smoothing_alpha");
+  return Math.round((alpha * newTempC + (1 - alpha) * prev) * 10) / 10;
+}
+
+async function getDynamicResidualBias(): Promise<number> {
+  try {
+    const cached = cacheGet<number>("climate:dynamic_residual_bias");
+    if (cached !== null) return cached;
+    return 0;
+  } catch {
+    return 0;
+  }
+}
+
 export async function computeClimateCalibration(): Promise<ClimateCalibrationResult> {
   const warnings: string[] = [];
-  const [bazaRaw, sanClementeRaw, localStation, radiationWind, bazaWindDirectionDeg, exoticVars] = await Promise.all([
+  const [bazaRaw, sanClementeRaw, groundTruth, radiationWind, bazaWindDirectionDeg, exoticVars] = await Promise.all([
     fetchAemetStation(REFERENCE_NODES.baza),
     fetchAemetStation(REFERENCE_NODES.sanClemente),
     fetchGroundTruth(),
@@ -794,6 +871,9 @@ export async function computeClimateCalibration(): Promise<ClimateCalibrationRes
     fetchBazaWindDirection(),
     fetchExoticVariables(),
   ]);
+
+  const localStation = groundTruth?.reading ?? null;
+  const localStationAgeMin = groundTruth?.ageMin ?? null;
 
   const sanClemente = await withOpenMeteoFallback(sanClementeRaw, REFERENCE_NODES.sanClemente);
 
@@ -823,7 +903,7 @@ export async function computeClimateCalibration(): Promise<ClimateCalibrationRes
   }
 
   if (sanClemente.status !== "OK") warnings.push("San Clemente imputado con Open-Meteo");
-  if (!localStation) warnings.push("Sin estación propia fresca: no se calcula residual real");
+  if (!localStation) warnings.push("Sin sensor propio del llano: se usa AEMET San Clemente como referencia oficial local, sin residual de entrenamiento");
   if (radiationWind.source !== "RIA_BLEND") warnings.push("Radiación y viento 2m imputados con Open-Meteo hasta configurar RIA");
   if (radiationWind.source === "RIA_BLEND") warnings.push("RIA blend Baza+Puebla: radiación interpolada IDW con corrección Foehn, viento de Baza por rugosidad");
   if (radiationWind.radiationBlend?.foehnDetected) warnings.push("Foehn detectado: sesgo radiativo hacia Baza por disipación orográfica en La Sagra");
@@ -834,10 +914,26 @@ export async function computeClimateCalibration(): Promise<ClimateCalibrationRes
   const rawInterpolatedTempC = estimateLlanoTemperature(bazaTemp, gammaCPerM);
   const windSpeed2mMs = radiationWind.windSpeed2mKmh / 3.6;
   const micro = computeLlanoMicroclimate(Math.round(rawInterpolatedTempC * 10) / 10, windSpeed2mMs, radiationWind.cloudCoverPct);
-  const estimatedTemperatureC = micro.correctedTempC;
+  let estimatedTemperatureC = micro.correctedTempC;
+
+  const dynamicBias = await getDynamicResidualBias();
+  if (Math.abs(dynamicBias) > 0.05) {
+    estimatedTemperatureC = Math.round((estimatedTemperatureC - dynamicBias) * 10) / 10;
+  }
+
+  estimatedTemperatureC = temporalSmoothedTemp(estimatedTemperatureC);
+  cacheSet("climate:llano:smoothed_temp", estimatedTemperatureC, 30 * 60 * 1000);
 
   const realTemperatureC = localStation?.temperatureC ?? null;
   const realHumidityPct = localStation?.humidityPct ?? null;
+
+  let blendedTemperatureC: number | null = null;
+  if (realTemperatureC !== null && localStationAgeMin !== null) {
+    const weight = sensorWeightByAge(localStationAgeMin);
+    if (weight > 0) {
+      blendedTemperatureC = Math.round((weight * realTemperatureC + (1 - weight) * estimatedTemperatureC) * 10) / 10;
+    }
+  }
 
   const bazaIsRealAemet = baza.source === "AEMET" && baza.status === "OK";
   let pressureHPa: number;
@@ -852,7 +948,7 @@ export async function computeClimateCalibration(): Promise<ClimateCalibrationRes
   }
 
   const extrapolation = buildExtrapolation(baza, Math.round(rawInterpolatedTempC * 10) / 10, pressureHPa, bazaWindDirectionDeg);
-  const effectiveTemperatureC = realTemperatureC ?? estimatedTemperatureC;
+  const effectiveTemperatureC = blendedTemperatureC ?? realTemperatureC ?? estimatedTemperatureC;
   const effectiveHumidityPct = realHumidityPct ?? extrapolation.humidityPct;
   const dewPointC = realTemperatureC !== null && realHumidityPct !== null
     ? Math.round(dewPoint(realTemperatureC, realHumidityPct) * 10) / 10
@@ -868,11 +964,41 @@ export async function computeClimateCalibration(): Promise<ClimateCalibrationRes
     : null;
   const residualC = realTemperatureC !== null ? Math.round((estimatedTemperatureC - realTemperatureC) * 10) / 10 : null;
 
+  if (residualC !== null && Math.abs(residualC) > 0.5) {
+    const feedbackFactor = getModelParam("dynamic_residual_feedback_factor");
+    const prevBias = cacheGet<number>("climate:dynamic_residual_bias") ?? 0;
+    const newBias = prevBias * 0.7 + residualC * feedbackFactor * 0.3;
+    cacheSet("climate:dynamic_residual_bias", Math.round(newBias * 100) / 100, 120 * 60 * 1000);
+    warnings.push(`Sesgo dinámico aplicado: ${residualC > 0 ? "sobreestimación" : "subestimación"} de ${Math.abs(residualC).toFixed(1)}°C detectada, corrección progresiva activa`);
+  }
+
   if (micro.inversionConditions) warnings.push("Inversión nocturna detectada: drenaje catabático activo en la cubeta del llano");
   if (micro.coldAirDrainageC < 0) warnings.push(`Corrección de drenaje de aire frío: ${micro.coldAirDrainageC}°C`);
+  if (blendedTemperatureC !== null && blendedTemperatureC !== effectiveTemperatureC) {
+    const weight = localStationAgeMin !== null ? sensorWeightByAge(localStationAgeMin) : 0;
+    warnings.push(`Sensor local (${localStationAgeMin?.toFixed(0)} min) mezclado con peso ${(weight * 100).toFixed(0)}%`);
+  }
 
-  const missingPenalty = warnings.filter(w => !w.includes("drenaje") && !w.includes("Inversión")).length * 8;
-  const confidencePct = Math.max(35, Math.min(95, 92 - missingPenalty - (localStation ? 0 : 15)));
+  const structuralWarnings = warnings.filter(w =>
+    !w.includes("drenaje") &&
+    !w.includes("Inversión") &&
+    !w.includes("Sensor local") &&
+    !w.includes("sensor propio") &&
+    !w.includes("sesgo dinámico")
+  );
+  const missingPenalty = structuralWarnings.length * 8;
+
+  const maxAgeMin = Math.max(
+    nodeAgeMin(baza),
+    nodeAgeMin(sanClemente),
+  );
+  const agePenaltyMax = getModelParam("confidence_age_penalty_max");
+  const agePenaltyDivisor = getModelParam("confidence_age_penalty_divisor");
+  const agePenalty = Math.min(agePenaltyMax, maxAgeMin / agePenaltyDivisor);
+
+  const localStationPenalty = localStation ? 0 : sanClementeRaw.status === "OK" ? 6 : 15;
+  let confidencePct = Math.max(35, Math.min(95, 92 - missingPenalty - localStationPenalty - agePenalty));
+  confidencePct = Math.round(confidencePct);
 
   return {
     location: LLANO,
@@ -943,6 +1069,17 @@ export async function computeClimateCalibration(): Promise<ClimateCalibrationRes
         ? "open_meteo"
         : "unavailable",
     },
-    quality: { confidencePct, warnings },
+    quality: {
+      confidencePct,
+      warnings,
+      breakdown: {
+        basePct: 92,
+        missingPenalty,
+        localStationPenalty,
+        agePenalty: Math.round(agePenalty),
+        maxSourceAgeMin: Math.round(maxAgeMin),
+        structuralWarnings,
+      },
+    },
   };
 }

@@ -1,24 +1,37 @@
-'use client';
-
 import Link from 'next/link';
 import ClimateEngineDashboard from '@/components/ClimateEngineDashboard';
+import { getClimateCalibrationPayload } from '@/services/climateCalibrationPayloadService';
+import { getCurrentWeatherPayload } from '@/services/currentWeatherService';
 
-export default function MotorClimaticoPage() {
+export const dynamic = 'force-dynamic';
+
+export default async function MotorClimaticoPage() {
+  const [climateResult, weatherResult] = await Promise.allSettled([
+    getClimateCalibrationPayload(),
+    getCurrentWeatherPayload(),
+  ]);
+
   return (
-    <div className="min-h-screen py-6 sm:py-8">
-      <div className="app-shell space-y-6">
-        <header className="surface-card flex flex-col gap-4 rounded-[28px] px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-7">
+    <div className="min-h-screen bg-[#f4f7fb]">
+      <div className="mx-auto max-w-lg px-4 pt-4 pb-8">
+        <header className="mb-4 flex items-center justify-between">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.24em] text-sky-700">Capa cientifica</p>
-            <h1 className="mt-2 text-2xl font-bold text-slate-950 sm:text-3xl">El Motor Climático</h1>
-            <p className="mt-1 text-sm text-slate-600">Contraste AEMET, RIA, estacion propia y calibracion del llano.</p>
+            <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-sky-700">Capa científica</p>
+            <h1 className="mt-0.5 text-xl font-black text-slate-900">Motor Climático</h1>
           </div>
-          <div className="flex flex-wrap items-center gap-3">
-            <Link href="/huescar" className="rounded-full border border-slate-200 bg-white/70 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-white">Huéscar</Link>
-            <Link href="/meteo" className="rounded-full border border-slate-200 bg-white/70 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-white">Panel completo</Link>
-          </div>
+          <Link
+            href="/huescar"
+            className="rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-600 shadow-sm hover:bg-slate-50"
+          >
+            ← Huéscar
+          </Link>
         </header>
-        <main><ClimateEngineDashboard /></main>
+        <main>
+          <ClimateEngineDashboard
+            initialClimateData={climateResult.status === 'fulfilled' ? climateResult.value : null}
+            initialWeatherData={weatherResult.status === 'fulfilled' ? weatherResult.value : null}
+          />
+        </main>
       </div>
     </div>
   );

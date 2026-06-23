@@ -2,29 +2,40 @@
 
 import { Doughnut } from 'react-chartjs-2';
 import { Chart as ChartJS, ArcElement, Tooltip } from 'chart.js';
+import type { ClimateCalibrationPayload } from '@/types/climate';
+import type { WeatherAlert, WeatherPayload } from '@/types/weather';
 
 ChartJS.register(ArcElement, Tooltip);
 
-export default function ConfidenceGauges({ currentData, calibrationData }: { currentData: any; calibrationData: any }) {
+type FrostRisk = NonNullable<ClimateCalibrationPayload['dewPoint']['frostRisk']>;
+
+const frostColors: Record<FrostRisk, string> = {
+  none: '#10b981',
+  media: '#f59e0b',
+  alta: '#f97316',
+  muy_alta: '#ef4444',
+  unknown: '#94a3b8',
+};
+
+const frostLabels: Record<FrostRisk, string> = {
+  none: 'Sin riesgo',
+  media: 'Media',
+  alta: 'Alta',
+  muy_alta: 'Muy alta',
+  unknown: 'No disponible',
+};
+
+export default function ConfidenceGauges({
+  currentData,
+  calibrationData,
+}: {
+  currentData: WeatherPayload | null | undefined;
+  calibrationData: ClimateCalibrationPayload | null | undefined;
+}) {
   const conf = currentData?.confidencePct ?? 0;
-  const warnings = calibrationData?.quality?.warnings?.length ?? 0;
-  const frost = calibrationData?.dewPoint?.frostRisk ?? 'unknown';
-
-  const frostColors: Record<string, string> = {
-    none: '#10b981',
-    media: '#f59e0b',
-    alta: '#f97316',
-    muy_alta: '#ef4444',
-    unknown: '#94a3b8',
-  };
-
-  const frostLabels: Record<string, string> = {
-    none: 'Sin riesgo',
-    media: 'Media',
-    alta: 'Alta',
-    muy_alta: 'Muy alta',
-    unknown: 'No disponible',
-  };
+  const warnings = calibrationData?.quality.warnings.length ?? 0;
+  const frost: FrostRisk = calibrationData?.dewPoint.frostRisk ?? 'unknown';
+  const alerts: WeatherAlert[] = currentData?.alerts ?? [];
 
   return (
     <section className="surface-card-strong rounded-[28px] p-5 sm:p-6">
@@ -63,7 +74,7 @@ export default function ConfidenceGauges({ currentData, calibrationData }: { cur
               data={{
                 datasets: [{
                   data: frost === 'none' ? [100, 0] : frost === 'media' ? [40, 60] : frost === 'alta' ? [65, 35] : frost === 'muy_alta' ? [85, 15] : [0, 100],
-                  backgroundColor: [frostColors[frost] || '#94a3b8', '#f1f5f9'],
+                  backgroundColor: [frostColors[frost], '#f1f5f9'],
                   borderWidth: 0,
                 }],
               }}
@@ -72,7 +83,7 @@ export default function ConfidenceGauges({ currentData, calibrationData }: { cur
             <div className="absolute inset-0 flex items-center justify-center">
               <span className="text-center">
                 <span className="text-lg font-black" style={{ color: frostColors[frost] }}>
-                  {frost === 'none' ? '✓' : '⚠'}
+                  {frost === 'none' ? 'âœ“' : 'âš '}
                 </span>
               </span>
             </div>
@@ -83,15 +94,19 @@ export default function ConfidenceGauges({ currentData, calibrationData }: { cur
         <div className="col-span-2 flex flex-col justify-center rounded-2xl border border-slate-100 bg-white p-5">
           <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">Alertas activas</p>
           <div className="mt-3 space-y-2">
-            {(currentData?.alerts ?? []).length === 0 && (
-              <p className="text-sm text-emerald-700">✓ Ninguna alerta activa</p>
+            {alerts.length === 0 && (
+              <p className="text-sm text-emerald-700">âœ“ Ninguna alerta activa</p>
             )}
-            {(currentData?.alerts ?? []).map((a: any, i: number) => (
-              <div key={i} className={`rounded-xl px-3 py-2 text-sm font-bold ${
-                a.level === 'severo' ? 'bg-rose-100 text-rose-800' :
-                a.level === 'peligro' ? 'bg-orange-100 text-orange-800' :
-                'bg-amber-100 text-amber-800'}`}>
-                {a.title}
+            {alerts.map((alert, index) => (
+              <div
+                key={`${alert.title}-${index}`}
+                className={`rounded-xl px-3 py-2 text-sm font-bold ${
+                  alert.level === 'severo' ? 'bg-rose-100 text-rose-800' :
+                  alert.level === 'peligro' ? 'bg-orange-100 text-orange-800' :
+                  'bg-amber-100 text-amber-800'
+                }`}
+              >
+                {alert.title}
               </div>
             ))}
           </div>

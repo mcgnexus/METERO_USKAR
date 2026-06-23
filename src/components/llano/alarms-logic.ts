@@ -1,5 +1,5 @@
-import type { ClimateCalibrationPayload } from '@/hooks/useClimateCalibration';
-import type { AgriculturalData, DailyWeather, WeatherAlert, WeatherPayload } from '@/types/weather';
+import type { ClimateCalibrationPayload } from '@/types/climate';
+import type { AgriculturalData, DailyWeather, WeatherPayload } from '@/types/weather';
 
 export type AlarmLevel = 'critico' | 'precaucion' | 'aviso';
 

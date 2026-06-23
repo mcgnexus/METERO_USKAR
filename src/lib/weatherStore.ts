@@ -1,5 +1,69 @@
 import { Pool } from '@neondatabase/serverless';
 
+type QueryParam = string | number | boolean | null;
+type QueryRow = Record<string, unknown>;
+
+interface CalibrationMeasurementRow extends QueryRow {
+  variable: string;
+  mae: number | string;
+  sample_count?: number | string | null;
+}
+
+interface ComarcaEstimationRow extends QueryRow {
+  reference_date: string;
+  payload: unknown;
+}
+
+interface LocationProfileRow extends QueryRow {
+  location_id: string;
+  version: string;
+  is_active: boolean;
+  payload: unknown;
+  generated_at: string;
+}
+
+interface StationCalibrationRow extends QueryRow {
+  station_id?: string;
+  variable: string;
+  bias: number | string;
+  sample_count?: number | string | null;
+}
+
+interface StationComparisonRow extends QueryRow {
+  error: number | string;
+  absolute_error: number | string;
+}
+
+interface ValidationRowDb extends QueryRow {
+  validation_date: string;
+  source: string;
+  variable: string;
+  hour_band: string;
+  season: string;
+  mae: number | string;
+  rmse: number | string;
+  bias: number | string;
+  sample_count?: number | string | null;
+}
+
+interface AggregatedValidationRow extends QueryRow {
+  source: string;
+  variable: string;
+  hour_band: string;
+  season: string;
+  avg_mae: number | string;
+  avg_rmse: number | string;
+  avg_bias: number | string | null;
+  total_samples?: number | string | null;
+}
+
+interface ModelParameterRow extends QueryRow {
+  parameter_key?: string;
+  value: number | string;
+  previous_value: number | string | null;
+  sample_count?: number | string | null;
+}
+
 let pool: Pool | null = null;
 
 function getPool(): Pool {
@@ -9,19 +73,20 @@ function getPool(): Pool {
   return pool;
 }
 
-async function safeQuery(text: string, params?: any[]): Promise<any[]> {
+async function safeQuery<T extends QueryRow = QueryRow>(text: string, params: QueryParam[] = []): Promise<T[]> {
   try {
     const result = await getPool().query(text, params);
-    return result.rows ?? [];
+    return (result.rows ?? []) as T[];
   } catch {
     return [];
   }
 }
 
-async function safeExecute(text: string, params?: any[]): Promise<void> {
+async function safeExecute(text: string, params: QueryParam[] = []): Promise<void> {
   try {
     await getPool().query(text, params);
   } catch {
+    // Best-effort persistence layer.
   }
 }
 
@@ -119,6 +184,19 @@ CREATE TABLE IF NOT EXISTS current_weather_llano (
   payload JSONB,
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+CREATE TABLE IF NOT EXISTS push_subscriptions (
+  id SERIAL PRIMARY KEY,
+  endpoint TEXT UNIQUE NOT NULL,
+  keys_p256dh TEXT NOT NULL,
+  keys_auth TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE TABLE IF NOT EXISTS push_notification_log (
+  id SERIAL PRIMARY KEY,
+  alarm_key TEXT NOT NULL,
+  endpoint TEXT,
+  sent_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
 `;
 
 let initialized = false;
@@ -163,8 +241,9 @@ export async function saveForecastPrediction(
 }
 
 export async function getLatestSourceObservation(source: string): Promise<Record<string, unknown> | null> {
-  const rows = await safeQuery(
-    `SELECT observation FROM latest_source_observations WHERE source = $1`, [source]
+  const rows = await safeQuery<{ observation?: Record<string, unknown> }>(
+    `SELECT observation FROM latest_source_observations WHERE source = $1`,
+    [source]
   );
   return rows[0]?.observation ?? null;
 }
@@ -177,12 +256,10 @@ export async function upsertLatestSourceObservation(source: string, observation:
   );
 }
 
-// C4 — Devolver también sample_count para que la ponderación Bayesiana en calibrationService
-// use el número real de muestras y no el valor hardcodeado (1).
 export async function getCalibrationMeasurements(
   daysBack: number
 ): Promise<{ variable: string; mae: number; sampleCount: number }[]> {
-  const rows = await safeQuery(
+  const rows = await safeQuery<CalibrationMeasurementRow>(
     `SELECT variable, AVG(absolute_error) AS mae, COUNT(*) AS sample_count
      FROM (
        SELECT variable, absolute_error
@@ -196,13 +273,14 @@ export async function getCalibrationMeasurements(
      GROUP BY variable`,
     [daysBack]
   );
-  return (rows ?? [])
-    .map((r: any) => ({
-      variable: r.variable,
-      mae: Number(r.mae),
-      sampleCount: Number(r.sample_count ?? 1),
+
+  return rows
+    .map((row) => ({
+      variable: row.variable,
+      mae: Number(row.mae),
+      sampleCount: Number(row.sample_count ?? 1),
     }))
-    .filter((r) => r.mae > 0);
+    .filter((row) => row.mae > 0);
 }
 
 export async function saveExternalCalibration(
@@ -217,8 +295,8 @@ export async function saveExternalCalibration(
   );
 }
 
-export async function getComarcaEstimations(): Promise<{ reference_date: string; payload: any } | null> {
-  const rows = await safeQuery(
+export async function getComarcaEstimations(): Promise<{ reference_date: string; payload: unknown } | null> {
+  const rows = await safeQuery<ComarcaEstimationRow>(
     `SELECT reference_date, payload FROM comarca_estimations ORDER BY reference_date DESC LIMIT 1`
   );
   return rows[0] ?? null;
@@ -232,8 +310,8 @@ export async function saveComarcaEstimations(date: string, payload: Record<strin
   );
 }
 
-export async function getLocationProfiles(locationId: string): Promise<any | null> {
-  const rows = await safeQuery(
+export async function getLocationProfiles(locationId: string): Promise<LocationProfileRow | null> {
+  const rows = await safeQuery<LocationProfileRow>(
     `SELECT location_id, version, is_active, payload, generated_at
      FROM location_profiles WHERE location_id = $1 AND is_active = true
      ORDER BY generated_at DESC LIMIT 1`,
@@ -260,22 +338,33 @@ export async function upsertStationCalibration(stationId: string, variable: stri
 }
 
 export async function getStationCalibrations(stationId: string): Promise<{ variable: string; bias: number; sampleCount: number }[]> {
-  const rows = await safeQuery(
+  const rows = await safeQuery<StationCalibrationRow>(
     `SELECT variable, bias, sample_count FROM station_calibrations WHERE station_id = $1 AND sample_count >= 5`,
     [stationId]
   );
-  return rows.map((r: any) => ({ variable: r.variable, bias: Number(r.bias), sampleCount: Number(r.sample_count) }));
+  return rows.map((row) => ({
+    variable: row.variable,
+    bias: Number(row.bias),
+    sampleCount: Number(row.sample_count ?? 0),
+  }));
 }
 
 export async function getAllStationCalibrations(): Promise<Record<string, { variable: string; bias: number; sampleCount: number }[]>> {
-  const rows = await safeQuery(
+  const rows = await safeQuery<StationCalibrationRow>(
     `SELECT station_id, variable, bias, sample_count FROM station_calibrations WHERE sample_count >= 5`
   );
-  const result: Record<string, any[]> = {};
-  for (const r of rows) {
-    if (!result[r.station_id]) result[r.station_id] = [];
-    result[r.station_id].push({ variable: r.variable, bias: Number(r.bias), sampleCount: Number(r.sample_count) });
+  const result: Record<string, { variable: string; bias: number; sampleCount: number }[]> = {};
+
+  for (const row of rows) {
+    if (!row.station_id) continue;
+    if (!result[row.station_id]) result[row.station_id] = [];
+    result[row.station_id].push({
+      variable: row.variable,
+      bias: Number(row.bias),
+      sampleCount: Number(row.sample_count ?? 0),
+    });
   }
+
   return result;
 }
 
@@ -292,19 +381,20 @@ export async function saveStationComparison(
 }
 
 export async function getRecentStationComparisons(stationId: string, variable: string, daysBack: number = 30): Promise<{ error: number; absoluteError: number }[]> {
-  const rows = await safeQuery(
+  const rows = await safeQuery<StationComparisonRow>(
     `SELECT error, absolute_error FROM station_comparisons
      WHERE station_id = $1 AND variable = $2 AND measured_at >= NOW() - ($3::integer * INTERVAL '1 day')
      ORDER BY measured_at DESC`,
     [stationId, variable, daysBack]
   );
-  return rows.map((r: any) => ({ error: Number(r.error), absoluteError: Number(r.absolute_error) }));
+  return rows.map((row) => ({ error: Number(row.error), absoluteError: Number(row.absolute_error) }));
 }
 
 export async function closePool(): Promise<void> {
   try {
     if (pool) await pool.end();
   } catch {
+    // Ignore shutdown errors.
   }
 }
 
@@ -332,28 +422,39 @@ export async function saveValidationDaily(row: ValidationRow): Promise<void> {
 }
 
 export async function getValidationHistory(daysBack: number = 30): Promise<ValidationRow[]> {
-  const rows = await safeQuery(
+  const rows = await safeQuery<ValidationRowDb>(
     `SELECT validation_date, source, variable, hour_band, season, mae, rmse, bias, sample_count
      FROM model_validation_daily
      WHERE validation_date >= CURRENT_DATE - $1::integer
      ORDER BY validation_date DESC, source, variable`,
     [daysBack]
   );
-  return rows.map((r: any) => ({
-    validationDate: r.validation_date,
-    source: r.source,
-    variable: r.variable,
-    hourBand: r.hour_band,
-    season: r.season,
-    mae: Number(r.mae),
-    rmse: Number(r.rmse),
-    bias: Number(r.bias),
-    sampleCount: Number(r.sample_count),
+  return rows.map((row) => ({
+    validationDate: row.validation_date,
+    source: row.source,
+    variable: row.variable,
+    hourBand: row.hour_band,
+    season: row.season,
+    mae: Number(row.mae),
+    rmse: Number(row.rmse),
+    bias: Number(row.bias),
+    sampleCount: Number(row.sample_count ?? 0),
   }));
 }
 
-export async function getAggregatedValidation(daysBack: number = 30): Promise<Record<string, any>> {
-  const rows = await safeQuery(
+export interface AggregatedValidationSummary {
+  source: string;
+  variable: string;
+  hourBand: string;
+  season: string;
+  avgMae: number;
+  avgRmse: number;
+  avgBias: number;
+  totalSamples: number;
+}
+
+export async function getAggregatedValidation(daysBack: number = 30): Promise<Record<string, AggregatedValidationSummary>> {
+  const rows = await safeQuery<AggregatedValidationRow>(
     `SELECT
        source, variable, hour_band, season,
        AVG(mae) AS avg_mae,
@@ -366,20 +467,22 @@ export async function getAggregatedValidation(daysBack: number = 30): Promise<Re
      ORDER BY source, variable, hour_band`,
     [daysBack]
   );
-  const result: any = {};
-  for (const r of rows) {
-    const key = `${r.source}_${r.variable}_${r.hour_band}_${r.season}`;
+  const result: Record<string, AggregatedValidationSummary> = {};
+
+  for (const row of rows) {
+    const key = `${row.source}_${row.variable}_${row.hour_band}_${row.season}`;
     result[key] = {
-      source: r.source,
-      variable: r.variable,
-      hourBand: r.hour_band,
-      season: r.season,
-      avgMae: Number(r.avg_mae),
-      avgRmse: Number(r.avg_rmse),
-      avgBias: Number(r.bias !== null ? r.avg_bias : 0),
-      totalSamples: Number(r.total_samples ?? 0),
+      source: row.source,
+      variable: row.variable,
+      hourBand: row.hour_band,
+      season: row.season,
+      avgMae: Number(row.avg_mae),
+      avgRmse: Number(row.avg_rmse),
+      avgBias: Number(row.avg_bias ?? 0),
+      totalSamples: Number(row.total_samples ?? 0),
     };
   }
+
   return result;
 }
 
@@ -397,11 +500,12 @@ export async function saveModelParameter(key: string, value: number, sampleCount
 }
 
 export async function getModelParameter(key: string): Promise<{ value: number; previousValue: number | null; sampleCount: number } | null> {
-  const rows = await safeQuery(
+  const rows = await safeQuery<ModelParameterRow>(
     `SELECT value, previous_value, sample_count FROM model_parameters WHERE parameter_key = $1`,
     [key]
   );
   if (rows.length === 0) return null;
+
   return {
     value: Number(rows[0].value),
     previousValue: rows[0].previous_value !== null ? Number(rows[0].previous_value) : null,
@@ -410,17 +514,20 @@ export async function getModelParameter(key: string): Promise<{ value: number; p
 }
 
 export async function getAllModelParameters(): Promise<Record<string, { value: number; previousValue: number | null; sampleCount: number }>> {
-  const rows = await safeQuery(
+  const rows = await safeQuery<ModelParameterRow>(
     `SELECT parameter_key, value, previous_value, sample_count FROM model_parameters`
   );
-  const result: Record<string, any> = {};
-  for (const r of rows) {
-    result[r.parameter_key] = {
-      value: Number(r.value),
-      previousValue: r.previous_value !== null ? Number(r.previous_value) : null,
-      sampleCount: Number(r.sample_count ?? 0),
+  const result: Record<string, { value: number; previousValue: number | null; sampleCount: number }> = {};
+
+  for (const row of rows) {
+    if (!row.parameter_key) continue;
+    result[row.parameter_key] = {
+      value: Number(row.value),
+      previousValue: row.previous_value !== null ? Number(row.previous_value) : null,
+      sampleCount: Number(row.sample_count ?? 0),
     };
   }
+
   return result;
 }
 
@@ -445,5 +552,46 @@ export async function upsertCurrentWeatherLlano(locationId: string, measuredAt: 
      VALUES ($1, $2, $3, NOW())
      ON CONFLICT (location_id) DO UPDATE SET measured_at = $2, payload = $3, updated_at = NOW()`,
     [locationId, measuredAt, JSON.stringify(payload)]
+  );
+}
+
+export async function savePushSubscription(endpoint: string, keysP256dh: string, keysAuth: string): Promise<void> {
+  await safeExecute(
+    `INSERT INTO push_subscriptions (endpoint, keys_p256dh, keys_auth)
+     VALUES ($1, $2, $3)
+     ON CONFLICT (endpoint) DO NOTHING`,
+    [endpoint, keysP256dh, keysAuth]
+  );
+}
+
+export async function removePushSubscription(endpoint: string): Promise<void> {
+  await safeExecute(
+    `DELETE FROM push_subscriptions WHERE endpoint = $1`,
+    [endpoint]
+  );
+}
+
+export async function getPushSubscriptions(): Promise<{ endpoint: string; keys_p256dh: string; keys_auth: string }[]> {
+  const rows = await safeQuery(
+    `SELECT endpoint, keys_p256dh, keys_auth FROM push_subscriptions ORDER BY created_at DESC`,
+    []
+  );
+  return rows as { endpoint: string; keys_p256dh: string; keys_auth: string }[];
+}
+
+export async function hasNotificationBeenSent(alarmKey: string, withinMinutes = 60): Promise<boolean> {
+  const rows = await safeQuery(
+    `SELECT 1 FROM push_notification_log
+     WHERE alarm_key = $1 AND sent_at > NOW() - INTERVAL '${withinMinutes} minutes'
+     LIMIT 1`,
+    [alarmKey]
+  );
+  return rows.length > 0;
+}
+
+export async function logNotificationSent(alarmKey: string, endpoint: string | null): Promise<void> {
+  await safeExecute(
+    `INSERT INTO push_notification_log (alarm_key, endpoint) VALUES ($1, $2)`,
+    [alarmKey, endpoint]
   );
 }
