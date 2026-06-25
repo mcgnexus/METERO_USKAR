@@ -1,5 +1,7 @@
 'use client';
 
+import { useState, useEffect } from 'react';
+
 function ageLabel(ms: number): string {
   const min = Math.round(ms / 60000);
   if (min < 1) return 'ahora mismo';
@@ -11,9 +13,15 @@ function ageLabel(ms: number): string {
 }
 
 export function OfflineBanner({ isStale, cachedAt }: { isStale: boolean; cachedAt: number | null }) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   if (!isStale) return null;
 
-  const age = cachedAt != null ? ageLabel(Date.now() - cachedAt) : null;
+  const age = mounted && cachedAt != null ? ageLabel(Date.now() - cachedAt) : null;
 
   return (
     <div
