@@ -267,7 +267,7 @@ function SimpleSummaryPanel({
   onShowTechnical: () => void;
 }) {
   const current = weather?.current;
-  const temp = current?.temperatureC ?? climate.calibration.realTemperatureC ?? climate.interpolation.estimatedTemperatureC;
+  const temp = climate.calibration.realTemperatureC ?? climate.interpolation.estimatedTemperatureC ?? current?.temperatureC ?? 0;
   const feelsLike = current?.apparentTemperatureC ?? temp;
   const humidity = current?.humidityPct ?? climate.extrapolation.humidityPct ?? climate.eto.inputs.humidityPct ?? null;
   const windSpeed = current?.windSpeedKmh ?? climate.nodes.radiationWind.windSpeed2mKmh;
