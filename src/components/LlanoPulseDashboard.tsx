@@ -262,6 +262,8 @@ function SimpleSummaryPanel({
   onShowTechnical: () => void;
 }) {
   const local = climate.nodes.localStation;
+  const hasLocalStation = local?.status === 'OK';
+  const stationName = local?.name ?? null;
   const temp = climate.calibration.realTemperatureC ?? climate.interpolation.estimatedTemperatureC ?? 0;
   const feelsLike = temp;
   const humidity: number | null = local?.humidityPct ?? climate.eto.inputs.humidityPct ?? climate.extrapolation.humidityPct ?? null;
@@ -305,7 +307,14 @@ function SimpleSummaryPanel({
       <section className={`overflow-hidden rounded-[28px] bg-gradient-to-br ${tempBg(temp)} p-6 text-white shadow-lg`}>
         <div className="flex items-start justify-between">
           <div>
-            <p className="text-sm font-bold uppercase tracking-wider opacity-90">Hoy en Huéscar</p>
+            <div className="flex items-center gap-2">
+              <p className="text-sm font-bold uppercase tracking-wider opacity-90">Hoy en Huéscar</p>
+              {hasLocalStation && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-white/20 px-2.5 py-0.5 text-[10px] font-bold backdrop-blur-sm" title={`Estación: ${stationName ?? 'local'}`}>
+                  📡 Local
+                </span>
+              )}
+            </div>
             <p className="mt-1 text-6xl font-black tracking-tight drop-shadow-md" style={{ textShadow: '0 2px 10px rgba(0,0,0,0.2)' }}>
               {fmtN(temp, 1)}°C
             </p>
@@ -346,6 +355,14 @@ function SimpleSummaryPanel({
           text="text-emerald-700" 
         />
       </div>
+
+      {/* INDICADOR DE ESTACIÓN LOCAL */}
+      {!hasLocalStation && (
+        <div className="flex items-center gap-2 rounded-2xl bg-white/60 px-4 py-2 text-xs text-slate-500 shadow-sm ring-1 ring-slate-100">
+          <span className="text-base">📡</span>
+          <span>Datos de respaldo — estación local no disponible</span>
+        </div>
+      )}
 
       {/* ALERTAS ACTIVAS */}
       {alarms.length > 0 && (
