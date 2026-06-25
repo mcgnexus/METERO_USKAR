@@ -13,13 +13,11 @@ import { LocalAlarmNotifier } from '@/components/LocalAlarmNotifier';
 import { fmtN } from '@/components/llano/atoms';
 import {
   interpretTemperature,
-  interpretHumidity,
-  interpretWind,
   interpretRain,
-  interpretTHI,
   interpretSoilTemp,
   interpretWindForTreatment,
   interpretFrostRisk,
+  interpretTHI,
 } from '@/lib/interpretation';
 import { weatherEmoji, weatherCodeDescription } from '@/lib/display';
 import type { ClimateCalibrationPayload } from '@/types/climate';
@@ -203,6 +201,12 @@ export default function LlanoPulseDashboard({
           </div>
         </header>
 
+        {mode === 'simple' && (
+          <div className="mb-3">
+            <NotificationPermission />
+          </div>
+        )}
+
         {mode === 'technical' && activeTab === 'now' && (
           <div className="mb-3">
             <NotificationPermission />
@@ -276,19 +280,14 @@ function SimpleSummaryPanel({
   const feelsLike = current?.apparentTemperatureC ?? temp;
   const humidity = current?.humidityPct ?? climate.extrapolation.humidityPct ?? climate.eto.inputs.humidityPct ?? null;
   const windSpeed = current?.windSpeedKmh ?? climate.nodes.radiationWind.windSpeed2mKmh;
-  const windGust = current?.windGustKmh ?? null;
   const soil10 = climate.exoticVariables.soilTemp10cmC;
-  const soil40 = climate.exoticVariables.soilTemp40cmC;
   const agri = weather?.agricultural ?? null;
   const livestock = weather?.livestock ?? null;
   const mainAlarm = alarms[0] ?? null;
 
   const tempInsight = interpretTemperature(temp, feelsLike, humidity, windSpeed);
-  const humidityInsight = interpretHumidity(humidity, temp);
-  const windInsight = interpretWind(windSpeed, windGust);
   const rainInsight = interpretRain(weather?.hourly?.precipitationProbabilityPct?.[0], weather?.hourly?.precipitationMm?.[0]);
   const soilInsight10 = interpretSoilTemp(soil10, '10cm');
-  const soilInsight40 = interpretSoilTemp(soil40, '40cm');
   const treatmentInsight = interpretWindForTreatment(windSpeed);
   const frostInsight = interpretFrostRisk(agri?.frostRisk48h);
   const thiInsight = interpretTHI(livestock?.thi ?? null);
@@ -499,7 +498,8 @@ function SimpleSummaryPanel({
       </section>
 
       {/* GANADERÍA - TARJETA COLORIDA */}
-      <section className="rounded-[24px] bg-gradient-to-br from-amber-50 to-orange-50 p-5 shadow-md border-2 border-amber-200">
+      {livestock && (
+        <section className="rounded-[24px] bg-gradient-to-br from-amber-50 to-orange-50 p-5 shadow-md border-2 border-amber-200">
         <div className="flex items-center gap-2 mb-4">
           <span className="text-2xl">🐄</span>
           <h2 className="text-base font-black text-amber-900">Ganadería</h2>
@@ -517,6 +517,7 @@ function SimpleSummaryPanel({
           </div>
         </div>
       </section>
+      )}
 
       {/* RIESGO PRINCIPAL */}
       <section className={`rounded-[24px] p-5 shadow-md border-2 ${
@@ -566,41 +567,6 @@ function FieldQuickCard({ emoji, label, value, color }: { emoji: string; label: 
       <p className="text-xl mb-1">{emoji}</p>
       <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">{label}</p>
       <p className={`text-sm font-black ${color}`}>{value}</p>
-    </div>
-  );
-}
-
-function StatPill({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-2xl bg-slate-50 p-3">
-      <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-700">{label}</p>
-      <p className="mt-1 text-sm font-bold text-slate-900">{value}</p>
-    </div>
-  );
-}
-
-function StatRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex items-start justify-between gap-3 rounded-2xl bg-slate-50 px-3 py-2">
-      <span className="text-xs font-bold uppercase tracking-[0.12em] text-slate-700">{label}</span>
-      <span className="text-sm font-bold text-slate-900">{value}</span>
-    </div>
-  );
-}
-
-function ActionGroup({ title, items, tone }: { title: string; items: string[]; tone: 'emerald' | 'amber' | 'rose' }) {
-  const toneClass = tone === 'emerald'
-    ? 'border-emerald-200 bg-emerald-50 text-emerald-900'
-    : tone === 'amber'
-      ? 'border-amber-200 bg-amber-50 text-amber-900'
-      : 'border-rose-200 bg-rose-50 text-rose-900';
-
-  return (
-    <div className={`rounded-2xl border p-4 ${toneClass}`}>
-      <p className="font-black">{title}</p>
-      <ul className="mt-2 list-disc space-y-1 pl-5">
-        {items.slice(0, 3).map((item) => <li key={item}>{item}</li>)}
-      </ul>
     </div>
   );
 }
