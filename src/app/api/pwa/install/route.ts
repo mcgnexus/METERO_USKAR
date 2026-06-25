@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
-  const dbUrl = process.env.DATABASE_URL;
+  const dbUrl = process.env.STATIONS_DATABASE_URL;
   if (!dbUrl) {
-    return NextResponse.json({ ok: false, error: "No DATABASE_URL" });
+    return NextResponse.json({ ok: false, error: "No STATIONS_DATABASE_URL" });
   }
 
   try {
