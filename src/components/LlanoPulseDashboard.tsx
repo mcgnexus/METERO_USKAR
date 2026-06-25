@@ -36,11 +36,6 @@ const DataTab = dynamic(() => import('@/components/llano/data-tab').then((m) => 
 type UiMode = 'simple' | 'technical';
 const MODE_STORAGE_KEY = 'llano-pulse-mode';
 
-function loadInitialMode(): UiMode {
-  if (typeof window === 'undefined') return 'simple';
-  return window.localStorage.getItem(MODE_STORAGE_KEY) === 'technical' ? 'technical' : 'simple';
-}
-
 function confidenceLabel(pct: number): string {
   if (pct >= 80) return 'alta';
   if (pct >= 60) return 'media';
@@ -125,11 +120,22 @@ function principalRiskLabel({
 }
 
 function useModeState(): [UiMode, (mode: UiMode) => void] {
-  const [mode, setMode] = useState<UiMode>(loadInitialMode);
+  const [mode, setMode] = useState<UiMode>('simple');
+  const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
-    window.localStorage.setItem(MODE_STORAGE_KEY, mode);
-  }, [mode]);
+    const stored = window.localStorage.getItem(MODE_STORAGE_KEY);
+    if (stored === 'technical' || stored === 'simple') {
+      setMode(stored);
+    }
+    setHydrated(true);
+  }, []);
+
+  useEffect(() => {
+    if (hydrated) {
+      window.localStorage.setItem(MODE_STORAGE_KEY, mode);
+    }
+  }, [mode, hydrated]);
 
   return [mode, setMode];
 }

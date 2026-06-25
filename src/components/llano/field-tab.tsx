@@ -25,14 +25,6 @@ const QUICK_CROPS = ['Olivo', 'Almendro', 'Pistacho', 'Tomate', 'Vid', 'Huerto']
 const ZONES = ['Huéscar centro', 'La Sagra', 'Campo total', 'Zona norte'];
 
 function loadCrops(): string[] {
-  if (typeof window === 'undefined') return ['Olivo', 'Almendro'];
-  try {
-    const raw = localStorage.getItem(LS_CROPS);
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-    }
-  } catch {}
   return ['Olivo', 'Almendro'];
 }
 
@@ -42,10 +34,7 @@ function saveCrops(crops: string[]) {
 }
 
 function loadZone(): string {
-  if (typeof window === 'undefined') return 'Campo total';
-  try {
-    return localStorage.getItem(LS_ZONE) ?? 'Campo total';
-  } catch { return 'Campo total'; }
+  return 'Campo total';
 }
 
 function saveZone(zone: string) {
@@ -62,9 +51,25 @@ export function FieldTab({ climate, weather, agricultural, livestock }: {
   const [profile, setProfile] = useState<Profile>('agricultura');
   const [favoriteCrops, setFavoriteCrops] = useState<string[]>(loadCrops);
   const [zone, setZone] = useState<string>(loadZone);
+  const [hydrated, setHydrated] = useState(false);
 
-  useEffect(() => { saveCrops(favoriteCrops); }, [favoriteCrops]);
-  useEffect(() => { saveZone(zone); }, [zone]);
+  useEffect(() => {
+    try {
+      const rawCrops = localStorage.getItem(LS_CROPS);
+      if (rawCrops) {
+        const parsed = JSON.parse(rawCrops);
+        if (Array.isArray(parsed) && parsed.length > 0) setFavoriteCrops(parsed);
+      }
+    } catch {}
+    try {
+      const storedZone = localStorage.getItem(LS_ZONE);
+      if (storedZone) setZone(storedZone);
+    } catch {}
+    setHydrated(true);
+  }, []);
+
+  useEffect(() => { if (hydrated) saveCrops(favoriteCrops); }, [favoriteCrops, hydrated]);
+  useEffect(() => { if (hydrated) saveZone(zone); }, [zone, hydrated]);
 
   const exotic = climate.exoticVariables;
   const airTemp = climate.calibration.realTemperatureC ?? climate.interpolation.estimatedTemperatureC;
