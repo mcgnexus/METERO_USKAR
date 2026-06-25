@@ -34,12 +34,6 @@ const DataTab = dynamic(() => import('@/components/llano/data-tab').then((m) => 
 type UiMode = 'simple' | 'technical';
 const MODE_STORAGE_KEY = 'llano-pulse-mode';
 
-function confidenceLabel(pct: number): string {
-  if (pct >= 80) return 'alta';
-  if (pct >= 60) return 'media';
-  return 'baja';
-}
-
 function windLabel(speedKmh: number): string {
   if (speedKmh < 10) return 'flojo';
   if (speedKmh < 25) return 'moderado';
@@ -283,8 +277,6 @@ function SimpleSummaryPanel({
   const treatmentInsight = interpretWindForTreatment(windSpeed);
   const frostInsight = interpretFrostRisk(agri?.frostRisk48h);
   const thiInsight = interpretTHI(livestock?.thi ?? null);
-  const confidencePct = Math.round(climate.quality.confidencePct);
-  const confidence = confidenceLabel(confidencePct);
   const principalRisk = principalRiskLabel({ mainAlarm, temp, humidity, weather });
   const irrigation = irrigationLabel(agri?.recommendedIrrigationLitersM2);
   const wcode = weather?.current?.weatherCode ?? 0;
@@ -317,18 +309,15 @@ function SimpleSummaryPanel({
             <p className="mt-1 text-6xl font-black tracking-tight drop-shadow-md" style={{ textShadow: '0 2px 10px rgba(0,0,0,0.2)' }}>
               {fmtN(temp, 1)}°C
             </p>
-            <p className="mt-2 text-lg font-bold flex items-center gap-2">
-              <span className="text-2xl">{weatherEmoji(wcode)}</span>
+            <p className="mt-2 text-lg font-bold">
               {mainWeatherLabel}
             </p>
             <p className="mt-1 text-sm opacity-90">
               {weatherCodeDescription(wcode)}
             </p>
           </div>
-          <div className="shrink-0 rounded-2xl bg-white/20 backdrop-blur-sm px-3 py-2 text-right">
-            <p className="text-[10px] font-bold uppercase tracking-wider opacity-80">Confianza</p>
-            <p className="text-lg font-black">{confidence}</p>
-            <p className="text-[10px] opacity-80">{confidencePct}%</p>
+          <div className="shrink-0 rounded-2xl bg-white/20 backdrop-blur-sm px-4 py-3 text-center">
+            <span className="text-4xl">{weatherEmoji(wcode)}</span>
           </div>
         </div>
       </section>
