@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import PwaRegister from "@/components/PwaRegister";
+import { Analytics } from "@vercel/analytics/react";
 
 export const metadata: Metadata = {
   title: "Meteo Huéscar | Tiempo local, alertas y previsión agrícola",
@@ -51,6 +52,7 @@ export default function RootLayout({
     <html lang="es" className="h-full antialiased">
       <body className="min-h-full flex flex-col">
         {children}
+        <Analytics />
         <PwaRegister />
       </body>
     </html>

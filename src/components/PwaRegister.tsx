@@ -52,10 +52,15 @@ export default function PwaRegister() {
   const handleInstall = async () => {
     if (!installEvent) return;
     await installEvent.prompt();
-    await installEvent.userChoice;
+    const choice = await installEvent.userChoice;
     setInstallEvent(null);
     setShowPrompt(false);
     setDismissed(true);
+    if (choice.outcome === 'accepted') {
+      try {
+        await fetch('/api/pwa/install', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userAgent: navigator.userAgent }) });
+      } catch {}
+    }
   };
 
   const handleDismiss = () => {
