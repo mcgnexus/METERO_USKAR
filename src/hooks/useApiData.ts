@@ -51,17 +51,13 @@ function readPersistedCache<T>(cacheKey?: string): { data: T; timestamp: number 
 
 function getInitialState<T>(cacheKey?: string, initialData?: T | null): ApiState<T> {
   // During hydration the client must render the exact same snapshot as the server.
-  // Browser caches can be used only when there is no server-provided data.
+  // Server-provided data always wins; browser caches are only read after mount.
   if (initialData !== undefined && initialData !== null) {
     return { data: initialData, loading: false, isStale: false, cachedAt: null };
   }
 
-  const session = readSessionCache<T>(cacheKey);
-  if (session) return { data: session.data, loading: false, isStale: false, cachedAt: session.timestamp };
-
-  const persisted = readPersistedCache<T>(cacheKey);
-  if (persisted) return { data: persisted.data, loading: false, isStale: true, cachedAt: persisted.timestamp };
-
+  // When there is no server data, both server and client start in loading state.
+  // The client will read from cache in a useEffect after hydration.
   return { data: null, loading: true, isStale: false, cachedAt: null };
 }
 
@@ -82,6 +78,20 @@ export function useApiData<T>(url: string, cacheKey?: string, initialData?: T | 
       window.removeEventListener('offline', goOffline);
     };
   }, []);
+
+  // After hydration, try to restore from browser cache if we don't have data yet.
+  useEffect(() => {
+    if (state.data !== null || !cacheKey) return;
+    const session = readSessionCache<T>(cacheKey);
+    if (session) {
+      setState({ data: session.data, loading: false, isStale: false, cachedAt: session.timestamp });
+      return;
+    }
+    const persisted = readPersistedCache<T>(cacheKey);
+    if (persisted) {
+      setState({ data: persisted.data, loading: false, isStale: true, cachedAt: persisted.timestamp });
+    }
+  }, [cacheKey, state.data]);
 
   const loadData = useCallback(async (): Promise<T> => {
     const res = await fetch(url, { cache: 'no-store' });

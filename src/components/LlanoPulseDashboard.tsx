@@ -126,7 +126,8 @@ function useModeState(): [UiMode, (mode: UiMode) => void] {
     }
   }, [mode, hydrated]);
 
-  return [mode, setMode];
+  const effectiveMode = hydrated ? mode : 'simple';
+  return [effectiveMode, setMode];
 }
 
 function LoadingState() {
