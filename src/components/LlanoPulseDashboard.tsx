@@ -74,15 +74,6 @@ function tempBg(t: number): string {
   return 'from-red-600 to-rose-700';
 }
 
-function tempEmoji(t: number): string {
-  if (t <= 0) return '❄️';
-  if (t <= 10) return '🧥';
-  if (t <= 20) return '🌤️';
-  if (t <= 25) return '☀️';
-  if (t <= 32) return '🔥';
-  return '🥵';
-}
-
 function alarmColor(level: string): string {
   if (level === 'critico') return 'bg-red-500 text-white border-red-400';
   if (level === 'precaucion') return 'bg-orange-400 text-white border-orange-300';
@@ -326,11 +317,11 @@ function SimpleSummaryPanel({
               {fmtN(temp, 1)}°C
             </p>
             <p className="mt-2 text-lg font-bold flex items-center gap-2">
-              <span className="text-2xl">{tempEmoji(temp)}</span>
+              <span className="text-2xl">{weatherEmoji(wcode)}</span>
               {mainWeatherLabel}
             </p>
             <p className="mt-1 text-sm opacity-90">
-              {weatherEmoji(wcode)} {weatherCodeDescription(wcode)}
+              {weatherCodeDescription(wcode)}
             </p>
           </div>
           <div className="shrink-0 rounded-2xl bg-white/20 backdrop-blur-sm px-3 py-2 text-right">
