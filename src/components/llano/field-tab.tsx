@@ -154,7 +154,7 @@ export function FieldTab({ climate, weather, agricultural, livestock }: {
 
                 <div className="mt-4 grid gap-3 sm:grid-cols-2">
                   <div className="rounded-xl bg-white p-3">
-                    <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-700">Demanda de agua<IndicatorHelp term="et0" /></p>
+                    <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-700">Demanda de agua<IndicatorHelp term="et0" /></div>
                     <p className="mt-1 text-xl font-black text-slate-900">{fmtN(agricultural.et0CumulativeMm, 1)} mm</p>
                     <p className="mt-1 text-xs leading-4 text-slate-600">{interpretETo(agricultural.et0CumulativeMm, 'semana').detail}</p>
                     <p className="text-xs font-bold text-sky-700">{interpretETo(agricultural.et0CumulativeMm, 'semana').action}</p>
@@ -166,7 +166,7 @@ export function FieldTab({ climate, weather, agricultural, livestock }: {
                     <p className="text-xs font-bold text-sky-700">{interpretSoilTemp(soil10, '10cm').action}</p>
                   </div>
                   <div className="rounded-xl bg-white p-3">
-                    <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-700">Helada<IndicatorHelp term="frostRisk" /></p>
+                    <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-700">Helada<IndicatorHelp term="frostRisk" /></div>
                     <p className="mt-1 text-xl font-black text-slate-900">{agricultural.frostRisk48h === 'none' ? 'Sin riesgo' : agricultural.frostRisk48h}</p>
                     <p className="mt-1 text-xs leading-4 text-slate-600">{interpretFrostRisk(agricultural.frostRisk48h).detail}</p>
                     <p className="text-xs font-bold text-sky-700">{interpretFrostRisk(agricultural.frostRisk48h).action}</p>

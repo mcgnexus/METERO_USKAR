@@ -971,19 +971,19 @@ function CropModal({ assessment, onClose, soilTemp, chillHours, et0CumulativeMm,
                 <p className="text-xs text-slate-500">Mínimo requerido: {a.crop.soilTempMinC}°C</p>
               </div>
               <div className="rounded-xl bg-white/80 p-3">
-                  <p className="text-xs text-slate-600">GDD acumulados<IndicatorHelp term="gdd" /></p>
+                  <div className="text-xs text-slate-600">GDD acumulados<IndicatorHelp term="gdd" /></div>
                 <p className="text-lg font-black text-slate-950">{a.gddProgress}</p>
                 <p className="text-xs text-slate-500">Base: {a.crop.gddBaseC}°C</p>
               </div>
               {a.crop.chillHoursMin !== null && (
                 <div className="rounded-xl bg-white/80 p-3">
-                  <p className="text-xs text-slate-600">Horas-frío<IndicatorHelp term="chillHours" /></p>
+                  <div className="text-xs text-slate-600">Horas-frío<IndicatorHelp term="chillHours" /></div>
                   <p className="text-lg font-black text-slate-950">{fmtN(chillHours, 0)}h</p>
                   <p className="text-xs text-slate-500">Mínimo requerido: {a.crop.chillHoursMin}h</p>
                 </div>
               )}
               <div className="rounded-xl bg-white/80 p-3">
-                <p className="text-xs text-slate-600">Riesgo helada 48h<IndicatorHelp term="frostRisk" /></p>
+                <div className="text-xs text-slate-600">Riesgo helada 48h<IndicatorHelp term="frostRisk" /></div>
                 <p className="text-lg font-black text-slate-950">
                   {a.crop.frostSensitive ? 'Sensible' : 'Tolerante'}
                 </p>
@@ -1024,7 +1024,7 @@ function CropModal({ assessment, onClose, soilTemp, chillHours, et0CumulativeMm,
               {a.crop.kcStages.map((s, i) => (
                 <div key={i} className={`rounded-xl p-3 ${s.monthStart === a.currentStage?.monthStart && s.monthEnd === a.currentStage?.monthEnd ? 'bg-sky-100 ring-1 ring-sky-300' : 'bg-white/60'}`}>
                   <p className="text-xs font-bold text-slate-800">{s.name}</p>
-                  <p className="text-lg font-black text-slate-950">Kc {s.kc.toFixed(2)}<IndicatorHelp term="kc" /></p>
+                  <div className="text-lg font-black text-slate-950">Kc {s.kc.toFixed(2)}<IndicatorHelp term="kc" /></div>
                   <p className="text-[10px] text-slate-500">Meses {s.monthStart}-{s.monthEnd}</p>
                 </div>
               ))}

@@ -17,7 +17,7 @@ export function KpiChip({ label, value, unit, caption, tone = 'default', help }:
             : 'border-slate-200 bg-white';
   return (
     <div className={`min-w-0 overflow-hidden rounded-[22px] border p-4 shadow-sm ${toneClass}`}>
-      <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-700">{label}<IndicatorHelp term={help} /></p>
+      <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-700">{label}<IndicatorHelp term={help} /></div>
       <p className="mt-2 text-2xl font-black leading-tight text-slate-950">
         {value}
         {unit && <span className="ml-1 text-sm font-bold text-slate-700">{unit}</span>}

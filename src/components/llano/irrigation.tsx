@@ -196,7 +196,7 @@ export function IrrigationCard({
       </div>
 
       <div className="mt-4 rounded-3xl bg-white p-5 shadow-sm">
-        <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-700">Dato principal<IndicatorHelp term="litersM2" /></p>
+        <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-700">Dato principal<IndicatorHelp term="litersM2" /></div>
         <p className="mt-2 text-3xl font-black text-slate-950">
           {showNoNeed ? 'No hace falta riego extra' : `${formatValue(amount, 1)} L/m² esta semana`}
         </p>
@@ -310,7 +310,7 @@ export function IrrigationCard({
 function IrrigationMetric({ label, value, help }: { label: string; value: string; help?: Parameters<typeof IndicatorHelp>[0]['term'] }) {
   return (
     <div className="rounded-2xl bg-white p-3">
-      <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-700">{label}<IndicatorHelp term={help} /></p>
+      <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-700">{label}<IndicatorHelp term={help} /></div>
       <p className="mt-1 text-base font-black text-slate-950">{value}</p>
     </div>
   );

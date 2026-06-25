@@ -38,7 +38,7 @@ export function KpiCard({
             : 'border-slate-200 bg-white';
   return (
     <div className={`rounded-[22px] border p-4 shadow-sm ${toneClass}`}>
-      <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-700">{label}<IndicatorHelp term={helpForLabel(label)} /></p>
+      <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-700">{label}<IndicatorHelp term={helpForLabel(label)} /></div>
       <p className="mt-2 text-2xl font-black text-slate-950">
         {value}
         {unit && <span className="ml-1 text-base font-bold text-slate-500">{unit}</span>}
