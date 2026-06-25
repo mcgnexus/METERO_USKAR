@@ -227,14 +227,14 @@ export function IrrigationCard({
               </p>
             )}
             {et0Mm !== undefined && et0Mm !== null && (
-              <p>
+              <div>
                 <LabelWithHelp term="et0">ET0 semanal</LabelWithHelp>: <span className="font-bold text-slate-900">{formatValue(et0Mm, 1)} mm</span>{kc != null ? <> · <LabelWithHelp term="kc">Kc usado</LabelWithHelp>: {kc.toFixed(2)}</> : ''}
-              </p>
+              </div>
             )}
             {precipitationMm !== undefined && precipitationMm !== null && (
-              <p>
+              <div>
                 Lluvia descontada: <span className="font-bold text-slate-900">{formatValue(precipitationMm, 1)} mm</span>
-              </p>
+              </div>
             )}
             {cropContext && <p className="text-slate-700">{cropContext}</p>}
           </div>
