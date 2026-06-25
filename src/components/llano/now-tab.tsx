@@ -17,12 +17,12 @@ import type { WeatherPayload } from '@/types/weather';
 import type { PulseAlarm } from '@/components/llano/alarms-logic';
 
 function tempColor(t: number): string {
-  if (t <= 0) return '#60a5fa';
-  if (t <= 10) return '#22d3ee';
-  if (t <= 20) return '#34d399';
-  if (t <= 30) return '#fbbf24';
-  if (t <= 35) return '#f97316';
-  return '#ef4444';
+  if (t <= 0) return '#2563eb';
+  if (t <= 10) return '#0891b2';
+  if (t <= 20) return '#15803d';
+  if (t <= 30) return '#b45309';
+  if (t <= 35) return '#c2410c';
+  return '#b91c1c';
 }
 
 function dewPointC(tempC: number | null | undefined, rhPct: number | null | undefined): number | null {
@@ -103,10 +103,10 @@ export function NowTab({ climate, weather, alarms }: {
   return (
     <div className="space-y-4 pb-24">
       <div className="flex items-center justify-between">
-        <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-sky-700">
-          Meteo Huéscar
-          {updateAge != null && (
-            <span className="ml-2 font-normal text-slate-400">
+          <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-sky-700">
+            Meteo Huéscar
+            {updateAge != null && (
+            <span className="ml-2 font-normal text-slate-600">
               · actualizado hace {updateAge < 60 ? `${updateAge} min` : `${Math.floor(updateAge / 60)}h`}
             </span>
           )}
@@ -121,21 +121,21 @@ export function NowTab({ climate, weather, alarms }: {
         </button>
       </div>
 
-      <section className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-sm">
+        <section className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-sm">
         <div className="px-5 py-5">
           <div className="flex items-baseline justify-between">
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">Huéscar ahora</p>
+              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-600">Huéscar ahora</p>
               <p className="mt-1 text-5xl font-black tracking-tight" style={{ color: tempColor(temp) }}>
                 {fmtN(temp, 1)}°C
               </p>
             </div>
             <div className="text-right">
               <p className="text-lg">{weatherEmoji(wcode)} {weatherCodeDescription(wcode)}</p>
-              <p className="mt-0.5 text-sm text-slate-500">Sensación {fmtN(temp, 1)}°C</p>
+              <p className="mt-0.5 text-sm text-slate-700">Sensación {fmtN(temp, 1)}°C</p>
             </div>
           </div>
-          <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-sm text-slate-500">
+          <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-sm text-slate-700">
             <span>💧 {humidity != null ? `${humidity.toFixed(0)}%` : '--'}</span>
             <span>💨 {windSpeed.toFixed(0)} km/h {windDir != null ? windDirection(windDir) : ''}{windGust != null ? ` (ráf. ${windGust.toFixed(0)})` : ''}</span>
           </div>
@@ -152,71 +152,88 @@ export function NowTab({ climate, weather, alarms }: {
             <p key={i} className="mt-1 text-sm font-semibold text-orange-700">⚠️ {a.title}</p>
           ))}
           {alarms.length > 3 && (
-            <p className="mt-1.5 text-xs font-bold text-slate-500">+{alarms.length - 3} más · Ver Alertas</p>
+            <p className="mt-1.5 text-xs font-bold text-slate-700">+{alarms.length - 3} más · Ver Alertas</p>
           )}
         </section>
       )}
 
       <section className="rounded-[20px] border border-slate-200 bg-white p-5">
-        <h2 className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400 mb-3">Lo importante hoy</h2>
-        <div className="space-y-2.5">
-          <Item icon={c.emoji} label={c.label} tone={c.tone} />
-          <Item icon="🌡️" label={t.label} tone={t.tone} />
-          <Item icon="💧" label={h.label} tone={h.tone} />
-          <Item icon="💨" label={w.label} tone={w.tone} />
-          <Item icon="☔" label={r.label} tone={r.tone} />
-          {hr.tone !== 'success' && <Item icon="🔥" label={hr.label} tone={hr.tone} />}
-          {nowcast && nowcast.level !== 'ninguno' && (
-            <Item icon="⛈️" label={nowcast.stormDetected ? 'Tormenta detectada' : 'Lluvia inminente'} tone={nowcast.level === 'peligro' ? 'danger' : 'warning'} />
-          )}
+        <h2 className="mb-3 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-600">Resumen de hoy</h2>
+        <div className="grid gap-3 sm:grid-cols-3">
+          <SummaryCard icon="🌡️" label={t.label} tone={t.tone} />
+          <SummaryCard icon="💧" label={h.label} tone={h.tone} />
+          <SummaryCard
+            icon="🌱"
+            label={agri?.recommendedIrrigationLitersM2 != null && agri.recommendedIrrigationLitersM2 > 0 ? 'Revisar riego' : 'Riego sin cambios'}
+            tone={agri?.recommendedIrrigationLitersM2 != null && agri.recommendedIrrigationLitersM2 > 0 ? 'warning' : 'success'}
+          />
         </div>
-      </section>
+        <details className="mt-4 rounded-2xl border border-slate-100 bg-slate-50/80">
+          <summary className="cursor-pointer px-4 py-3 text-sm font-black text-slate-800">Ver detalle técnico</summary>
+          <div className="space-y-4 px-4 pb-4">
+            <section className="rounded-[20px] border border-slate-200 bg-white p-5">
+              <h2 className="mb-3 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-600">Lo importante hoy</h2>
+              <div className="space-y-2.5">
+                <Item icon={c.emoji} label={c.label} tone={c.tone} />
+                <Item icon="🌡️" label={t.label} tone={t.tone} />
+                <Item icon="💧" label={h.label} tone={h.tone} />
+                <Item icon="💨" label={w.label} tone={w.tone} />
+                <Item icon="☔" label={r.label} tone={r.tone} />
+                {hr.tone !== 'success' && <Item icon="🔥" label={hr.label} tone={hr.tone} />}
+                {nowcast && nowcast.level !== 'ninguno' && (
+                  <Item icon="⛈️" label={nowcast.stormDetected ? 'Tormenta detectada' : 'Lluvia inminente'} tone={nowcast.level === 'peligro' ? 'danger' : 'warning'} />
+                )}
+              </div>
+            </section>
 
-      <section className={`rounded-[20px] border p-5 ${t.tone === 'danger' || t.tone === 'warning' ? 'border-orange-200 bg-orange-50/80' : 'border-emerald-200 bg-emerald-50/80'}`}>
-        <h2 className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500 mb-2">Qué hacer</h2>
-        <div className="space-y-2">
-          {actionItems.map((item) => (
-            <div key={item.label} className="flex items-start gap-2">
-              <span className={`mt-0.5 inline-flex shrink-0 rounded-full px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.14em] ${item.tone === 'danger' ? 'bg-rose-100 text-rose-800' : item.tone === 'warning' ? 'bg-amber-100 text-amber-800' : item.tone === 'info' ? 'bg-sky-100 text-sky-800' : 'bg-emerald-100 text-emerald-800'}`}>
-                {item.label}
-              </span>
-              <p className="text-sm leading-6 text-slate-900">{item.text}</p>
-            </div>
-          ))}
-        </div>
-      </section>
+            <section className={`rounded-[20px] border p-5 ${t.tone === 'danger' || t.tone === 'warning' ? 'border-orange-200 bg-orange-50/80' : 'border-emerald-200 bg-emerald-50/80'}`}>
+              <h2 className="mb-2 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-700">Qué hacer</h2>
+              <div className="space-y-2">
+                {actionItems.map((item) => (
+                  <div key={item.label} className="flex items-start gap-2">
+                    <span className={`mt-0.5 inline-flex shrink-0 rounded-full px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.14em] ${item.tone === 'danger' ? 'bg-rose-100 text-rose-800' : item.tone === 'warning' ? 'bg-amber-100 text-amber-800' : item.tone === 'info' ? 'bg-sky-100 text-sky-800' : 'bg-emerald-100 text-emerald-800'}`}>
+                      {item.label}
+                    </span>
+                    <p className="text-sm leading-6 text-slate-900">{item.text}</p>
+                  </div>
+                ))}
+              </div>
+            </section>
 
-      {agri && (
-        <section className="rounded-[20px] border border-sky-200 bg-white p-5">
-          <h2 className="text-[10px] font-bold uppercase tracking-[0.18em] text-sky-600">🌾 Campo</h2>
-          <div className="mt-3 flex flex-wrap gap-x-6 gap-y-2 text-sm">
-            {agri.et0CumulativeMm != null && (
-              <span className="text-slate-700">💧 ET0 semanal <strong className="text-sky-800">{fmtN(agri.et0CumulativeMm, 1)} mm</strong></span>
+            {agri && (
+              <section className="rounded-[20px] border border-sky-200 bg-white p-5">
+                <h2 className="text-[10px] font-bold uppercase tracking-[0.18em] text-sky-600">🌾 Campo</h2>
+                <div className="mt-3 flex flex-wrap gap-x-6 gap-y-2 text-sm">
+                  {agri.et0CumulativeMm != null && (
+                    <span className="text-slate-700">💧 ET0 semanal <strong className="text-sky-800">{fmtN(agri.et0CumulativeMm, 1)} mm</strong></span>
+                  )}
+                  {agri.frostRisk48h && agri.frostRisk48h !== 'none' && (
+                    <span className="text-slate-700">❄️ Helada <strong className="text-rose-700">{agri.frostRisk48h}</strong></span>
+                  )}
+                  {agri.recommendedIrrigationLitersM2 != null && agri.recommendedIrrigationLitersM2 > 0 && (
+                    <span className="text-slate-700">🚿 Riego <strong className="text-sky-800">{agri.recommendedIrrigationLitersM2.toFixed(1)} L/m²</strong></span>
+                  )}
+                  {agri.frostRisk48h === 'none' && (
+                    <span className="text-emerald-700">✅ Sin riesgo de helada</span>
+                  )}
+                </div>
+              </section>
             )}
-            {agri.frostRisk48h && agri.frostRisk48h !== 'none' && (
-              <span className="text-slate-700">❄️ Helada <strong className="text-rose-700">{agri.frostRisk48h}</strong></span>
-            )}
-            {agri.recommendedIrrigationLitersM2 != null && agri.recommendedIrrigationLitersM2 > 0 && (
-              <span className="text-slate-700">🚿 Riego <strong className="text-sky-800">{agri.recommendedIrrigationLitersM2.toFixed(1)} L/m²</strong></span>
-            )}
-            {agri.frostRisk48h === 'none' && (
-              <span className="text-emerald-700">✅ Sin riesgo de helada</span>
+
+            {weather?.livestock && (
+              <section className="rounded-[20px] border border-amber-200 bg-white p-5">
+                <h2 className="text-[10px] font-bold uppercase tracking-[0.18em] text-amber-700">🐄 Ganadería</h2>
+                <p className="mt-2 text-sm font-semibold text-amber-800">
+                  {interpretTHI(weather.livestock.thi ?? null).label}
+                </p>
+                <p className="mt-1 text-sm text-slate-600">
+                  {interpretTHI(weather.livestock.thi ?? null).action}
+                </p>
+              </section>
             )}
           </div>
-        </section>
-      )}
-
-      {weather?.livestock && (
-        <section className="rounded-[20px] border border-amber-200 bg-white p-5">
-          <h2 className="text-[10px] font-bold uppercase tracking-[0.18em] text-amber-600">🐄 Ganadería</h2>
-          <p className="mt-2 text-sm font-semibold text-amber-800">
-            {interpretTHI(weather.livestock.thi ?? null).label}
-          </p>
-          <p className="mt-1 text-sm text-slate-600">
-            {interpretTHI(weather.livestock.thi ?? null).action}
-          </p>
-        </section>
-      )}
+        </details>
+      </section>
     </div>
   );
 }
@@ -359,4 +376,15 @@ function buildActionItems({
 
   if (items.length > 3) return items.slice(0, 3);
   return items;
+}
+
+function SummaryCard({ icon, label, tone }: { icon: string; label: string; tone: string }) {
+  const border = tone === 'danger' ? 'border-rose-200 bg-rose-50' : tone === 'warning' ? 'border-amber-200 bg-amber-50' : tone === 'success' ? 'border-emerald-200 bg-emerald-50' : 'border-slate-200 bg-slate-50';
+  const text = tone === 'danger' ? 'text-rose-800' : tone === 'warning' ? 'text-amber-800' : tone === 'success' ? 'text-emerald-800' : 'text-slate-800';
+  return (
+    <div className={`rounded-2xl border p-4 ${border}`}>
+      <p className="text-2xl">{icon}</p>
+      <p className={`mt-2 text-sm font-black ${text}`}>{label}</p>
+    </div>
+  );
 }

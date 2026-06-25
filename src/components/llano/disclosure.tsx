@@ -9,10 +9,10 @@ export function ModelDisclosure() {
         <summary className="cursor-pointer">
           <div className="flex items-center justify-between gap-4">
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-500">Transparencia</p>
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-700">Transparencia</p>
               <p className="mt-1 text-base font-black text-slate-900">Cómo se calcula lo que ves aquí</p>
             </div>
-            <span className="shrink-0 rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
+            <span className="shrink-0 rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
               Desplegar
             </span>
           </div>

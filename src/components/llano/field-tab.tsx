@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import { fmtN } from '@/components/llano/atoms';
 import { AgricultureSection } from '@/components/llano/agriculture';
+import { IndicatorHelp } from '@/components/llano/indicator-help';
+import { IrrigationCard } from '@/components/llano/irrigation';
 import { interpretTHI, interpretFrostRisk, interpretSoilTemp, interpretWindForTreatment, interpretETo } from '@/lib/interpretation';
 import type { ClimateCalibrationPayload } from '@/hooks/useClimateCalibration';
 import type { AgriculturalData, LivestockData, WeatherPayload } from '@/types/weather';
@@ -79,7 +81,7 @@ export function FieldTab({ climate, weather, agricultural, livestock }: {
   return (
     <div className="space-y-4 pb-24">
       <section className="rounded-[22px] border border-slate-200 bg-white p-5">
-        <h2 className="text-xs font-bold uppercase tracking-[0.18em] text-slate-500">Tu perfil</h2>
+        <h2 className="text-xs font-bold uppercase tracking-[0.18em] text-slate-700">Tu perfil</h2>
         <div className="mt-3 flex flex-wrap gap-2">
           {PROFILES.map((p) => (
             <button
@@ -97,7 +99,7 @@ export function FieldTab({ climate, weather, agricultural, livestock }: {
           ))}
         </div>
         <div className="mt-3">
-          <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400 mb-1.5">Zona</p>
+          <p className="mb-1.5 text-[10px] font-bold uppercase tracking-[0.12em] text-slate-600">Zona</p>
           <div className="flex flex-wrap gap-1.5">
             {ZONES.map((z) => (
               <button
@@ -105,7 +107,7 @@ export function FieldTab({ climate, weather, agricultural, livestock }: {
                 type="button"
                 onClick={() => { setZone(z); }}
                 className={`rounded-full px-2.5 py-1 text-xs font-semibold transition ${
-                  zone === z ? 'bg-sky-700 text-white shadow-sm' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+                  zone === z ? 'bg-sky-700 text-white shadow-sm' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                 }`}
                 aria-label={`Seleccionar zona ${z}`}
               >
@@ -119,7 +121,7 @@ export function FieldTab({ climate, weather, agricultural, livestock }: {
       {profile === 'agricultura' && (
         <>
           <section className="rounded-[22px] border border-slate-200 bg-white p-5">
-            <h2 className="text-xs font-bold uppercase tracking-[0.18em] text-slate-500">Mis cultivos</h2>
+            <h2 className="text-xs font-bold uppercase tracking-[0.18em] text-slate-700">Mis cultivos</h2>
             <div className="mt-3 flex flex-wrap gap-2">
               {QUICK_CROPS.map((crop) => (
                 <button
@@ -139,67 +141,73 @@ export function FieldTab({ climate, weather, agricultural, livestock }: {
           </section>
 
           {agricultural && (
-            <section className="rounded-[22px] border border-sky-200 bg-sky-50/80 p-5">
-              <div className="flex items-center justify-between">
-                <h2 className="text-xs font-bold uppercase tracking-[0.18em] text-sky-700">
-                  {favoriteCrops.join(' / ')}
-                </h2>
-                <span className={`rounded-full px-3 py-1 text-xs font-bold ${
-                  agricultural.workability.workable ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'
-                }`}>
-                  {agricultural.workability.workable ? 'Suelo operable' : 'Labores no recomendadas'}
-                </span>
-              </div>
+            <>
+              <section className="rounded-[22px] border border-sky-200 bg-sky-50/80 p-5">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-xs font-bold uppercase tracking-[0.18em] text-sky-700">Resumen agrícola</h2>
+                  <span className={`rounded-full px-3 py-1 text-xs font-bold ${
+                    agricultural.workability.workable ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'
+                  }`}>
+                    {agricultural.workability.workable ? 'Suelo operable' : 'Labores no recomendadas'}
+                  </span>
+                </div>
 
-              <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                <div className="rounded-xl bg-white p-3">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500">ET0 semanal</p>
-                  <p className="mt-1 text-xl font-black text-slate-900">{fmtN(agricultural.et0CumulativeMm, 1)} mm</p>
-                  <p className="mt-1 text-xs leading-4 text-slate-600">{interpretETo(agricultural.et0CumulativeMm, 'semana').detail}</p>
-                  <p className="text-xs font-bold text-sky-700">{interpretETo(agricultural.et0CumulativeMm, 'semana').action}</p>
+                <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                  <div className="rounded-xl bg-white p-3">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-700">Demanda de agua<IndicatorHelp term="et0" /></p>
+                    <p className="mt-1 text-xl font-black text-slate-900">{fmtN(agricultural.et0CumulativeMm, 1)} mm</p>
+                    <p className="mt-1 text-xs leading-4 text-slate-600">{interpretETo(agricultural.et0CumulativeMm, 'semana').detail}</p>
+                    <p className="text-xs font-bold text-sky-700">{interpretETo(agricultural.et0CumulativeMm, 'semana').action}</p>
+                  </div>
+                  <div className="rounded-xl bg-white p-3">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-700">Suelo superficial</p>
+                    <p className="mt-1 text-xl font-black text-slate-900">{fmtN(soil10, 1)}°C</p>
+                    <p className="mt-1 text-xs leading-4 text-slate-600">{interpretSoilTemp(soil10, '10cm').detail}</p>
+                    <p className="text-xs font-bold text-sky-700">{interpretSoilTemp(soil10, '10cm').action}</p>
+                  </div>
+                  <div className="rounded-xl bg-white p-3">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-700">Helada<IndicatorHelp term="frostRisk" /></p>
+                    <p className="mt-1 text-xl font-black text-slate-900">{agricultural.frostRisk48h === 'none' ? 'Sin riesgo' : agricultural.frostRisk48h}</p>
+                    <p className="mt-1 text-xs leading-4 text-slate-600">{interpretFrostRisk(agricultural.frostRisk48h).detail}</p>
+                    <p className="text-xs font-bold text-sky-700">{interpretFrostRisk(agricultural.frostRisk48h).action}</p>
+                  </div>
+                  <div className="rounded-xl bg-white p-3">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-700">Tratamientos</p>
+                    <p className="mt-1 text-xl font-black text-slate-900">
+                      {windSpeed <= 15 ? 'Apto con viento bajo' : windSpeed <= 25 ? 'Marginal' : 'No apto'}
+                    </p>
+                    <p className="mt-1 text-xs leading-4 text-slate-600">{interpretWindForTreatment(windSpeed).detail}</p>
+                    <p className="text-xs font-bold text-sky-700">{interpretWindForTreatment(windSpeed).action}</p>
+                  </div>
                 </div>
-                <div className="rounded-xl bg-white p-3">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500">Riesgo helada</p>
-                  <p className="mt-1 text-xl font-black text-slate-900">{agricultural.frostRisk48h === 'none' ? 'Sin riesgo' : agricultural.frostRisk48h}</p>
-                  <p className="mt-1 text-xs leading-4 text-slate-600">{interpretFrostRisk(agricultural.frostRisk48h).detail}</p>
-                  <p className="text-xs font-bold text-sky-700">{interpretFrostRisk(agricultural.frostRisk48h).action}</p>
-                </div>
-                <div className="rounded-xl bg-white p-3">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500">Suelo 10cm</p>
-                  <p className="mt-1 text-xl font-black text-slate-900">{fmtN(soil10, 1)}°C</p>
-                  <p className="mt-1 text-xs leading-4 text-slate-600">{interpretSoilTemp(soil10, '10cm').detail}</p>
-                  <p className="text-xs font-bold text-sky-700">{interpretSoilTemp(soil10, '10cm').action}</p>
-                </div>
-                <div className="rounded-xl bg-white p-3">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500">Tratamientos</p>
-                  <p className="mt-1 text-xl font-black text-slate-900">
-                    {windSpeed <= 15 ? 'Apto' : windSpeed <= 25 ? 'Marginal' : 'No apto'}
-                  </p>
-                  <p className="mt-1 text-xs leading-4 text-slate-600">{interpretWindForTreatment(windSpeed).detail}</p>
-                  <p className="text-xs font-bold text-sky-700">{interpretWindForTreatment(windSpeed).action}</p>
-                </div>
-              </div>
+              </section>
 
-              {agricultural.recommendedIrrigationLitersM2 !== undefined && agricultural.recommendedIrrigationLitersM2 > 0 && (
-                <div className="mt-4 rounded-xl bg-emerald-100 p-4">
-                  <p className="text-xs font-bold uppercase tracking-[0.12em] text-emerald-700">Riego recomendado</p>
-                  <p className="mt-1 text-2xl font-black text-emerald-900">
-                    {agricultural.recommendedIrrigationLitersM2.toFixed(1)} L/m²
-                  </p>
-                  <p className="mt-1 text-sm text-emerald-800">
-                    Balance hídrico semanal. Ajusta por cultivo, fase fenológica y textura del suelo.
-                  </p>
+              <section className="rounded-[22px] border border-sky-200 bg-sky-50/80 p-5">
+                <h2 className="text-xs font-bold uppercase tracking-[0.18em] text-sky-700">Riego por cultivo</h2>
+                <div className="mt-4">
+                  <IrrigationCard
+                    litersPerM2={agricultural.recommendedIrrigationLitersM2 ?? null}
+                    title="Riego recomendado esta semana"
+                    subtitle={`Referencia para: ${favoriteCrops.join(' / ')}`}
+                    et0Mm={agricultural.et0CumulativeMm}
+                    kc={0.70}
+                    precipitationMm={weather?.daily?.precipitationSumMm?.[0] ?? null}
+                    cropContext="Ajusta según tipo de suelo, edad del cultivo, humedad real, sistema de riego y estado fenológico."
+                  />
                 </div>
-              )}
-            </section>
-          )}
+              </section>
 
-          {agricultural && (
-            <AgricultureSection
-              agricultural={agricultural}
-              climate={climate}
-              precipitacionSemanal={weather?.daily?.precipitationSumMm?.[0] ?? null}
-            />
+              <section className="rounded-[22px] border border-slate-200 bg-white p-5">
+                <h2 className="text-xs font-bold uppercase tracking-[0.18em] text-slate-700">Datos técnicos</h2>
+                <div className="mt-4">
+                  <AgricultureSection
+                    agricultural={agricultural}
+                    climate={climate}
+                    precipitacionSemanal={weather?.daily?.precipitationSumMm?.[0] ?? null}
+                  />
+                </div>
+              </section>
+            </>
           )}
 
         </>
@@ -211,7 +219,7 @@ export function FieldTab({ climate, weather, agricultural, livestock }: {
           {livestock ? (
             <div className="mt-4 space-y-4">
               <div className="rounded-xl bg-white p-4">
-                <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500">Estrés térmico</p>
+                <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-700">Estrés térmico</p>
                 <p className="mt-1 text-2xl font-black text-amber-900">
                   {interpretTHI(livestock.thi ?? null).label}
                 </p>
@@ -219,7 +227,7 @@ export function FieldTab({ climate, weather, agricultural, livestock }: {
                 <p className="mt-2 text-sm font-semibold text-amber-800">{interpretTHI(livestock.thi ?? null).action}</p>
               </div>
               <div className="rounded-xl bg-white p-4">
-                <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500">Condiciones actuales</p>
+                <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-700">Condiciones actuales</p>
                 <div className="mt-2 space-y-1 text-sm text-slate-700">
                   <p>🌡️ Temperatura: {fmtN(airTemp, 1)}°C</p>
                   <p>💧 Humedad: {humidity != null ? `${humidity.toFixed(0)}%` : '—'}</p>
@@ -238,7 +246,7 @@ export function FieldTab({ climate, weather, agricultural, livestock }: {
               </div>
             </div>
           ) : (
-            <p className="mt-3 text-sm text-slate-500">Sin datos ganaderos disponibles.</p>
+            <p className="mt-3 text-sm text-slate-700">Sin datos ganaderos disponibles.</p>
           )}
         </section>
       )}
@@ -248,13 +256,13 @@ export function FieldTab({ climate, weather, agricultural, livestock }: {
           <h2 className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-700">🥬 Huerto y jardín</h2>
           <div className="mt-4 space-y-4">
             <div className="rounded-xl bg-white p-4">
-              <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500">Temperatura suelo 10cm</p>
+              <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-700">Temperatura suelo 10cm</p>
               <p className="mt-1 text-2xl font-black text-slate-900">{fmtN(soil10, 1)}°C</p>
               <p className="mt-1 text-sm text-slate-600">{interpretSoilTemp(soil10, '10cm').detail}</p>
               <p className="mt-1 text-sm font-semibold text-sky-700">{interpretSoilTemp(soil10, '10cm').action}</p>
             </div>
             <div className="rounded-xl bg-white p-4">
-              <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500">Riego</p>
+              <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-700">Riego</p>
               {agricultural?.recommendedIrrigationLitersM2 !== undefined && agricultural.recommendedIrrigationLitersM2 > 0 ? (
                 <>
                   <p className="mt-1 text-2xl font-black text-sky-700">{agricultural.recommendedIrrigationLitersM2.toFixed(1)} L/m²</p>
@@ -283,7 +291,7 @@ export function FieldTab({ climate, weather, agricultural, livestock }: {
           <h2 className="text-xs font-bold uppercase tracking-[0.18em] text-sky-700">👥 Para hoy</h2>
           <div className="mt-4 space-y-4">
             <div className="rounded-xl bg-white p-4">
-              <p className="text-xs font-bold uppercase tracking-[0.12em] text-slate-500">🌡️ Temperatura</p>
+              <p className="text-xs font-bold uppercase tracking-[0.12em] text-slate-700">🌡️ Temperatura</p>
               <p className="mt-1 text-2xl font-black text-slate-900">{fmtN(airTemp, 1)}°C</p>
               <p className="mt-1 text-sm text-slate-600">
                 {airTemp >= 30
@@ -296,7 +304,7 @@ export function FieldTab({ climate, weather, agricultural, livestock }: {
               </p>
             </div>
             <div className="rounded-xl bg-white p-4">
-              <p className="text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Recomendación del día</p>
+              <p className="text-xs font-bold uppercase tracking-[0.12em] text-slate-700">Recomendación del día</p>
               <p className="mt-2 text-sm leading-6 text-slate-700">
                 {airTemp >= 35
                   ? 'Evita salir en horas centrales. Mantente hidratado. Usa protección solar y gorra.'

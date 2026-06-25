@@ -30,7 +30,7 @@ export function NavBottom({ active, onChange, alertCount }: {
               aria-label={tab.label}
               onClick={() => onChange(tab.id)}
               className={`relative flex flex-col items-center gap-0.5 py-2.5 px-3 min-w-0 min-h-[52px] transition-colors
-                ${isActive ? 'text-sky-700' : 'text-slate-400 hover:text-slate-600'}`}
+                ${isActive ? 'text-sky-800' : 'text-slate-600 hover:text-slate-800'}`}
             >
               <span className="relative text-xl leading-none">
                 {tab.icon}
@@ -40,11 +40,11 @@ export function NavBottom({ active, onChange, alertCount }: {
                   </span>
                 )}
               </span>
-              <span className={`text-[10px] font-bold leading-tight tracking-tight ${isActive ? '' : ''}`}>
+              <span className={`text-[10px] font-bold leading-tight tracking-tight ${isActive ? 'text-slate-900' : 'text-slate-700'}`}>
                 {tab.label}
               </span>
               {isActive && (
-                <span className="absolute -top-px left-1/4 right-1/4 h-0.5 rounded-full bg-sky-600" />
+                <span className="absolute -top-px left-1/4 right-1/4 h-0.5 rounded-full bg-sky-700" />
               )}
             </button>
           );

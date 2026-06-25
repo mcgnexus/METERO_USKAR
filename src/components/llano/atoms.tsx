@@ -1,11 +1,13 @@
 import type { ReactNode } from 'react';
+import { IndicatorHelp, type IndicatorKey } from '@/components/llano/indicator-help';
 
-export function KpiChip({ label, value, unit, caption, tone = 'default' }: {
+export function KpiChip({ label, value, unit, caption, tone = 'default', help }: {
   label: string;
   value: string;
   unit?: string;
   caption?: ReactNode;
   tone?: 'default' | 'accent' | 'warning' | 'danger' | 'success';
+  help?: IndicatorKey;
 }) {
   const toneClass =
     tone === 'accent' ? 'border-sky-200 bg-sky-50/80'
@@ -15,12 +17,12 @@ export function KpiChip({ label, value, unit, caption, tone = 'default' }: {
             : 'border-slate-200 bg-white';
   return (
     <div className={`min-w-0 overflow-hidden rounded-[22px] border p-4 shadow-sm ${toneClass}`}>
-      <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">{label}</p>
+      <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-700">{label}<IndicatorHelp term={help} /></p>
       <p className="mt-2 text-2xl font-black leading-tight text-slate-950">
         {value}
-        {unit && <span className="ml-1 text-sm font-bold text-slate-500">{unit}</span>}
+        {unit && <span className="ml-1 text-sm font-bold text-slate-700">{unit}</span>}
       </p>
-      {caption && <p className="mt-1 break-words text-xs leading-4 text-slate-600">{caption}</p>}
+      {caption && <p className="mt-1 break-words text-xs leading-4 text-slate-700">{caption}</p>}
     </div>
   );
 }

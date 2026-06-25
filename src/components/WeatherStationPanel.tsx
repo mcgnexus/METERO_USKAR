@@ -152,8 +152,8 @@ export default function WeatherStationPanel({
     <div className={`rounded-xl border ${border} bg-white p-4 text-slate-800`}>
       <h3 className={`mb-3 font-semibold ${primary}`}>ðŸ“¡ Miniestaciones locales</h3>
       {loading && (
-        <div className="flex items-center gap-2 text-sm text-slate-400">
-          <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-slate-300 border-t-transparent" />
+        <div className="flex items-center gap-2 text-sm text-slate-700">
+          <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-slate-400 border-t-transparent" />
           Cargando estaciones...
         </div>
       )}
@@ -161,7 +161,7 @@ export default function WeatherStationPanel({
         <p className="text-sm text-red-500">{error}</p>
       )}
       {!loading && !error && stations.length === 0 && (
-        <p className="text-sm text-slate-400">No hay estaciones disponibles</p>
+        <p className="text-sm text-slate-700">No hay estaciones disponibles</p>
       )}
       {stations.length > 0 && (
         <div className="space-y-3">
@@ -175,52 +175,52 @@ export default function WeatherStationPanel({
                   </span>
                 )}
               </div>
-              <div className="mt-1 grid grid-cols-3 gap-1 text-xs text-slate-500">
+              <div className="mt-1 grid grid-cols-3 gap-1 text-xs text-slate-700">
                 {station.temperature !== undefined && (
                   <div>
-                    <span className="block text-[10px] text-slate-400">Temp</span>
+                    <span className="block text-[10px] text-slate-600">Temp</span>
                     <span className="font-medium text-slate-700">{station.temperature.toFixed(1)}Â°C</span>
                   </div>
                 )}
                 {station.humidity !== undefined && (
                   <div>
-                    <span className="block text-[10px] text-slate-400">Humedad</span>
+                    <span className="block text-[10px] text-slate-600">Humedad</span>
                     <span className="font-medium text-slate-700">{station.humidity}%</span>
                   </div>
                 )}
                 {station.pressureHPa !== undefined && (
                   <div>
-                    <span className="block text-[10px] text-slate-400">PresiÃ³n</span>
+                    <span className="block text-[10px] text-slate-600">PresiÃ³n</span>
                     <span className="font-medium text-slate-700">{station.pressureHPa.toFixed(0)} hPa</span>
                   </div>
                 )}
                 {isAdmin && station.precipitation !== undefined && (
                   <div>
-                    <span className="block text-[10px] text-slate-400">Precip</span>
+                    <span className="block text-[10px] text-slate-600">Precip</span>
                     <span className="font-medium text-slate-700">{station.precipitation.toFixed(1)} mm</span>
                   </div>
                 )}
                 {isAdmin && station.windSpeed !== undefined && (
                   <div>
-                    <span className="block text-[10px] text-slate-400">Viento</span>
+                    <span className="block text-[10px] text-slate-600">Viento</span>
                     <span className="font-medium text-slate-700">{station.windSpeed} km/h</span>
                   </div>
                 )}
                 {isAdmin && station.soilMoisturePct !== undefined && (
                   <div>
-                    <span className="block text-[10px] text-slate-400">Suelo</span>
+                    <span className="block text-[10px] text-slate-600">Suelo</span>
                     <span className="font-medium text-slate-700">{station.soilMoisturePct.toFixed(0)}%</span>
                   </div>
                 )}
                 {isAdmin && station.rssiDbm !== undefined && (
                   <div>
-                    <span className="block text-[10px] text-slate-400">SeÃ±al</span>
+                    <span className="block text-[10px] text-slate-600">SeÃ±al</span>
                     <span className="font-medium text-slate-700">{station.rssiDbm} dBm</span>
                   </div>
                 )}
               </div>
               {isAdmin && station.updatedAt && (
-                <p className="mt-1 text-[10px] text-slate-400">
+                <p className="mt-1 text-[10px] text-slate-600">
                   {new Date(station.updatedAt).toLocaleString('es-ES')}
                 </p>
               )}

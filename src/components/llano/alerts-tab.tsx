@@ -59,7 +59,7 @@ function AlertModal({ alarm, onClose }: { alarm: PulseAlarm; onClose: () => void
           {meta && (
             <div className="flex items-center gap-2 rounded-xl bg-white/60 p-3 text-sm">
               <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${meta.tone}`}>{meta.label}</span>
-              <span className="text-slate-600">{meta.desc}</span>
+              <span className="text-slate-700">{meta.desc}</span>
             </div>
           )}
         </div>
@@ -89,7 +89,8 @@ function Section({ title, body, emphasis }: { title: string; body: string; empha
 function alarmOrder(a: PulseAlarm): number {
   if (a.level === 'critico') return 0;
   if (a.level === 'precaucion') return 1;
-  return 2;
+  if (a.level === 'aviso') return 2;
+  return 3;
 }
 
 export function AlertsTab({ alarms }: { alarms: PulseAlarm[] }) {
@@ -99,6 +100,7 @@ export function AlertsTab({ alarms }: { alarms: PulseAlarm[] }) {
   const criticas = sorted.filter(a => a.level === 'critico');
   const precauciones = sorted.filter(a => a.level === 'precaucion');
   const avisos = sorted.filter(a => a.level === 'aviso');
+  const infos = sorted.filter(a => a.level === 'info');
 
   if (alarms.length === 0) {
     return (
@@ -117,20 +119,21 @@ export function AlertsTab({ alarms }: { alarms: PulseAlarm[] }) {
   return (
     <div className="space-y-4 pb-24">
       <section className="rounded-[22px] border border-slate-200 bg-white p-5">
-        <h2 className="text-xs font-bold uppercase tracking-[0.18em] text-slate-500">Resumen</h2>
+        <h2 className="text-xs font-bold uppercase tracking-[0.18em] text-slate-700">Resumen</h2>
         <p className="mt-2 text-2xl font-black text-slate-900">
           {alarms.length} {alarms.length === 1 ? 'alerta activa' : 'alertas activas'}
         </p>
         <div className="mt-2 flex flex-wrap gap-2 text-sm">
-          {criticas.length > 0 && <span className="rounded-full bg-red-100 px-3 py-1 font-bold text-red-800">🚨 {criticas.length} críticas</span>}
-          {precauciones.length > 0 && <span className="rounded-full bg-orange-100 px-3 py-1 font-bold text-orange-800">⚠️ {precauciones.length} precauciones</span>}
-          {avisos.length > 0 && <span className="rounded-full bg-yellow-100 px-3 py-1 font-bold text-yellow-800">ℹ️ {avisos.length} avisos</span>}
+          {criticas.length > 0 && <span className="rounded-full bg-red-100 px-3 py-1 font-bold text-red-800">🚨 {criticas.length} prioridad alta</span>}
+          {precauciones.length > 0 && <span className="rounded-full bg-orange-100 px-3 py-1 font-bold text-orange-800">⚠️ {precauciones.length} prioridad media</span>}
+          {avisos.length > 0 && <span className="rounded-full bg-yellow-100 px-3 py-1 font-bold text-yellow-800">⚡ {avisos.length} avisos</span>}
+          {infos.length > 0 && <span className="rounded-full bg-sky-100 px-3 py-1 font-bold text-sky-800">ℹ️ {infos.length} informativos</span>}
         </div>
       </section>
 
       {criticas.length > 0 && (
         <section className="space-y-3">
-          <h3 className="px-1 text-sm font-bold uppercase tracking-[0.16em] text-red-700">🚨 Críticas</h3>
+          <h3 className="px-1 text-sm font-bold uppercase tracking-[0.16em] text-red-700">🚨 Prioridad alta</h3>
           {criticas.map((a, i) => (
             <AlertCard key={`crit-${i}`} alarm={a} onOpen={() => setExpanded(a)} />
           ))}
@@ -139,7 +142,7 @@ export function AlertsTab({ alarms }: { alarms: PulseAlarm[] }) {
 
       {precauciones.length > 0 && (
         <section className="space-y-3">
-          <h3 className="px-1 text-sm font-bold uppercase tracking-[0.16em] text-orange-700">⚠️ Precaución</h3>
+          <h3 className="px-1 text-sm font-bold uppercase tracking-[0.16em] text-orange-700">⚠️ Prioridad media</h3>
           {precauciones.map((a, i) => (
             <AlertCard key={`prec-${i}`} alarm={a} onOpen={() => setExpanded(a)} />
           ))}
@@ -148,9 +151,18 @@ export function AlertsTab({ alarms }: { alarms: PulseAlarm[] }) {
 
       {avisos.length > 0 && (
         <section className="space-y-3">
-          <h3 className="px-1 text-sm font-bold uppercase tracking-[0.16em] text-yellow-700">ℹ️ Avisos</h3>
+          <h3 className="px-1 text-sm font-bold uppercase tracking-[0.16em] text-yellow-700">⚡ Avisos</h3>
           {avisos.map((a, i) => (
             <AlertCard key={`aviso-${i}`} alarm={a} onOpen={() => setExpanded(a)} />
+          ))}
+        </section>
+      )}
+
+      {infos.length > 0 && (
+        <section className="space-y-3">
+          <h3 className="px-1 text-sm font-bold uppercase tracking-[0.16em] text-sky-700">ℹ️ Informativo</h3>
+          {infos.map((a, i) => (
+            <AlertCard key={`info-${i}`} alarm={a} onOpen={() => setExpanded(a)} />
           ))}
         </section>
       )}

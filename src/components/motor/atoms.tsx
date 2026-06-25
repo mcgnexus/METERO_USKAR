@@ -1,4 +1,17 @@
 import type { ReactNode } from 'react';
+import { IndicatorHelp, type IndicatorKey } from '@/components/llano/indicator-help';
+
+function helpForLabel(label: string): IndicatorKey | undefined {
+  const lower = label.toLowerCase();
+  if (lower.includes('confianza')) return 'confidence';
+  if (lower.includes('sesgo')) return 'bias';
+  if (lower.includes('eto') || lower.includes('et0')) return 'et0';
+  if (lower.includes('vpd')) return 'vpd';
+  if (lower.includes('cape')) return 'cape';
+  if (lower.includes('invers')) return 'inversion';
+  if (lower.includes('orograf')) return 'orographic';
+  return undefined;
+}
 
 export function KpiCard({
   label,
@@ -25,7 +38,7 @@ export function KpiCard({
             : 'border-slate-200 bg-white';
   return (
     <div className={`rounded-[22px] border p-4 shadow-sm ${toneClass}`}>
-      <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">{label}</p>
+      <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-700">{label}<IndicatorHelp term={helpForLabel(label)} /></p>
       <p className="mt-2 text-2xl font-black text-slate-950">
         {value}
         {unit && <span className="ml-1 text-base font-bold text-slate-500">{unit}</span>}
@@ -65,7 +78,7 @@ export function ConfidenceBar({ pct }: { pct: number }) {
       <div className="h-2 flex-1 overflow-hidden rounded-full bg-slate-200">
         <div className={`h-full rounded-full ${tone}`} style={{ width: `${clamped}%` }} />
       </div>
-      <span className="text-sm font-bold tabular-nums text-slate-700">{clamped.toFixed(0)}%</span>
+      <span className="text-sm font-bold tabular-nums text-slate-700">{clamped.toFixed(0)}%<IndicatorHelp term="confidence" /></span>
     </div>
   );
 }

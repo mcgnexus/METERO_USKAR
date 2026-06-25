@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 import { fmtN } from '@/components/llano/atoms';
+import { IndicatorHelp } from '@/components/llano/indicator-help';
+import { IrrigationCard, type IrrigationNeed } from '@/components/llano/irrigation';
 import type { AgriculturalData } from '@/types/weather';
 
 interface PhenologicalStage {
@@ -26,6 +28,13 @@ interface CropProfile {
   harvestWindow: string;
   irrigationMonths: number[];
   notes: string[];
+}
+
+interface IrrigationThresholds {
+  veryLowMax: number;
+  lowMax: number;
+  mediumMax: number;
+  highMax: number;
 }
 
 const CROPS: CropProfile[] = [
@@ -383,6 +392,33 @@ const CROPS: CropProfile[] = [
     ],
   },
 ];
+
+const IRRIGATION_THRESHOLDS: Record<string, IrrigationThresholds> = {
+  Pistacho: { veryLowMax: 10, lowMax: 25, mediumMax: 45, highMax: 70 },
+  Almendro: { veryLowMax: 15, lowMax: 35, mediumMax: 60, highMax: 90 },
+  Olivo: { veryLowMax: 12, lowMax: 30, mediumMax: 50, highMax: 75 },
+  Tomate: { veryLowMax: 20, lowMax: 45, mediumMax: 75, highMax: 110 },
+  Pepino: { veryLowMax: 18, lowMax: 40, mediumMax: 65, highMax: 95 },
+  Patata: { veryLowMax: 15, lowMax: 35, mediumMax: 60, highMax: 90 },
+  Melón: { veryLowMax: 18, lowMax: 35, mediumMax: 60, highMax: 85 },
+  Sandía: { veryLowMax: 18, lowMax: 35, mediumMax: 60, highMax: 85 },
+  'Habichuela verde': { veryLowMax: 15, lowMax: 30, mediumMax: 50, highMax: 75 },
+  Vid: { veryLowMax: 12, lowMax: 28, mediumMax: 45, highMax: 70 },
+  Calabaza: { veryLowMax: 18, lowMax: 35, mediumMax: 60, highMax: 85 },
+  Calabacín: { veryLowMax: 18, lowMax: 35, mediumMax: 60, highMax: 85 },
+};
+
+function cropIrrigationNeed(crop: CropProfile, litersPerM2: number | null | undefined): { label: string; tone: 'emerald' | 'sky' | 'amber' | 'rose'; key: IrrigationNeed } {
+  const liters = litersPerM2 ?? 0;
+  const t = IRRIGATION_THRESHOLDS[crop.name] ?? { veryLowMax: 15, lowMax: 35, mediumMax: 60, highMax: 90 };
+
+  if (!Number.isFinite(liters) || liters <= 0) return { label: 'Muy bajo', tone: 'emerald', key: 'muy_bajo' };
+  if (liters <= t.veryLowMax) return { label: 'Muy bajo', tone: 'emerald', key: 'muy_bajo' };
+  if (liters <= t.lowMax) return { label: 'Bajo', tone: 'sky', key: 'bajo' };
+  if (liters <= t.mediumMax) return { label: 'Medio', tone: 'amber', key: 'medio' };
+  if (liters <= t.highMax) return { label: 'Alto', tone: 'rose', key: 'alto' };
+  return { label: 'Muy alto', tone: 'rose', key: 'muy_alto' };
+}
 
 type CropStatus = 'safe' | 'risk' | 'not_recommended';
 
@@ -888,11 +924,13 @@ function CropIcon({ crop, size = 'md' }: { crop: CropProfile; size?: 'sm' | 'md'
   );
 }
 
-function CropModal({ assessment, onClose, soilTemp, chillHours }: {
+function CropModal({ assessment, onClose, soilTemp, chillHours, et0CumulativeMm, precipitacionSemanal }: {
   assessment: CropAssessment;
   onClose: () => void;
   soilTemp: number | null;
   chillHours: number | null;
+  et0CumulativeMm: number | null;
+  precipitacionSemanal: number | null;
 }) {
   const a = assessment;
   return (
@@ -933,19 +971,19 @@ function CropModal({ assessment, onClose, soilTemp, chillHours }: {
                 <p className="text-xs text-slate-500">Mínimo requerido: {a.crop.soilTempMinC}°C</p>
               </div>
               <div className="rounded-xl bg-white/80 p-3">
-                <p className="text-xs text-slate-600">GDD acumulados</p>
+                  <p className="text-xs text-slate-600">GDD acumulados<IndicatorHelp term="gdd" /></p>
                 <p className="text-lg font-black text-slate-950">{a.gddProgress}</p>
                 <p className="text-xs text-slate-500">Base: {a.crop.gddBaseC}°C</p>
               </div>
               {a.crop.chillHoursMin !== null && (
                 <div className="rounded-xl bg-white/80 p-3">
-                  <p className="text-xs text-slate-600">Horas-frío</p>
+                  <p className="text-xs text-slate-600">Horas-frío<IndicatorHelp term="chillHours" /></p>
                   <p className="text-lg font-black text-slate-950">{fmtN(chillHours, 0)}h</p>
                   <p className="text-xs text-slate-500">Mínimo requerido: {a.crop.chillHoursMin}h</p>
                 </div>
               )}
               <div className="rounded-xl bg-white/80 p-3">
-                <p className="text-xs text-slate-600">Riesgo helada 48h</p>
+                <p className="text-xs text-slate-600">Riesgo helada 48h<IndicatorHelp term="frostRisk" /></p>
                 <p className="text-lg font-black text-slate-950">
                   {a.crop.frostSensitive ? 'Sensible' : 'Tolerante'}
                 </p>
@@ -958,20 +996,19 @@ function CropModal({ assessment, onClose, soilTemp, chillHours }: {
 
           <section>
             <h3 className="text-sm font-bold uppercase tracking-[0.18em] text-sky-700">Riego</h3>
-            <div className="mt-2 space-y-2">
+            <div className="mt-2">
               {a.isIrrigationSeason && a.irrigationLitersM2 !== null ? (
-                <div className="rounded-xl bg-sky-50 p-4">
-                  <p className="text-xs font-bold text-sky-900">Riego semanal recomendado</p>
-                  <p className="text-2xl font-black text-sky-700">
-                    {a.irrigationLitersM2 > 0
-                      ? `${a.irrigationLitersM2.toFixed(1)} L/m²`
-                      : 'No requiere (lluvia suficiente)'}
-                  </p>
-                  <p className="mt-1 text-xs text-sky-600">
-                    Kc: {a.kcEffective.toFixed(2)} · {a.currentStage?.name ?? 'sin etapa'} ·
-                    ETc = ETo × Kc · Riego = ETc - precipitación
-                  </p>
-                </div>
+                <IrrigationCard
+                  litersPerM2={a.irrigationLitersM2}
+                  title="Riego recomendado esta semana"
+                  subtitle={`${a.crop.icon} ${a.crop.name}`}
+                  et0Mm={et0CumulativeMm}
+                  kc={a.kcEffective}
+                  precipitationMm={precipitacionSemanal}
+                  cropContext={`Etapa actual: ${a.currentStage?.name ?? 'sin etapa'} · ETc = ETo × Kc · Ajusta por humedad real, tipo de suelo y sistema de riego.`}
+                  needOverride={cropIrrigationNeed(a.crop, a.irrigationLitersM2)}
+                  cropName={a.crop.name}
+                />
               ) : (
                 <div className="rounded-xl bg-slate-100 p-4">
                   <p className="text-sm font-bold text-slate-700">Dormancia</p>
@@ -987,7 +1024,7 @@ function CropModal({ assessment, onClose, soilTemp, chillHours }: {
               {a.crop.kcStages.map((s, i) => (
                 <div key={i} className={`rounded-xl p-3 ${s.monthStart === a.currentStage?.monthStart && s.monthEnd === a.currentStage?.monthEnd ? 'bg-sky-100 ring-1 ring-sky-300' : 'bg-white/60'}`}>
                   <p className="text-xs font-bold text-slate-800">{s.name}</p>
-                  <p className="text-lg font-black text-slate-950">Kc {s.kc.toFixed(2)}</p>
+                  <p className="text-lg font-black text-slate-950">Kc {s.kc.toFixed(2)}<IndicatorHelp term="kc" /></p>
                   <p className="text-[10px] text-slate-500">Meses {s.monthStart}-{s.monthEnd}</p>
                 </div>
               ))}
@@ -1132,7 +1169,7 @@ export function CropRequirements({ agricultural, soilTemp, frostRisk, et0Cumulat
                   <span className="font-bold text-sky-900">Riego</span>
                   <span className="text-right font-semibold">
                     {a.irrigationLitersM2 > 0
-                      ? `${a.irrigationLitersM2.toFixed(1)} L/m²`
+                      ? `${a.irrigationLitersM2.toFixed(1)} L/m² · ${cropIrrigationNeed(a.crop, a.irrigationLitersM2).label}`
                       : 'Lluvia suficiente'}
                   </span>
                 </p>
@@ -1154,6 +1191,8 @@ export function CropRequirements({ agricultural, soilTemp, frostRisk, et0Cumulat
           onClose={() => setExpandedCrop(null)}
           soilTemp={soilTemp}
           chillHours={chillHours}
+          et0CumulativeMm={et0CumulativeMm}
+          precipitacionSemanal={precipitacionSemanal}
         />
       )}
     </div>

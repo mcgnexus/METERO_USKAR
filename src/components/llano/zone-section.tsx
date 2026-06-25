@@ -47,14 +47,30 @@ export function ZoneSection() {
 
   const temps = zones.map(z => z.temperatureC);
   const range = temps.length > 0 ? Math.max(...temps) - Math.min(...temps) : 0;
+  const sortedZones = [...zones].sort((a, b) => a.temperatureC - b.temperatureC);
+  const coldest = sortedZones[0];
+  const warmest = sortedZones[sortedZones.length - 1];
 
   return (
     <div className="space-y-3">
       <p className="text-sm text-slate-600">
         {zones.length} zonas · Δ {range.toFixed(1)}°C entre la más cálida y la más fría
       </p>
+      <div className="grid gap-2 sm:grid-cols-2">
+        <div className="rounded-xl bg-sky-50 p-3 text-sky-950">
+          <p className="text-[10px] font-bold uppercase tracking-[0.14em]">Más fría</p>
+          <p className="mt-1 text-sm font-black">{coldest.name} · {fmtN(coldest.temperatureC, 1)}°C</p>
+        </div>
+        <div className="rounded-xl bg-orange-50 p-3 text-orange-950">
+          <p className="text-[10px] font-bold uppercase tracking-[0.14em]">Más cálida</p>
+          <p className="mt-1 text-sm font-black">{warmest.name} · {fmtN(warmest.temperatureC, 1)}°C</p>
+        </div>
+      </div>
+      <p className="rounded-xl bg-slate-50 p-3 text-xs leading-5 text-slate-700">
+        La diferencia entre zonas puede cambiar el riesgo de helada, el riego necesario, el estrés térmico y la ventana para tratamientos.
+      </p>
 
-      {zones.map((z) => {
+      {sortedZones.map((z) => {
         const frost = frostBadge(z.frostRisk);
         return (
           <div key={z.name} className="rounded-xl border border-slate-100 bg-slate-50 p-3">

@@ -29,7 +29,7 @@ function TabButton({ tab, active, onClick }: { tab: MotorTab; active: MotorTab; 
   const isActive = active === tab;
   const cfg = tabConfig[tab];
   return (
-    <button
+        <button
       type="button"
       role="tab"
       aria-selected={isActive}
@@ -41,7 +41,7 @@ function TabButton({ tab, active, onClick }: { tab: MotorTab; active: MotorTab; 
           : 'text-slate-500 hover:bg-slate-100'
       }`}
       onClick={() => onClick(tab)}
-    >
+        >
       <span className="block text-base">{cfg.icon}</span>
       <span className="block text-xs font-bold">{cfg.label}</span>
     </button>
@@ -60,7 +60,7 @@ function ErrorState({ message }: { message: string }) {
   return (
     <div className="rounded-[28px] border border-rose-200 bg-rose-50 p-10 text-center">
       <p className="font-semibold text-red-500">No se pudo cargar el motor climático</p>
-      <p className="mt-2 text-sm text-slate-500">{message}</p>
+      <p className="mt-2 text-sm text-slate-700">{message}</p>
     </div>
   );
 }
@@ -85,7 +85,7 @@ function ResumenPanel({ data, agri, daily }: {
       />
 
       <section className="rounded-[24px] border border-slate-200 bg-white p-5">
-        <h2 className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">Qué hace este motor</h2>
+        <h2 className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-700">Qué hace este motor</h2>
         <p className="mt-2 text-sm leading-6 text-slate-700">
           Huéscar no tiene estación meteorológica oficial propia. Este motor estima la temperatura,
           humedad, presión y viento reales del llano (950 m) combinando datos de AEMET Baza, AEMET San Clemente,
@@ -98,7 +98,7 @@ function ResumenPanel({ data, agri, daily }: {
       </section>
 
       <section className="rounded-[24px] border border-slate-200 bg-white p-5">
-        <h2 className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400 mb-3">Salida actual</h2>
+        <h2 className="mb-3 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-700">Salida actual</h2>
         <div className="grid gap-3 sm:grid-cols-2">
           <KpiCard label="Temperatura" value={fmtNumber(temp, 1)} unit="°C" tone="accent"
             caption={data.calibration.realTemperatureC !== null ? 'Sensor propio (auditado)' : 'Estimación por gradiente'} />
@@ -114,7 +114,7 @@ function ResumenPanel({ data, agri, daily }: {
       <section className={`rounded-[24px] border p-5 ${
         residualOk ? 'border-emerald-200 bg-emerald-50/60' : 'border-amber-200 bg-amber-50/60'
       }`}>
-        <h2 className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">Fiabilidad</h2>
+        <h2 className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-700">Fiabilidad</h2>
         <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="text-lg font-black text-slate-900">
@@ -165,7 +165,7 @@ function TecnicaPanel({ data, dewPointC }: { data: ClimateCalibrationPayload; de
   return (
     <div className="space-y-4" role="tabpanel" id="motor-panel-tecnica" aria-labelledby="motor-tab-tecnica">
       <section className="rounded-[24px] border border-slate-200 bg-white p-5">
-        <h2 className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">Metodología</h2>
+        <h2 className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-700">Metodología</h2>
         <p className="mt-2 text-sm leading-6 text-slate-700">
           El motor aplica una cascada de leyes físicas en orden: decide la estabilidad de la columna de aire,
           transporta la humedad, calcula la demanda evaporativa y aplica correcciones de microclima del llano.
@@ -235,7 +235,7 @@ export default function ClimateEngineDashboard({
         ))}
       </div>
 
-      <p className="text-center text-xs text-slate-400">{tabConfig[activeTab].hint}</p>
+      <p className="text-center text-xs text-slate-700">{tabConfig[activeTab].hint}</p>
 
       {activeTab === 'resumen' && <ResumenPanel data={data} agri={agri} daily={daily} />}
       {activeTab === 'tecnica' && <TecnicaPanel data={data} dewPointC={dewPointC} />}

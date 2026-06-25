@@ -1,7 +1,7 @@
 import type { ClimateCalibrationPayload } from '@/types/climate';
 import type { AgriculturalData, DailyWeather, WeatherPayload } from '@/types/weather';
 
-export type AlarmLevel = 'critico' | 'precaucion' | 'aviso';
+export type AlarmLevel = 'critico' | 'precaucion' | 'aviso' | 'info';
 
 export interface PulseAlarm {
   level: AlarmLevel;
@@ -184,31 +184,35 @@ export function buildAlarms(
     }
   }
 
-  const order: Record<AlarmLevel, number> = { critico: 0, precaucion: 1, aviso: 2 };
+  const order: Record<AlarmLevel, number> = { critico: 0, precaucion: 1, aviso: 2, info: 3 };
   return alarms.sort((a, b) => order[a.level] - order[b.level]);
 }
 
 export function levelClass(level: AlarmLevel): string {
   if (level === 'critico') return 'border-red-200 bg-red-50 text-red-950';
   if (level === 'precaucion') return 'border-orange-200 bg-orange-50 text-orange-950';
-  return 'border-yellow-200 bg-yellow-50 text-yellow-950';
+  if (level === 'aviso') return 'border-yellow-200 bg-yellow-50 text-yellow-950';
+  return 'border-sky-200 bg-sky-50 text-sky-950';
 }
 
 export function levelBadge(level: AlarmLevel): string {
   if (level === 'critico') return 'bg-red-600 text-white';
   if (level === 'precaucion') return 'bg-orange-500 text-white';
-  return 'bg-yellow-400 text-yellow-950';
+  if (level === 'aviso') return 'bg-yellow-400 text-yellow-950';
+  return 'bg-sky-500 text-white';
 }
 
 export function levelLabel(level: AlarmLevel): string {
   if (level === 'critico') return 'Crítico';
   if (level === 'precaucion') return 'Precaución';
-  return 'Aviso';
+  if (level === 'aviso') return 'Aviso';
+  return 'Informativo';
 }
 
 export function levelEmoji(level: AlarmLevel): string {
   if (level === 'critico') return '🚨';
   if (level === 'precaucion') return '⚠️';
+  if (level === 'aviso') return '⚡';
   return 'ℹ️';
 }
 

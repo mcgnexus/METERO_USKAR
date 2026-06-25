@@ -21,11 +21,15 @@ const ZONE_COLORS: Record<ZoneEstimation['type'], string> = {
 export default function ZoneChart({ zones }: { zones: ZoneEstimation[] }) {
   if (!zones.length) return null;
 
-  const names = zones.map((zone) => zone.name);
-  const temps = zones.map((zone) => zone.temperatureC);
-  const hums = zones.map((zone) => zone.humidityPct);
-  const winds = zones.map((zone) => zone.windSpeedKmh);
-  const colors = zones.map((zone) => ZONE_COLORS[zone.type]);
+  const sortedZones = [...zones].sort((a, b) => a.temperatureC - b.temperatureC);
+  const coldest = sortedZones[0];
+  const warmest = sortedZones[sortedZones.length - 1];
+  const tempRange = warmest.temperatureC - coldest.temperatureC;
+  const names = sortedZones.map((zone) => zone.name);
+  const temps = sortedZones.map((zone) => zone.temperatureC);
+  const hums = sortedZones.map((zone) => zone.humidityPct);
+  const winds = sortedZones.map((zone) => zone.windSpeedKmh);
+  const colors = sortedZones.map((zone) => ZONE_COLORS[zone.type]);
 
   return (
     <section className="surface-card-strong rounded-[28px] p-5 sm:p-6">
@@ -34,6 +38,24 @@ export default function ZoneChart({ zones }: { zones: ZoneEstimation[] }) {
           <p className="text-xs font-bold uppercase tracking-[0.18em] text-sky-700">Zonas</p>
           <h2 className="mt-1 text-2xl font-black text-slate-950">Microclima por zona</h2>
           <p className="mt-1 text-sm text-slate-600">Comparativa termica e hidrica de las pedanias y entornos de Huescar.</p>
+        </div>
+      </div>
+
+      <div className="mt-5 grid gap-3 sm:grid-cols-3">
+        <div className="rounded-2xl bg-sky-50 p-4 text-sky-950">
+          <p className="text-xs font-bold uppercase tracking-[0.14em]">Zona más fría</p>
+          <p className="mt-1 text-lg font-black">{coldest.name}</p>
+          <p className="text-sm font-bold">{coldest.temperatureC.toFixed(1)}°C</p>
+        </div>
+        <div className="rounded-2xl bg-orange-50 p-4 text-orange-950">
+          <p className="text-xs font-bold uppercase tracking-[0.14em]">Zona más cálida</p>
+          <p className="mt-1 text-lg font-black">{warmest.name}</p>
+          <p className="text-sm font-bold">{warmest.temperatureC.toFixed(1)}°C</p>
+        </div>
+        <div className="rounded-2xl bg-slate-50 p-4 text-slate-900">
+          <p className="text-xs font-bold uppercase tracking-[0.14em]">Diferencia</p>
+          <p className="mt-1 text-lg font-black">{tempRange.toFixed(1)}°C</p>
+          <p className="text-xs leading-5 text-slate-700">Afecta a heladas, riego, estrés térmico y tratamientos.</p>
         </div>
       </div>
 
@@ -130,7 +152,7 @@ export default function ZoneChart({ zones }: { zones: ZoneEstimation[] }) {
       </div>
 
       <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-        {zones.map((zone) => (
+        {sortedZones.map((zone) => (
           <div key={zone.name} className="rounded-2xl border border-slate-100 bg-white p-3">
             <div className="flex items-center gap-2">
               <span className="inline-block h-3 w-3 rounded-full" style={{ backgroundColor: ZONE_COLORS[zone.type] }} />

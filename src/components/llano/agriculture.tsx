@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { fmtN, KpiChip } from '@/components/llano/atoms';
+import { IrrigationCard } from '@/components/llano/irrigation';
 import { CropRequirements } from '@/components/llano/crop-requirements';
 import type { ClimateCalibrationPayload } from '@/hooks/useClimateCalibration';
 import type { AgriculturalData } from '@/types/weather';
@@ -156,7 +157,7 @@ export function AgricultureSection({ agricultural, climate, precipitacionSemanal
                 ],
               }}
             >
-              <KpiChip label="ET0 acumulada 7d" value={fmtN(agricultural.et0CumulativeMm, 1)} unit="mm" caption="Evapotranspiración de referencia" tone="accent" />
+              <KpiChip label="ET0 acumulada 7d" value={fmtN(agricultural.et0CumulativeMm, 1)} unit="mm" caption="Evapotranspiración de referencia" tone="accent" help="et0" />
             </ClickableCard>
             <ClickableCard
               onOpen={setExpandedDetail}
@@ -171,7 +172,7 @@ export function AgricultureSection({ agricultural, climate, precipitacionSemanal
                 ],
               }}
             >
-              <KpiChip label="GDD" value={fmtN(agricultural.gddCumulative, 0)} caption="Grados día acumulados" />
+              <KpiChip label="GDD" value={fmtN(agricultural.gddCumulative, 0)} caption="Grados día acumulados" help="gdd" />
             </ClickableCard>
             <ClickableCard
               onOpen={setExpandedDetail}
@@ -187,7 +188,7 @@ export function AgricultureSection({ agricultural, climate, precipitacionSemanal
                 ],
               }}
             >
-              <KpiChip label="Horas-frío 7d" value={fmtN(agricultural.chillHours, 0)} unit="h" caption={agricultural.yearlyChillHoursAccumulated !== undefined ? `Acumulado estacional: ${agricultural.yearlyChillHoursAccumulated} h` : 'Pronóstico'} />
+              <KpiChip label="Horas-frío 7d" value={fmtN(agricultural.chillHours, 0)} unit="h" caption={agricultural.yearlyChillHoursAccumulated !== undefined ? `Acumulado estacional: ${agricultural.yearlyChillHoursAccumulated} h` : 'Pronóstico'} help="chillHours" />
             </ClickableCard>
             <ClickableCard
               onOpen={setExpandedDetail}
@@ -202,7 +203,7 @@ export function AgricultureSection({ agricultural, climate, precipitacionSemanal
                 ],
               }}
             >
-              <KpiChip label="Helada 48h" value={frostLabel(agricultural.frostRisk48h)} caption="Riesgo microclimático local" tone={frostTone(agricultural.frostRisk48h)} />
+              <KpiChip label="Helada 48h" value={frostLabel(agricultural.frostRisk48h)} caption="Riesgo microclimático local" tone={frostTone(agricultural.frostRisk48h)} help="frostRisk" />
             </ClickableCard>
           </div>
 
@@ -243,34 +244,18 @@ export function AgricultureSection({ agricultural, climate, precipitacionSemanal
               </article>
             </ClickableCard>
 
-            {agricultural.recommendedIrrigationLitersM2 !== undefined && (
-              <ClickableCard
-                onOpen={setExpandedDetail}
-                detail={{
-                  title: 'Riego recomendado general',
-                  value: agricultural.recommendedIrrigationLitersM2 > 0 ? agricultural.recommendedIrrigationLitersM2.toFixed(1) : '0.0',
-                  unit: 'l/m²',
-                  tone: 'emerald',
-                  sections: [
-                    { title: 'Qué significa', body: 'Estimación general de agua a aportar esta semana por metro cuadrado. Sirve como referencia rápida, no sustituye el cálculo por cultivo de las tarjetas inferiores.' },
-                    { title: 'Cómo se calcula', body: `Balance hídrico semanal: demanda por ET0 (${fmtN(agricultural.et0CumulativeMm, 1)} mm) ajustada con Kc orientativo y lluvia semanal (${fmtN(precipitacionSemanal, 1)} mm). 1 mm equivale aproximadamente a 1 l/m².` },
-                    { title: 'Qué hacer', body: agricultural.recommendedIrrigationLitersM2 > 0 ? 'Repartir el aporte en varios pulsos si el suelo infiltra mal o hay calor. Ajustar siempre por cultivo, fase fenológica, textura y sistema de riego.' : 'No aportar riego general salvo cultivos recién implantados, macetas, suelos muy arenosos o parcelas con déficit confirmado.' },
-                  ],
-                }}
-              >
-                <article className="rounded-[22px] border border-emerald-200 bg-emerald-50/60 p-5">
-                  <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-700">Riego recomendado</p>
-                  <h3 className="mt-1 text-lg font-black text-slate-950">
-                    {agricultural.recommendedIrrigationLitersM2 > 0
-                      ? `${agricultural.recommendedIrrigationLitersM2.toFixed(1)} l/m²`
-                      : 'No requiere riego'}
-                  </h3>
-                  <p className="mt-1 text-sm text-slate-600">
-                    Balance hídrico semanal con Kc 0.70 (olivar/almendro). Ajustar por tipo de cultivo y estado fenológico.
-                  </p>
-                </article>
-              </ClickableCard>
-            )}
+            <div className="sm:col-span-2 lg:col-span-2">
+              <IrrigationCard
+                litersPerM2={agricultural.recommendedIrrigationLitersM2 ?? null}
+                title="Riego recomendado esta semana"
+                subtitle="Referencia general para la finca. Ajusta siempre por suelo, cultivo y sistema de riego."
+                et0Mm={agricultural.et0CumulativeMm}
+                kc={0.70}
+                precipitationMm={precipitacionSemanal}
+                cropContext="Ajustar según tipo de suelo, edad del cultivo, humedad real, sistema de riego y estado fenológico."
+                compact={false}
+              />
+            </div>
           </div>
 
 

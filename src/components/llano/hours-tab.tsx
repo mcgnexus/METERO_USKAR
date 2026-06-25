@@ -2,10 +2,11 @@
 
 import { useState } from 'react';
 import { weatherCodeDescription, weatherEmoji } from '@/lib/display';
-import { interpretTemperature, interpretRain, interpretWind } from '@/lib/interpretation';
+import { interpretTemperature, interpretRain, interpretWind, interpretWindForTreatment } from '@/lib/interpretation';
 import type { HourlyWeather, DailyWeather, WeatherPayload } from '@/types/weather';
 import type { ForecastPayload } from '@/types/forecast';
 import { Forecast5d } from '@/components/llano/forecast-5d';
+import { WindTreatmentChart } from '@/components/llano/wind-treatment-chart';
 import TemperatureChart from '@/components/visualizacion/TemperatureChart';
 
 function fmtHour(iso: string): string {
@@ -41,15 +42,14 @@ export function HoursTab({ hourly, forecast, daily, weather }: {
   daily?: DailyWeather;
   weather?: WeatherPayload | null;
 }) {
-  const [showChart, setShowChart] = useState(false);
-  // Use the server-provided weather timestamp so SSR and hydration agree.
+  const [view, setView] = useState<'resumen' | 'tabla' | 'grafica'>('resumen');
   const referenceTime = weather?.current?.time ?? weather?.fetchedAt ?? null;
   const now = referenceTime ? new Date(referenceTime).getTime() : Date.now();
 
   if (!hourly?.time?.length) {
     return (
       <div className="flex min-h-[200px] items-center justify-center rounded-[22px] border border-slate-200 bg-white p-8">
-        <p className="text-sm text-slate-500">Datos horarios no disponibles</p>
+        <p className="text-sm text-slate-700">Datos horarios no disponibles</p>
       </div>
     );
   }
@@ -66,84 +66,182 @@ export function HoursTab({ hourly, forecast, daily, weather }: {
   const minTemp = Math.min(...temps);
   const maxTempHour = upcoming[temps.indexOf(maxTemp)];
   const rainHours = upcoming.filter(h => (hourly.precipitationProbabilityPct[h.index] ?? 0) >= 40);
+  const first = upcoming[0];
+  const firstWind = first ? hourly.windSpeedKmh[first.index] ?? 0 : 0;
+  const firstWindLabel = interpretWind(firstWind, null).label;
+
+  // Calcular ventanas de trabajo y tratamiento
+  const workHours = upcoming.filter(h => {
+    const temp = hourly.temperatureC[h.index] ?? 0;
+    const wind = hourly.windSpeedKmh[h.index] ?? 0;
+    return temp <= 30 && wind <= 20 && (hourly.precipitationProbabilityPct[h.index] ?? 0) < 40;
+  });
+
+  const treatOptimal = upcoming.filter(h => {
+    const wind = hourly.windSpeedKmh[h.index] ?? 0;
+    return wind <= 15 && (hourly.precipitationProbabilityPct[h.index] ?? 0) < 40;
+  });
+  const treatApto = upcoming.filter(h => {
+    const wind = hourly.windSpeedKmh[h.index] ?? 0;
+    return wind <= 25 && (hourly.precipitationProbabilityPct[h.index] ?? 0) < 40;
+  });
+
+  const workText = workHours.length > 0
+    ? `Antes de ${fmtHour(workHours[0].time)}${workHours.length > 1 ? ` o después de ${fmtHour(workHours[workHours.length - 1].time)}` : ''}`
+    : 'Evita las horas centrales si hace mucho calor o viento';
+
+  const treatText = treatOptimal.length > 0
+    ? `Óptimo entre ${fmtHour(treatOptimal[0].time)} y ${fmtHour(treatOptimal[treatOptimal.length - 1].time)}`
+    : treatApto.length > 0
+      ? `Apto entre ${fmtHour(treatApto[0].time)} y ${fmtHour(treatApto[treatApto.length - 1].time)}`
+      : 'Viento o lluvia desaconsejan tratar ahora';
+
+  const rainText = rainHours.length > 0
+    ? `Probable sobre las ${rainHours.slice(0, 2).map(h => fmtHour(h.time)).join(' y ')}`
+    : 'No prevista';
 
   return (
     <div className="space-y-4 pb-24">
       <section className="rounded-[22px] border border-slate-200 bg-white p-5">
-        <h2 className="text-xs font-bold uppercase tracking-[0.18em] text-slate-500">Próximas {upcoming.length} horas</h2>
-        <div className="mt-3 space-y-2">
-          <div className="rounded-xl bg-slate-50 p-3 text-sm">
-            <p className="font-bold text-slate-900">
-              Máxima: {fmtN(maxTemp, 0)}°C {maxTempHour ? `a las ${fmtHour(maxTempHour.time)}` : ''}
-            </p>
-            <p className="text-slate-600">
-              Mínima: {fmtN(minTemp, 0)}°C · Rango: {fmtN(maxTemp - minTemp, 0)}°C
-            </p>
-            {rainHours.length > 0 ? (
-              <p className="mt-1 font-semibold text-sky-700">
-                ☔ Lluvia probable alrededor de las {rainHours.slice(0, 3).map(h => fmtHour(h.time)).join(', ')}
+        <div className="flex items-center justify-between">
+          <h2 className="text-xs font-bold uppercase tracking-[0.18em] text-slate-700">Próximas {upcoming.length} horas</h2>
+        </div>
+
+        <div className="mt-3 flex gap-2">
+          <ViewButton active={view === 'resumen'} onClick={() => setView('resumen')}>Resumen</ViewButton>
+          <ViewButton active={view === 'tabla'} onClick={() => setView('tabla')}>Tabla</ViewButton>
+          <ViewButton active={view === 'grafica'} onClick={() => setView('grafica')}>Gráfica</ViewButton>
+        </div>
+
+        {view === 'resumen' && (
+          <div className="mt-4 space-y-3">
+            <div className="rounded-3xl bg-slate-50 p-4">
+              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-700">Dato principal</p>
+              <p className="mt-1 text-4xl font-black text-slate-950">
+                {fmtN(maxTemp, 0)}°C
               </p>
-            ) : (
-              <p className="mt-1 text-emerald-700">☀️ Sin lluvia prevista</p>
-            )}
+              <p className="mt-1 text-sm font-bold text-slate-700">
+                Máxima prevista {maxTempHour ? `a las ${fmtHour(maxTempHour.time)}` : ''}
+              </p>
+            </div>
+
+            <div className="grid gap-2 sm:grid-cols-3">
+              <SummaryChip label="Mínima" value={`${fmtN(minTemp, 0)}°C`} />
+              <SummaryChip label="Lluvia" value={rainHours.length > 0 ? `${rainHours.length} horas probables` : 'Sin lluvia'} />
+              <SummaryChip label="Viento ahora" value={firstWindLabel} />
+            </div>
+
+            <div className="rounded-2xl bg-white p-4 text-sm leading-6 text-slate-800 ring-1 ring-slate-100">
+              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-700">Recomendación</p>
+              <p className="mt-1 font-semibold text-slate-950">
+                {rainHours.length > 0
+                  ? `Ten a mano protección por posible lluvia sobre las ${rainHours.slice(0, 2).map(h => fmtHour(h.time)).join(' y ')}.`
+                  : maxTemp >= 32
+                    ? 'Prioriza tareas al aire libre temprano o al final del día.'
+                    : 'Sin cambios importantes: revisa viento y temperatura antes de trabajos sensibles.'}
+              </p>
+            </div>
+
+            <div className="rounded-2xl bg-slate-50 p-4 text-sm leading-6 text-slate-800">
+              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-700">Detalle práctico</p>
+              <ul className="mt-2 space-y-2">
+                <li className="flex items-start gap-2">
+                  <span className="text-base">🔥</span>
+                  <span><strong>Hora más calurosa:</strong> {maxTempHour ? fmtHour(maxTempHour.time) : '—'}</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-base">🛠️</span>
+                  <span><strong>Mejor momento para trabajar:</strong> {workText}</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-base">🌬️</span>
+                  <span><strong>Mejor ventana para tratar:</strong> {treatText}</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-base">☔</span>
+                  <span><strong>Lluvia:</strong> {rainText}</span>
+                </li>
+              </ul>
+            </div>
           </div>
-        </div>
+        )}
 
-        <div className="mt-4 overflow-x-auto -mx-5 px-5">
-          <table className="w-full min-w-[400px] text-sm">
-            <thead>
-              <tr className="border-b border-slate-100 text-[11px] font-bold uppercase tracking-[0.1em] text-slate-400">
-                <th className="py-2 text-left">Hora</th>
-                <th className="py-2 text-left">Temp</th>
-                <th className="py-2 text-left">Cielo</th>
-                <th className="py-2 text-left">Viento</th>
-                <th className="py-2 text-left">Lluvia</th>
-                <th className="py-2 text-left">Riesgo</th>
-              </tr>
-            </thead>
-            <tbody>
-              {upcoming.map((h) => {
-                const temp = hourly.temperatureC[h.index] ?? 0;
-                const wc = hourly.weatherCode[h.index] ?? 0;
-                const rain = hourly.precipitationProbabilityPct[h.index] ?? 0;
-                const wind = hourly.windSpeedKmh[h.index] ?? 0;
-                const risk = riskLabel(temp);
-                const interp = interpretTemperature(temp, temp, hourly.humidityPct[h.index] ?? null, wind);
-                return (
-                  <tr key={h.time} className="border-b border-slate-50 hover:bg-slate-50/50">
-                    <td className="py-2.5 pr-3 font-bold text-slate-800">{fmtHourShort(h.time)}</td>
-                    <td className="py-2.5 pr-3 font-black tabular-nums" style={{ color: temp <= 0 ? '#60a5fa' : temp <= 15 ? '#22d3ee' : temp <= 25 ? '#34d399' : temp <= 32 ? '#fbbf24' : temp <= 38 ? '#f97316' : '#ef4444' }}>
-                      {fmtN(temp, 1)}°
-                    </td>
-                    <td className="py-2.5 pr-3 text-slate-700">{weatherEmoji(wc)} {weatherCodeDescription(wc)}</td>
-                    <td className="py-2.5 pr-3 text-slate-600">{wind.toFixed(0)} km/h</td>
-                    <td className="py-2.5 pr-3 text-sky-700">{rain.toFixed(0)}%</td>
-                    <td className="py-2.5">
-                      <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${riskColor(risk)}`}>
-                        {risk}
-                      </span>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+        {view === 'tabla' && (
+          <div className="mt-4 overflow-x-auto -mx-5 px-5">
+            <table className="w-full min-w-[400px] text-sm">
+              <thead>
+                <tr className="border-b border-slate-100 text-[11px] font-bold uppercase tracking-[0.1em] text-slate-600">
+                  <th className="py-2 text-left">Hora</th>
+                  <th className="py-2 text-left">Temp</th>
+                  <th className="py-2 text-left">Cielo</th>
+                  <th className="py-2 text-left">Viento</th>
+                  <th className="py-2 text-left">Lluvia</th>
+                  <th className="py-2 text-left">Riesgo</th>
+                </tr>
+              </thead>
+              <tbody>
+                {upcoming.map((h) => {
+                  const temp = hourly.temperatureC[h.index] ?? 0;
+                  const wc = hourly.weatherCode[h.index] ?? 0;
+                  const rain = hourly.precipitationProbabilityPct[h.index] ?? 0;
+                  const wind = hourly.windSpeedKmh[h.index] ?? 0;
+                  const risk = riskLabel(temp);
+                  return (
+                    <tr key={h.time} className="border-b border-slate-50 hover:bg-slate-50/50">
+                      <td className="py-2.5 pr-3 font-bold text-slate-800">{fmtHourShort(h.time)}</td>
+                      <td className="py-2.5 pr-3 font-black tabular-nums" style={{ color: temp <= 0 ? '#60a5fa' : temp <= 15 ? '#22d3ee' : temp <= 25 ? '#34d399' : temp <= 32 ? '#fbbf24' : temp <= 38 ? '#f97316' : '#ef4444' }}>
+                        {fmtN(temp, 1)}°
+                      </td>
+                      <td className="py-2.5 pr-3 text-slate-700">{weatherEmoji(wc)} {weatherCodeDescription(wc)}</td>
+                      <td className="py-2.5 pr-3 text-slate-600">{wind.toFixed(0)} km/h</td>
+                      <td className="py-2.5 pr-3 text-sky-700">{rain.toFixed(0)}%</td>
+                      <td className="py-2.5">
+                        <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${riskColor(risk)}`}>
+                          {risk}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
 
-        <button
-          type="button"
-          onClick={() => setShowChart(!showChart)}
-          className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-slate-50 py-3 text-sm font-bold text-slate-600 transition hover:bg-slate-100"
-        >
-          {showChart ? 'Ocultar gráfica' : 'Ver gráfica detallada'}
-        </button>
+        {view === 'grafica' && weather && (
+          <div className="mt-4 space-y-4">
+            <TemperatureChart currentData={weather} />
+            <WindTreatmentChart hourly={hourly} />
+          </div>
+        )}
       </section>
 
-      {showChart && weather && (
-        <TemperatureChart currentData={weather} />
-      )}
-
       {forecast && <Forecast5d forecast={forecast} daily={daily} />}
+    </div>
+  );
+}
+
+function ViewButton({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`rounded-full px-4 py-1.5 text-xs font-bold transition ${
+        active
+          ? 'bg-slate-950 text-white shadow-sm'
+          : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
+
+function SummaryChip({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-2xl bg-slate-50 p-3">
+      <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-700">{label}</p>
+      <p className="mt-1 text-sm font-black text-slate-950">{value}</p>
     </div>
   );
 }
