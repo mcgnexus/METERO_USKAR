@@ -266,11 +266,11 @@ function SimpleSummaryPanel({
   alarms: PulseAlarm[];
   onShowTechnical: () => void;
 }) {
-  const current = weather?.current;
-  const temp = climate.calibration.realTemperatureC ?? climate.interpolation.estimatedTemperatureC ?? current?.temperatureC ?? 0;
-  const feelsLike = current?.apparentTemperatureC ?? temp;
-  const humidity = current?.humidityPct ?? climate.extrapolation.humidityPct ?? climate.eto.inputs.humidityPct ?? null;
-  const windSpeed = current?.windSpeedKmh ?? climate.nodes.radiationWind.windSpeed2mKmh;
+  const local = climate.nodes.localStation;
+  const temp = climate.calibration.realTemperatureC ?? climate.interpolation.estimatedTemperatureC ?? 0;
+  const feelsLike = temp;
+  const humidity: number | null = local?.humidityPct ?? climate.eto.inputs.humidityPct ?? climate.extrapolation.humidityPct ?? null;
+  const windSpeed = climate.nodes.radiationWind.windSpeed2mKmh ?? 0;
   const soil10 = climate.exoticVariables.soilTemp10cmC;
   const agri = weather?.agricultural ?? null;
   const livestock = weather?.livestock ?? null;
@@ -282,7 +282,7 @@ function SimpleSummaryPanel({
   const treatmentInsight = interpretWindForTreatment(windSpeed);
   const frostInsight = interpretFrostRisk(agri?.frostRisk48h);
   const thiInsight = interpretTHI(livestock?.thi ?? null);
-  const confidencePct = Math.round(weather?.confidencePct ?? climate.quality.confidencePct);
+  const confidencePct = Math.round(climate.quality.confidencePct);
   const confidence = confidenceLabel(confidencePct);
   const principalRisk = principalRiskLabel({ mainAlarm, temp, humidity, weather });
   const irrigation = irrigationLabel(agri?.recommendedIrrigationLitersM2);
