@@ -924,8 +924,19 @@ export async function computeClimateCalibration(): Promise<ClimateCalibrationRes
   estimatedTemperatureC = temporalSmoothedTemp(estimatedTemperatureC);
   cacheSet("climate:llano:smoothed_temp", estimatedTemperatureC, 30 * 60 * 1000);
 
-  const realTemperatureC = localStation?.temperatureC ?? null;
+  let realTemperatureC = localStation?.temperatureC ?? null;
   const realHumidityPct = localStation?.humidityPct ?? null;
+
+  if (realTemperatureC !== null) {
+    const deviation = Math.abs(realTemperatureC - estimatedTemperatureC);
+    const maxDeviation = getModelParam("local_station_max_deviation_c");
+    if (deviation > maxDeviation) {
+      warnings.push(
+        `Sensor local descartado: ${realTemperatureC.toFixed(1)}\u00b0C vs estimacion ${estimatedTemperatureC.toFixed(1)}\u00b0C (desviacion ${deviation.toFixed(1)}\u00b0C > umbral ${maxDeviation.toFixed(1)}\u00b0C)`
+      );
+      realTemperatureC = null;
+    }
+  }
 
   let blendedTemperatureC: number | null = null;
   if (realTemperatureC !== null && localStationAgeMin !== null) {
@@ -996,7 +1007,8 @@ export async function computeClimateCalibration(): Promise<ClimateCalibrationRes
   const agePenaltyDivisor = getModelParam("confidence_age_penalty_divisor");
   const agePenalty = Math.min(agePenaltyMax, maxAgeMin / agePenaltyDivisor);
 
-  const localStationPenalty = localStation ? 0 : sanClementeRaw.status === "OK" ? 6 : 15;
+  const localStationUsable = localStation !== null && realTemperatureC !== null;
+  const localStationPenalty = localStationUsable ? 0 : sanClementeRaw.status === "OK" ? 6 : 15;
   let confidencePct = Math.max(35, Math.min(95, 92 - missingPenalty - localStationPenalty - agePenalty));
   confidencePct = Math.round(confidencePct);
 

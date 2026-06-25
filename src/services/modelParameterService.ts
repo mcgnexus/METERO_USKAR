@@ -47,6 +47,7 @@ const DEFAULT_PARAMS: Record<string, number> = {
   confidence_age_penalty_divisor: 3,
   dynamic_residual_feedback_factor: 0.3,
   dynamic_residual_min_samples: 30,
+  local_station_max_deviation_c: 7.0,
 };
 
 export interface ParameterTuningResult {
