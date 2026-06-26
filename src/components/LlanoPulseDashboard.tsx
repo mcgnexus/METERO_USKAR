@@ -176,7 +176,7 @@ export default function LlanoPulseDashboard({
   return (
     <div className="min-h-screen bg-[#f4f7fb]">
       <LocalAlarmNotifier alarms={alarms} />
-      <div className="mx-auto max-w-lg px-4 pt-4 pb-4">
+      <div className="mx-auto max-w-lg px-4 pt-4" style={mode === 'technical' ? { paddingBottom: 'calc(72px + env(safe-area-inset-bottom) + 16px)' } : { paddingBottom: '16px' }}>
         <header className="mb-4">
           <div className="flex items-center justify-between">
             <div>
