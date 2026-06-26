@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { fmtN } from '@/components/llano/atoms';
-import { AgricultureSection } from '@/components/llano/agriculture';
 import { IndicatorHelp } from '@/components/llano/indicator-help';
 import { IrrigationCard } from '@/components/llano/irrigation';
 import { interpretTHI, interpretFrostRisk, interpretSoilTemp, interpretWindForTreatment, interpretETo } from '@/lib/interpretation';
@@ -253,16 +252,29 @@ export function FieldTab({ climate, weather, agricultural, livestock }: {
                         <p className="mt-1 text-xs leading-4 text-slate-600">{interpretSoilTemp(soil10, '10cm').detail}</p>
                       </div>
                       <div className="rounded-xl bg-slate-50 p-3">
-                        <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-700">Demanda de agua</p>
+                        <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-700">ET0 semanal<IndicatorHelp term="et0" /></div>
                         <p className="mt-1 text-xl font-black text-slate-900">{fmtN(agricultural.et0CumulativeMm, 1)} mm</p>
                         <p className="mt-1 text-xs leading-4 text-slate-600">{interpretETo(agricultural.et0CumulativeMm, 'semana').detail}</p>
                       </div>
+                      <div className="rounded-xl bg-slate-50 p-3">
+                        <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-700">GDD<IndicatorHelp term="gdd" /></div>
+                        <p className="mt-1 text-xl font-black text-slate-900">{fmtN(agricultural.gddCumulative, 0)}</p>
+                        <p className="mt-1 text-xs leading-4 text-slate-600">Calor útil acumulado para desarrollo del cultivo.</p>
+                      </div>
+                      <div className="rounded-xl bg-slate-50 p-3">
+                        <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-700">Horas-frío<IndicatorHelp term="chillHours" /></div>
+                        <p className="mt-1 text-xl font-black text-slate-900">{fmtN(agricultural.chillHours, 0)} h</p>
+                        <p className="mt-1 text-xs leading-4 text-slate-600">Frío útil reciente para leñosos en reposo.</p>
+                      </div>
                     </div>
-                    <AgricultureSection
-                      agricultural={agricultural}
-                      climate={climate}
-                      precipitacionSemanal={weather?.daily?.precipitationSumMm?.[0] ?? null}
-                    />
+                    {agricultural.workability.reasons.length > 0 && (
+                      <div className="rounded-xl bg-rose-50 p-3 text-sm text-rose-900">
+                        <p className="font-bold">Motivos operativos</p>
+                        <ul className="mt-2 list-disc space-y-1 pl-5">
+                          {agricultural.workability.reasons.map((reason, index) => <li key={index}>{reason}</li>)}
+                        </ul>
+                      </div>
+                    )}
                   </div>
                 </details>
               </>
