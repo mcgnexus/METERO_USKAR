@@ -83,7 +83,7 @@ export default function ConfidenceGauges({
             <div className="absolute inset-0 flex items-center justify-center">
               <span className="text-center">
                 <span className="text-lg font-black" style={{ color: frostColors[frost] }}>
-                  {frost === 'none' ? 'âœ“' : 'âš '}
+                  {frost === 'none' ? '✓' : '⚠'}
                 </span>
               </span>
             </div>

@@ -47,7 +47,7 @@ function StatusCard({ health }: { health: SourceHealthStatus }) {
       </div>
       <p className="mb-1 text-xs text-slate-400">{health.message}</p>
       {health.dataAgeMinutes !== undefined && (
-        <p className="text-xs text-slate-500">AntigÃ¼edad: {health.dataAgeMinutes.toFixed(0)} min</p>
+        <p className="text-xs text-slate-500">Antigüedad: {health.dataAgeMinutes.toFixed(0)} min</p>
       )}
       {health.lastError && (
         <p className="mt-1 text-xs text-red-400">Error: {health.lastError}</p>
@@ -68,10 +68,10 @@ export default function AdminConsole() {
     setRefreshError(null);
     try {
       const response = await fetch('/api/admin/force-refresh', { method: 'POST', cache: 'no-store' });
-      if (!response.ok) throw new Error('No se pudo forzar la actualizaciÃ³n.');
+      if (!response.ok) throw new Error('No se pudo forzar la actualización.');
       refresh();
     } catch (error) {
-      setRefreshError(error instanceof Error ? error.message : 'No se pudo forzar la actualizaciÃ³n.');
+      setRefreshError(error instanceof Error ? error.message : 'No se pudo forzar la actualización.');
     } finally {
       setRefreshing(false);
       setConfirmRefresh(false);
@@ -89,7 +89,7 @@ export default function AdminConsole() {
   if (!overview) {
     return (
       <div className="p-20 text-center text-slate-400">
-        No se pudieron cargar los datos de administraciÃ³n.
+        No se pudieron cargar los datos de administración.
       </div>
     );
   }
@@ -99,13 +99,13 @@ export default function AdminConsole() {
       <div className="flex justify-end">
         {confirmRefresh ? (
           <div className="flex items-center gap-3">
-            <span className="text-sm text-amber-400">Â¿Forzar actualizaciÃ³n?</span>
+            <span className="text-sm text-amber-400">¿Forzar actualización?</span>
             <button
               onClick={handleForceRefresh}
               disabled={refreshing}
               className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-700 disabled:opacity-50"
             >
-              {refreshing ? 'Actualizando...' : 'SÃ­, forzar'}
+              {refreshing ? 'Actualizando...' : 'Sí, forzar'}
             </button>
             <button
               onClick={() => setConfirmRefresh(false)}
@@ -119,7 +119,7 @@ export default function AdminConsole() {
             onClick={() => setConfirmRefresh(true)}
             className="rounded-lg border border-slate-600 bg-slate-800 px-4 py-2 text-sm text-slate-300 transition-colors hover:bg-slate-700"
           >
-            Forzar actualizaciÃ³n
+            Forzar actualización
           </button>
         )}
       </div>
@@ -135,7 +135,7 @@ export default function AdminConsole() {
       </section>
 
       <section>
-        <h2 className="mb-4 text-lg font-semibold">Estado de CachÃ©</h2>
+        <h2 className="mb-4 text-lg font-semibold">Estado de Caché</h2>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
@@ -161,7 +161,7 @@ export default function AdminConsole() {
               ))}
               {overview.cacheEntries.length === 0 && (
                 <tr>
-                  <td colSpan={4} className="py-4 text-center text-slate-500">Sin entradas en cachÃ©</td>
+                  <td colSpan={4} className="py-4 text-center text-slate-500">Sin entradas en caché</td>
                 </tr>
               )}
             </tbody>
@@ -170,7 +170,7 @@ export default function AdminConsole() {
       </section>
 
       <section>
-        <h2 className="mb-4 text-lg font-semibold">MÃ©tricas de CalibraciÃ³n</h2>
+        <h2 className="mb-4 text-lg font-semibold">Métricas de Calibración</h2>
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
           {Object.entries(overview.calibrationMetrics).map(([key, value]) => (
             <div key={key} className="rounded-xl border border-slate-700 bg-slate-800 p-4">
@@ -179,7 +179,7 @@ export default function AdminConsole() {
             </div>
           ))}
           {Object.keys(overview.calibrationMetrics).length === 0 && (
-            <p className="col-span-full text-sm text-slate-500">Sin mÃ©tricas disponibles</p>
+            <p className="col-span-full text-sm text-slate-500">Sin métricas disponibles</p>
           )}
         </div>
       </section>

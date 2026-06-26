@@ -34,27 +34,27 @@ function generateAlerts(
   const alerts: WeatherAlert[] = [];
 
   if (tempC <= 0) {
-    alerts.push({ type: "frost", level: "peligro", title: "Helada", message: "Temperatura bajo 0Â°C. Proteger cultivos sensibles." });
+    alerts.push({ type: "frost", level: "peligro", title: "Helada", message: "Temperatura bajo 0°C. Proteger cultivos sensibles." });
   } else if (tempC <= 2) {
-    alerts.push({ type: "frost", level: "aviso", title: "Helada dÃ©bil", message: "Riesgo de helada. Vigilar cultivos." });
+    alerts.push({ type: "frost", level: "aviso", title: "Helada débil", message: "Riesgo de helada. Vigilar cultivos." });
   }
 
   if (tempC >= 36) {
-    alerts.push({ type: "heat", level: "peligro", title: "Calor extremo", message: "Temperatura superior a 36Â°C. Riesgo para personas y ganado." });
+    alerts.push({ type: "heat", level: "peligro", title: "Calor extremo", message: "Temperatura superior a 36°C. Riesgo para personas y ganado." });
   } else if (tempC >= 32) {
-    alerts.push({ type: "heat", level: "aviso", title: "Calor intenso", message: "Temperatura superior a 32Â°C. Tomar precauciones." });
+    alerts.push({ type: "heat", level: "aviso", title: "Calor intenso", message: "Temperatura superior a 32°C. Tomar precauciones." });
   }
 
   if (gustsKmh >= 60) {
-    alerts.push({ type: "wind", level: "peligro", title: "Vientos fuertes", message: "Rachas superiores a 60 km/h. Riesgo de daÃ±os." });
+    alerts.push({ type: "wind", level: "peligro", title: "Vientos fuertes", message: "Rachas superiores a 60 km/h. Riesgo de daños." });
   } else if (gustsKmh >= 40) {
-    alerts.push({ type: "wind", level: "aviso", title: "Vientos moderados", message: "Rachas superiores a 40 km/h. PrecauciÃ³n." });
+    alerts.push({ type: "wind", level: "aviso", title: "Vientos moderados", message: "Rachas superiores a 40 km/h. Precaución." });
   }
 
   if (humidityPct <= 20) {
     alerts.push({ type: "dryness", level: "peligro", title: "Sequedad extrema", message: "Humedad bajo 20%. Riesgo de incendios." });
   } else if (humidityPct <= 30 && et0Mm >= 0.15) {
-    alerts.push({ type: "dryness", level: "aviso", title: "Sequedad ambiental", message: "Humedad baja y evapotranspiraciÃ³n elevada." });
+    alerts.push({ type: "dryness", level: "aviso", title: "Sequedad ambiental", message: "Humedad baja y evapotranspiración elevada." });
   }
 
   return alerts;
@@ -127,7 +127,7 @@ export async function aggregateWeather(): Promise<WeatherPayload> {
     };
 
     return {
-      location: "HuÃ©scar",
+      location: "Huéscar",
       latitude: HUESCAR_COORDS.lat,
       longitude: HUESCAR_COORDS.lon,
       elevation: HUESCAR_COORDS.elevation,
@@ -177,7 +177,7 @@ export async function aggregateWeather(): Promise<WeatherPayload> {
         : "ERROR";
 
   return {
-    location: "HuÃ©scar",
+    location: "Huéscar",
     latitude: HUESCAR_COORDS.lat,
     longitude: HUESCAR_COORDS.lon,
     elevation: HUESCAR_COORDS.elevation,

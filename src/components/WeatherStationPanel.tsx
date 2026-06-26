@@ -136,7 +136,7 @@ export default function WeatherStationPanel({
         setLoading(false);
       } catch (error) {
         if (cancelled) return;
-        setError(error instanceof Error ? error.message : 'Error de conexiÃ³n');
+        setError(error instanceof Error ? error.message : 'Error de conexión');
         setLoading(false);
       }
     }
@@ -150,7 +150,7 @@ export default function WeatherStationPanel({
 
   return (
     <div className={`rounded-xl border ${border} bg-white p-4 text-slate-800`}>
-      <h3 className={`mb-3 font-semibold ${primary}`}>ðŸ“¡ Miniestaciones locales</h3>
+      <h3 className={`mb-3 font-semibold ${primary}`}>📡 Miniestaciones locales</h3>
       {loading && (
         <div className="flex items-center gap-2 text-sm text-slate-700">
           <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-slate-400 border-t-transparent" />
@@ -179,7 +179,7 @@ export default function WeatherStationPanel({
                 {station.temperature !== undefined && (
                   <div>
                     <span className="block text-[10px] text-slate-600">Temp</span>
-                    <span className="font-medium text-slate-700">{station.temperature.toFixed(1)}Â°C</span>
+                    <span className="font-medium text-slate-700">{station.temperature.toFixed(1)}°C</span>
                   </div>
                 )}
                 {station.humidity !== undefined && (
@@ -190,7 +190,7 @@ export default function WeatherStationPanel({
                 )}
                 {station.pressureHPa !== undefined && (
                   <div>
-                    <span className="block text-[10px] text-slate-600">PresiÃ³n</span>
+                    <span className="block text-[10px] text-slate-600">Presión</span>
                     <span className="font-medium text-slate-700">{station.pressureHPa.toFixed(0)} hPa</span>
                   </div>
                 )}
@@ -214,7 +214,7 @@ export default function WeatherStationPanel({
                 )}
                 {isAdmin && station.rssiDbm !== undefined && (
                   <div>
-                    <span className="block text-[10px] text-slate-600">SeÃ±al</span>
+                    <span className="block text-[10px] text-slate-600">Señal</span>
                     <span className="font-medium text-slate-700">{station.rssiDbm} dBm</span>
                   </div>
                 )}

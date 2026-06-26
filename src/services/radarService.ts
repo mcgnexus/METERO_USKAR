@@ -38,13 +38,13 @@ export async function fetchRadarPrecipitation(lat: number, lon: number): Promise
 
           if (rainAmount > 4.0) {
             level = "peligro";
-            message = `âš ï¸ Tormenta fuerte detectada. Lluvia intensa estimada en ${minutesToRain} minutos (${rainAmount.toFixed(1)} mm).`;
+            message = `⚠️ Tormenta fuerte detectada. Lluvia intensa estimada en ${minutesToRain} minutos (${rainAmount.toFixed(1)} mm).`;
           } else if (rainAmount > 1.5) {
             level = "alerta";
-            message = `ðŸŒ§ï¸ Precipitaciones moderadas estimadas en ${minutesToRain} minutos.`;
+            message = `🌧️ Precipitaciones moderadas estimadas en ${minutesToRain} minutos.`;
           } else {
             level = "aviso";
-            message = `ðŸŒ¦ï¸ Posibilidad de lluvia dÃ©bil en ${minutesToRain} minutos.`;
+            message = `🌦️ Posibilidad de lluvia débil en ${minutesToRain} minutos.`;
           }
         }
         fetchSucceeded = true;

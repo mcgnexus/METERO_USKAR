@@ -236,7 +236,7 @@ export default function RadarPanel({
   };
 
   const alarmIcons: Record<RadarData['level'], string> = {
-    ninguno: 'â˜”', aviso: 'âš ï¸', alerta: 'ðŸŒ§ï¸', peligro: 'ðŸŒ©ï¸',
+    ninguno: '☔', aviso: '⚠️', alerta: '🌧️', peligro: '🌩️',
   };
 
   const levelBadges: Record<RadarData['level'], string> = {
@@ -308,19 +308,19 @@ export default function RadarPanel({
                   className="flex h-6 w-6 items-center justify-center rounded bg-slate-600 text-sm font-bold leading-none hover:bg-slate-500"
                   aria-label="Reducir"
                   title="Reducir (-)"
-                >âˆ’</button>
+                >−</button>
                 <button
                   type="button"
                   onClick={resetView}
                   className="h-6 rounded bg-slate-600 px-2 text-[10px] font-semibold hover:bg-slate-500"
                   aria-label="Restablecer vista"
                   title="Restablecer vista (0)"
-                >â†º Reset</button>
+                >↺ Reset</button>
                 <span className="text-slate-400">{Math.round(scale * 100)}%</span>
               </div>
               <div className="flex items-center gap-2 text-slate-300">
-                <span>ðŸ“ HuÃ©scar</span>
-                <span>ðŸ• {timeAgo(radar.lastUpdated, nowMs)}</span>
+                <span>📍 Huéscar</span>
+                <span>🕐 {timeAgo(radar.lastUpdated, nowMs)}</span>
               </div>
             </div>
 
@@ -359,7 +359,7 @@ export default function RadarPanel({
                       style={{ objectFit: 'contain', display: imgError ? 'none' : 'block' }}
                       onError={() => {
                         setIsLoading(false);
-                        setImgError('El radar de AEMET no estÃ¡ disponible ahora mismo (lÃ­mite de peticiones). IntÃ©ntalo en 1 minuto.');
+                        setImgError('El radar de AEMET no está disponible ahora mismo (límite de peticiones). Inténtalo en 1 minuto.');
                       }}
                       onLoad={() => {
                         setIsLoading(false);
@@ -383,7 +383,7 @@ export default function RadarPanel({
                           gap: '8px',
                         }}
                       >
-                        <span style={{ fontSize: '28px' }}>ðŸ›°ï¸</span>
+                        <span style={{ fontSize: '28px' }}>🛰️</span>
                         <span>{imgError}</span>
                         <button
                           type="button"
@@ -404,7 +404,7 @@ export default function RadarPanel({
                             cursor: 'pointer',
                           }}
                         >
-                          ðŸ”„ Reintentar
+                          🔄 Reintentar
                         </button>
                       </div>
                     )}
@@ -432,7 +432,7 @@ export default function RadarPanel({
                             marginBottom: '2px',
                           }}
                         >
-                          ðŸ“ HuÃ©scar
+                          📍 Huéscar
                         </div>
                         <div
                           style={{
@@ -452,7 +452,7 @@ export default function RadarPanel({
               {isLoading && !imgError && (
                 <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-slate-900/80">
                   <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-white" />
-                  <span className="mt-3 text-sm font-medium text-white">Cargando imagen del radarâ€¦</span>
+                  <span className="mt-3 text-sm font-medium text-white">Cargando imagen del radar...</span>
                 </div>
               )}
             </div>
@@ -470,7 +470,7 @@ export default function RadarPanel({
             </div>
 
             <div className="flex items-center justify-between bg-slate-800 px-3 py-1 text-[9px] text-slate-400">
-              <span>Radar AEMET Â· AlmerÃ­a/Granada</span>
+              <span>Radar AEMET · Almería/Granada</span>
               <span>Fuente: Open-Meteo + AEMET</span>
             </div>
           </div>
