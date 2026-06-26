@@ -1,13 +1,21 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import { useState } from 'react';
 import { fmtN } from '@/components/llano/atoms';
 import { IndicatorHelp, type IndicatorKey } from '@/components/llano/indicator-help';
-import { ZoneSection } from '@/components/llano/zone-section';
-import TemperatureChart from '@/components/visualizacion/TemperatureChart';
 import type { ClimateCalibrationPayload } from '@/hooks/useClimateCalibration';
 import type { WeatherPayload } from '@/types/weather';
 import type { ForecastPayload } from '@/types/forecast';
+
+const TemperatureChart = dynamic(() => import('@/components/visualizacion/TemperatureChart'), {
+  ssr: false,
+  loading: () => <ChartSkeleton title="Cargando gráfica de temperatura" minHeightClass="h-80" />,
+});
+const ZoneSection = dynamic(() => import('@/components/llano/zone-section').then((m) => ({ default: m.ZoneSection })), {
+  ssr: false,
+  loading: () => <ChartSkeleton title="Cargando microclimas por zona" minHeightClass="h-56" />,
+});
 
 export function DataTab({ climate, weather, forecast }: {
   climate: ClimateCalibrationPayload;
@@ -307,5 +315,13 @@ function SourceCard({ title, subtitle, status, message }: {
         </p>
       )}
     </article>
+  );
+}
+
+function ChartSkeleton({ title, minHeightClass }: { title: string; minHeightClass: string }) {
+  return (
+    <div className={`flex items-center justify-center rounded-[22px] border border-slate-200 bg-slate-50 ${minHeightClass}`}>
+      <p className="text-sm font-medium text-slate-500">{title}...</p>
+    </div>
   );
 }

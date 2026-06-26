@@ -1,13 +1,27 @@
 'use client';
 
-import { useState } from 'react';
+import dynamic from 'next/dynamic';
+import { useMemo, useState } from 'react';
 import { weatherCodeDescription, weatherEmoji } from '@/lib/display';
 import { interpretTemperature, interpretRain, interpretWind, interpretWindForTreatment } from '@/lib/interpretation';
 import type { HourlyWeather, DailyWeather, WeatherPayload } from '@/types/weather';
 import type { ForecastPayload } from '@/types/forecast';
-import { Forecast5d } from '@/components/llano/forecast-5d';
-import { WindTreatmentChart } from '@/components/llano/wind-treatment-chart';
-import TemperatureChart from '@/components/visualizacion/TemperatureChart';
+
+const TemperatureChart = dynamic(() => import('@/components/visualizacion/TemperatureChart'), {
+  ssr: false,
+  loading: () => <ChartSkeleton title="Cargando gráfica de temperatura" minHeightClass="h-80" />,
+});
+const WindTreatmentChart = dynamic(
+  () => import('@/components/llano/wind-treatment-chart').then((m) => ({ default: m.WindTreatmentChart })),
+  {
+    ssr: false,
+    loading: () => <ChartSkeleton title="Cargando gráfica de viento" minHeightClass="h-80" />,
+  }
+);
+const Forecast5d = dynamic(() => import('@/components/llano/forecast-5d').then((m) => ({ default: m.Forecast5d })), {
+  ssr: false,
+  loading: () => <ChartSkeleton title="Cargando pronóstico" minHeightClass="h-72" />,
+});
 
 function fmtHour(iso: string): string {
   return new Date(iso).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
@@ -54,51 +68,57 @@ export function HoursTab({ hourly, forecast, daily, weather }: {
     );
   }
 
-  const upcoming = hourly.time
+  const upcoming = useMemo(() => hourly.time
     .map((time, index) => ({ time, index, ts: new Date(time).getTime() }))
     .filter((h) => h.ts >= now)
-    .slice(0, 12);
+    .slice(0, 12), [hourly.time, now]);
 
   if (upcoming.length === 0) return null;
 
-  const temps = upcoming.map(h => hourly.temperatureC[h.index] ?? 0);
-  const maxTemp = Math.max(...temps);
-  const minTemp = Math.min(...temps);
-  const maxTempHour = upcoming[temps.indexOf(maxTemp)];
-  const rainHours = upcoming.filter(h => (hourly.precipitationProbabilityPct[h.index] ?? 0) >= 40);
-  const first = upcoming[0];
-  const firstWind = first ? hourly.windSpeedKmh[first.index] ?? 0 : 0;
-  const firstWindLabel = interpretWind(firstWind, null).label;
+  const temps = useMemo(() => upcoming.map((h) => hourly.temperatureC[h.index] ?? 0), [upcoming, hourly.temperatureC]);
+  const { maxTemp, minTemp, maxTempHour, rainHours, workText, treatText, rainText, firstWindLabel } = useMemo(() => {
+    const max = Math.max(...temps);
+    const min = Math.min(...temps);
+    const maxHour = upcoming[temps.indexOf(max)];
+    const rain = upcoming.filter((h) => (hourly.precipitationProbabilityPct[h.index] ?? 0) >= 40);
+    const firstHour = upcoming[0];
+    const firstWind = firstHour ? hourly.windSpeedKmh[firstHour.index] ?? 0 : 0;
+    const firstWindLabelNext = interpretWind(firstWind, null).label;
 
-  // Calcular ventanas de trabajo y tratamiento
-  const workHours = upcoming.filter(h => {
-    const temp = hourly.temperatureC[h.index] ?? 0;
-    const wind = hourly.windSpeedKmh[h.index] ?? 0;
-    return temp <= 30 && wind <= 20 && (hourly.precipitationProbabilityPct[h.index] ?? 0) < 40;
-  });
+    const workHours = upcoming.filter((h) => {
+      const tempValue = hourly.temperatureC[h.index] ?? 0;
+      const windValue = hourly.windSpeedKmh[h.index] ?? 0;
+      return tempValue <= 30 && windValue <= 20 && (hourly.precipitationProbabilityPct[h.index] ?? 0) < 40;
+    });
 
-  const treatOptimal = upcoming.filter(h => {
-    const wind = hourly.windSpeedKmh[h.index] ?? 0;
-    return wind <= 15 && (hourly.precipitationProbabilityPct[h.index] ?? 0) < 40;
-  });
-  const treatApto = upcoming.filter(h => {
-    const wind = hourly.windSpeedKmh[h.index] ?? 0;
-    return wind <= 25 && (hourly.precipitationProbabilityPct[h.index] ?? 0) < 40;
-  });
+    const treatOptimal = upcoming.filter((h) => {
+      const windValue = hourly.windSpeedKmh[h.index] ?? 0;
+      return windValue <= 15 && (hourly.precipitationProbabilityPct[h.index] ?? 0) < 40;
+    });
+    const treatApto = upcoming.filter((h) => {
+      const windValue = hourly.windSpeedKmh[h.index] ?? 0;
+      return windValue <= 25 && (hourly.precipitationProbabilityPct[h.index] ?? 0) < 40;
+    });
 
-  const workText = workHours.length > 0
-    ? `Antes de ${fmtHour(workHours[0].time)}${workHours.length > 1 ? ` o después de ${fmtHour(workHours[workHours.length - 1].time)}` : ''}`
-    : 'Evita las horas centrales si hace mucho calor o viento';
-
-  const treatText = treatOptimal.length > 0
-    ? `Óptimo entre ${fmtHour(treatOptimal[0].time)} y ${fmtHour(treatOptimal[treatOptimal.length - 1].time)}`
-    : treatApto.length > 0
-      ? `Apto entre ${fmtHour(treatApto[0].time)} y ${fmtHour(treatApto[treatApto.length - 1].time)}`
-      : 'Viento o lluvia desaconsejan tratar ahora';
-
-  const rainText = rainHours.length > 0
-    ? `Probable sobre las ${rainHours.slice(0, 2).map(h => fmtHour(h.time)).join(' y ')}`
-    : 'No prevista';
+    return {
+      maxTemp: max,
+      minTemp: min,
+      maxTempHour: maxHour,
+      rainHours: rain,
+      firstWindLabel: firstWindLabelNext,
+      workText: workHours.length > 0
+        ? `Antes de ${fmtHour(workHours[0].time)}${workHours.length > 1 ? ` o después de ${fmtHour(workHours[workHours.length - 1].time)}` : ''}`
+        : 'Evita las horas centrales si hace mucho calor o viento',
+      treatText: treatOptimal.length > 0
+        ? `Óptimo entre ${fmtHour(treatOptimal[0].time)} y ${fmtHour(treatOptimal[treatOptimal.length - 1].time)}`
+        : treatApto.length > 0
+          ? `Apto entre ${fmtHour(treatApto[0].time)} y ${fmtHour(treatApto[treatApto.length - 1].time)}`
+          : 'Viento o lluvia desaconsejan tratar ahora',
+      rainText: rain.length > 0
+        ? `Probable sobre las ${rain.slice(0, 2).map((h) => fmtHour(h.time)).join(' y ')}`
+        : 'No prevista',
+    };
+  }, [hourly.precipitationProbabilityPct, hourly.temperatureC, hourly.windSpeedKmh, upcoming, temps]);
 
   return (
     <div className="space-y-4 pb-24">
@@ -242,6 +262,14 @@ function SummaryChip({ label, value }: { label: string; value: string }) {
     <div className="rounded-2xl bg-slate-50 p-3">
       <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-700">{label}</p>
       <p className="mt-1 text-sm font-black text-slate-950">{value}</p>
+    </div>
+  );
+}
+
+function ChartSkeleton({ title, minHeightClass }: { title: string; minHeightClass: string }) {
+  return (
+    <div className={`flex items-center justify-center rounded-[22px] border border-slate-200 bg-slate-50 ${minHeightClass}`}>
+      <p className="text-sm font-medium text-slate-500">{title}...</p>
     </div>
   );
 }
