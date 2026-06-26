@@ -8,6 +8,9 @@ interface BeforeInstallPromptEvent extends Event {
 }
 
 const STORAGE_KEY = 'pwa-install-dismissed';
+const VISIT_KEY = 'meteo_notifications_visits';
+const NOTIFY_DISMISS_KEY = 'meteo_notifications_dismissed';
+const NOTIFY_COOLDOWN_MS = 7 * 86400000;
 
 export default function PwaRegister() {
   const [installEvent, setInstallEvent] = useState<BeforeInstallPromptEvent | null>(null);
@@ -25,10 +28,23 @@ export default function PwaRegister() {
     if (stored) {
       const { date } = JSON.parse(stored);
       const daysSince = (Date.now() - new Date(date).getTime()) / 86400000;
-      if (daysSince < 7) {
+      if (daysSince < 30) {
         return;
       }
     }
+
+    let visits = 0;
+    try {
+      visits = parseInt(localStorage.getItem(VISIT_KEY) || '0', 10);
+    } catch {}
+    if (visits < 2) return;
+
+    const notifyRaw = localStorage.getItem(NOTIFY_DISMISS_KEY);
+    const notificationWillShow =
+      typeof Notification !== 'undefined' &&
+      Notification.permission === 'default' &&
+      (!notifyRaw || Date.now() - JSON.parse(notifyRaw).ts >= NOTIFY_COOLDOWN_MS);
+    if (notificationWillShow) return;
   }, []);
 
   useEffect(() => {
@@ -45,7 +61,7 @@ export default function PwaRegister() {
     if (!installEvent) return;
     const timer = setTimeout(() => {
       setShowPrompt(true);
-    }, 15000);
+    }, 45000);
     return () => clearTimeout(timer);
   }, [installEvent]);
 

@@ -14,12 +14,14 @@ function urlBase64ToUint8Array(base64String: string): ArrayBuffer {
 }
 
 const LS_KEY = 'meteo_notifications_dismissed';
+const VISIT_KEY = 'meteo_notifications_visits';
 
 export function NotificationPermission() {
   const [mounted, setMounted] = useState(false);
   const [status, setStatus] = useState<NotificationPermission | 'loading' | 'done'>('loading');
   const [error, setError] = useState<string | null>(null);
   const [dismissed, setDismissed] = useState(true);
+  const [visits, setVisits] = useState(0);
 
   useEffect(() => {
     setMounted(true);
@@ -28,6 +30,13 @@ export function NotificationPermission() {
         ? Notification.permission
         : 'loading';
     setStatus(nextStatus);
+
+    let visitCount = 0;
+    try {
+      visitCount = parseInt(localStorage.getItem(VISIT_KEY) || '0', 10);
+    } catch {}
+    localStorage.setItem(VISIT_KEY, String(visitCount + 1));
+    setVisits(visitCount + 1);
 
     let nextDismissed = true;
     try {
@@ -42,6 +51,8 @@ export function NotificationPermission() {
     }
     setDismissed(nextDismissed);
   }, []);
+
+  if (visits > 0 && visits < 2) return null;
 
   const handleEnable = useCallback(async () => {
     setError(null);
