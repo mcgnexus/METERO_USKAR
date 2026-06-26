@@ -1,11 +1,13 @@
 'use client';
 
 import { ConfidenceBar, WarningBanner } from '@/components/motor/atoms';
+import { confidenceExplanation, confidenceHeadline } from '@/components/motor/quality-language';
 
-export function QualityBanner({ confidencePct, warnings, generatedAt }: {
+export function QualityBanner({ confidencePct, warnings, generatedAt, hasTrustedLocalSensor = false }: {
   confidencePct: number;
   warnings: string[];
   generatedAt: string;
+  hasTrustedLocalSensor?: boolean;
 }) {
   const tone =
     confidencePct >= 75 ? 'success' : confidencePct >= 50 ? 'warning' : 'danger';
@@ -23,12 +25,9 @@ export function QualityBanner({ confidencePct, warnings, generatedAt }: {
           <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-600">
             Calidad del diagnóstico
           </p>
+          <p className="mt-1 text-lg font-black text-slate-900">{confidenceHeadline(confidencePct)}</p>
           <p className="mt-1 text-sm text-slate-700">
-            {tone === 'success'
-              ? 'El modelo tiene alta confianza en este diagnóstico.'
-              : tone === 'warning'
-                ? 'El modelo tiene confianza media: revise los avisos antes de tomar decisiones.'
-                : 'El modelo tiene baja confianza: datos incompletos o degradados.'}
+            {confidenceExplanation(confidencePct, hasTrustedLocalSensor)}
           </p>
         </div>
         <div className="w-full sm:w-64">

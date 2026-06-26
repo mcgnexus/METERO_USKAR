@@ -13,6 +13,7 @@ import { ExtrapolationPanel } from '@/components/motor/extrapolation-panel';
 import { EtoBreakdown } from '@/components/motor/eto-breakdown';
 import { ExoticBlock } from '@/components/motor/exotic-block';
 import { KpiCard, fmtNumber, ConfidenceBar } from '@/components/motor/atoms';
+import { confidenceFallbackLine, confidenceHeadline, confidenceExplanation } from '@/components/motor/quality-language';
 import { OfflineBanner } from '@/components/OfflineBanner';
 import type { ClimateCalibrationPayload } from '@/types/climate';
 import type { WeatherPayload } from '@/types/weather';
@@ -75,6 +76,10 @@ function ResumenPanel({ data, agri, daily }: {
   const residualOk = residual === null || Math.abs(residual) < 1;
   const inversion = data.interpolation.inversionDetected;
   const rainNext5d = daily ? daily.precipitationSumMm.slice(0, 5).reduce((s, v) => s + v, 0) : null;
+  const hasTrustedLocalSensor = data.nodes.localStation?.status === 'OK' && data.calibration.realTemperatureC !== null;
+  const confidenceHeadlineText = confidenceHeadline(data.quality.confidencePct);
+  const confidenceExplanationText = confidenceExplanation(data.quality.confidencePct, hasTrustedLocalSensor);
+  const confidenceFallbackText = confidenceFallbackLine(hasTrustedLocalSensor);
 
   return (
     <div className="space-y-4" role="tabpanel" id="motor-panel-resumen" aria-labelledby="motor-tab-resumen">
@@ -82,6 +87,7 @@ function ResumenPanel({ data, agri, daily }: {
         confidencePct={data.quality.confidencePct}
         warnings={data.quality.warnings}
         generatedAt={data.generatedAt}
+        hasTrustedLocalSensor={hasTrustedLocalSensor}
       />
 
       <section className="rounded-[24px] border border-slate-200 bg-white p-5">
@@ -89,11 +95,11 @@ function ResumenPanel({ data, agri, daily }: {
         <p className="mt-2 text-sm leading-6 text-slate-700">
           Huéscar no tiene estación meteorológica oficial propia. Este motor estima la temperatura,
           humedad, presión y viento reales del llano (950 m) combinando datos de AEMET Baza, AEMET San Clemente,
-          las estaciones agrícolas RIA y un sensor local cuando está disponible.
+          las estaciones agrícolas RIA y, cuando hay sensor local, una referencia auditada in situ.
         </p>
         <p className="mt-2 text-sm leading-6 text-slate-700">
           Aplica 4 capas: gradiente térmico, transporte de humedad, demanda evaporativa (ETo) y corrección
-          de microclima (drenaje de aire frío + isla de calor urbana). El resultado se audita contra el sensor propio.
+          de microclima (drenaje de aire frío + isla de calor urbana). El resultado se audita contra el sensor propio cuando está disponible.
         </p>
       </section>
 
@@ -101,7 +107,7 @@ function ResumenPanel({ data, agri, daily }: {
         <h2 className="mb-3 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-700">Salida actual</h2>
         <div className="grid gap-3 sm:grid-cols-2">
           <KpiCard label="Temperatura" value={fmtNumber(temp, 1)} unit="°C" tone="accent"
-            caption={data.calibration.realTemperatureC !== null ? 'Sensor propio (auditado)' : 'Estimación por gradiente'} />
+            caption={hasTrustedLocalSensor ? 'Sensor propio (auditado)' : 'Planificación general: sin sensor local activo'} />
           <KpiCard label="Humedad" value={fmtNumber(data.extrapolation.humidityPct, 0)} unit="%" tone="accent"
             caption="Transportada desde Baza con Tetens-Magnus" />
           <KpiCard label="ETo horaria" value={fmtNumber(data.eto.etoHourlyMm, 3)} unit="mm"
@@ -118,17 +124,16 @@ function ResumenPanel({ data, agri, daily }: {
         <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="text-lg font-black text-slate-900">
-              {residual === null
-                ? 'Sin sensor local para auditar'
-                : residualOk
-                ? 'Modelo preciso'
-                : 'Modelo con desviación'}
+              {residual === null ? confidenceHeadlineText : residualOk ? 'Modelo preciso' : 'Modelo con desviación'}
             </p>
             <p className="text-sm text-slate-600">
               {residual === null
-                ? 'El resultado se basa solo en interpolación física.'
+                ? confidenceExplanationText
                 : `Residual ${residual > 0 ? '+' : ''}${residual.toFixed(2)}°C vs sensor propio.`}
             </p>
+            {residual === null && (
+              <p className="mt-1 text-xs font-semibold text-slate-500">{confidenceFallbackText}</p>
+            )}
           </div>
           <div className="w-full sm:w-48">
             <ConfidenceBar pct={data.quality.confidencePct} />

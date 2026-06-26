@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import type { WeatherPayload, SourceObservation } from '@/types/weather';
+import { confidenceExplanation, confidenceHeadline } from '@/components/motor/quality-language';
 
 interface Props {
   data: WeatherPayload;
@@ -27,6 +28,7 @@ export default function ModelTransparencyPanel({ data, variant = 'neutral', onDa
   const isAyto = variant === 'ayto';
   const accent = onDark ? 'text-slate-100' : isAyto ? 'text-[#1B3668]' : 'text-slate-700';
   const subText = onDark ? 'text-slate-300' : 'text-slate-500';
+  const hasLocalSensor = data.sources.some((source) => source.source === 'LOCAL_STATIONS' && source.status === 'OK');
 
   const hasOro = data.orographic && data.orographic.factor !== 1.0;
   const hasReservoir = data.sources.some(
@@ -42,12 +44,16 @@ export default function ModelTransparencyPanel({ data, variant = 'neutral', onDa
         <span>{expanded ? '▼' : '▶'}</span>
         <span>Transparencia del modelo</span>
         <span className={`text-[10px] ${subText}`}>
-          ({data.sources.length} fuentes · confianza {data.confidencePct.toFixed(0)}%)
+          ({data.sources.length} fuentes · {confidenceHeadline(data.confidencePct).toLowerCase()} · {data.confidencePct.toFixed(0)}%)
         </span>
       </button>
 
       {expanded && (
         <div className="space-y-3 rounded-lg border border-slate-200 bg-white/95 p-3 text-xs text-slate-700 shadow-sm">
+          <div className="rounded-lg border border-slate-100 bg-slate-50 p-3 text-xs leading-5 text-slate-600">
+            <p className="font-bold text-slate-800">Lectura rápida</p>
+            <p className="mt-1">{confidenceHeadline(data.confidencePct)}. {confidenceExplanation(data.confidencePct, hasLocalSensor)}</p>
+          </div>
           {data.sources.map((source) => {
             const qd = qualityDot(source.qualityScore);
             const ageMin = source.dataAgeMinutes;

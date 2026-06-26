@@ -44,6 +44,7 @@ function NodeRow({ label, node }: { label: string; node: ClimateNode & { role?: 
 }
 
 export function ContrastPanel({ data }: { data: ClimateCalibrationPayload }) {
+  const hasTrustedLocalSensor = data.nodes.localStation?.status === 'OK' && data.calibration.realTemperatureC !== null;
   return (
     <section className="surface-card-strong rounded-[28px] p-5 sm:p-6">
       <p className="text-xs font-bold uppercase tracking-[0.2em] text-sky-700">Panel de contraste</p>
@@ -93,6 +94,7 @@ export function AuditHero({ data, chillHours, chillHoursYearly, rainNext5d, foeh
 }) {
   const currentTemp = data.calibration.realTemperatureC ?? data.interpolation.estimatedTemperatureC;
   const residual = data.calibration.residualC;
+  const hasTrustedLocalSensor = data.nodes.localStation?.status === 'OK' && data.calibration.realTemperatureC !== null;
   const residualTone = residual === null
     ? 'default'
     : Math.abs(residual) < 1
@@ -123,13 +125,17 @@ export function AuditHero({ data, chillHours, chillHoursYearly, rainNext5d, foeh
           caption={`Interpolación a ${data.location.elevation} m`}
           tone="accent"
         />
-        <KpiCard
-          label="Residual del modelo"
-          value={residual !== null ? `${residual > 0 ? '+' : ''}${residual.toFixed(1)}` : '—'}
-          unit="°C"
-          caption={residualTone === 'default' ? 'Sin sensor local activo' : `El modelo ${residualSign}`}
-          tone={residualTone}
-        />
+          <KpiCard
+            label="Residual del modelo"
+            value={residual !== null ? `${residual > 0 ? '+' : ''}${residual.toFixed(1)}` : '—'}
+            unit="°C"
+            caption={residualTone === 'default'
+              ? (hasTrustedLocalSensor
+                ? 'Sensor local activo: auditamos la salida del motor.'
+                : 'Sin sensor local activo: útil para planificación general.')
+              : `El modelo ${residualSign}`}
+            tone={residualTone}
+          />
         <KpiCard
           label="Horas-frío 7d"
           value={chillHours !== null ? chillHours.toString() : '—'}
