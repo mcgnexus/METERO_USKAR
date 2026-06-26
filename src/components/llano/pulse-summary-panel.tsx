@@ -1,16 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import dynamic from 'next/dynamic';
-import { useClimateCalibration } from '@/hooks/useClimateCalibration';
-import { useWeatherData } from '@/hooks/useWeatherData';
-import { useForecast } from '@/hooks/useForecast';
-import { buildAlarms } from '@/components/llano/alarms-logic';
-import { NavBottom, type TabId } from '@/components/NavBottom';
-import { OfflineBanner } from '@/components/OfflineBanner';
-import { NotificationPermission } from '@/components/NotificationPermission';
-import { LocalAlarmNotifier } from '@/components/LocalAlarmNotifier';
+import { useState } from 'react';
 import { fmtN } from '@/components/llano/atoms';
+import { weatherEmoji, weatherCodeDescription } from '@/lib/display';
 import {
   interpretTemperature,
   interpretRain,
@@ -19,253 +11,13 @@ import {
   interpretFrostRisk,
   interpretTHI,
 } from '@/lib/interpretation';
-import { weatherEmoji, weatherCodeDescription } from '@/lib/display';
 import type { ClimateCalibrationPayload } from '@/types/climate';
 import type { WeatherPayload } from '@/types/weather';
-import type { ForecastPayload } from '@/types/forecast';
 import type { PulseAlarm } from '@/components/llano/alarms-logic';
 
-const NowTab = dynamic(() => import('@/components/llano/now-tab').then((m) => ({ default: m.NowTab })));
-const HoursTab = dynamic(() => import('@/components/llano/hours-tab').then((m) => ({ default: m.HoursTab })));
-const FieldTab = dynamic(() => import('@/components/llano/field-tab').then((m) => ({ default: m.FieldTab })));
-const AlertsTab = dynamic(() => import('@/components/llano/alerts-tab').then((m) => ({ default: m.AlertsTab })));
-const DataTab = dynamic(() => import('@/components/llano/data-tab').then((m) => ({ default: m.DataTab })));
-const LazySummaryPanel = dynamic(() => import('@/components/llano/pulse-summary-panel').then((m) => ({ default: m.SummaryPanel })), {
-  ssr: false,
-  loading: () => <div className="surface-card rounded-[28px] p-10 text-center text-slate-500">Cargando resumen...</div>,
-});
+type Depth = 'essential' | 'practical';
 
-type UiMode = 'essential' | 'practical' | 'technical';
-const MODE_STORAGE_KEY = 'llano-pulse-mode';
-
-function windLabel(speedKmh: number): string {
-  if (speedKmh < 10) return 'flojo';
-  if (speedKmh < 25) return 'moderado';
-  return 'fuerte';
-}
-
-function irrigationLabel(liters?: number | null): string {
-  if (liters === null || liters === undefined || !Number.isFinite(liters)) return 'sin datos';
-  if (liters >= 40) return 'alto';
-  if (liters >= 20) return 'medio';
-  if (liters > 0) return 'bajo';
-  return 'sin riego adicional';
-}
-
-function tempColor(t: number): string {
-  if (t <= 0) return '#3b82f6';
-  if (t <= 10) return '#06b6d4';
-  if (t <= 20) return '#10b981';
-  if (t <= 25) return '#f59e0b';
-  if (t <= 32) return '#f97316';
-  if (t <= 38) return '#ef4444';
-  return '#dc2626';
-}
-
-function tempBg(t: number): string {
-  if (t <= 0) return 'from-blue-500 to-cyan-400';
-  if (t <= 10) return 'from-cyan-500 to-teal-400';
-  if (t <= 20) return 'from-emerald-400 to-teal-300';
-  if (t <= 25) return 'from-amber-400 to-orange-300';
-  if (t <= 32) return 'from-orange-400 to-red-400';
-  if (t <= 38) return 'from-red-400 to-rose-500';
-  return 'from-red-600 to-rose-700';
-}
-
-function alarmColor(level: string): string {
-  if (level === 'critico') return 'bg-red-500 text-white border-red-400';
-  if (level === 'precaucion') return 'bg-orange-400 text-white border-orange-300';
-  if (level === 'aviso') return 'bg-yellow-400 text-yellow-900 border-yellow-300';
-  return 'bg-sky-400 text-white border-sky-300';
-}
-
-function alarmEmoji(level: string): string {
-  if (level === 'critico') return '🚨';
-  if (level === 'precaucion') return '⚠️';
-  if (level === 'aviso') return '⚡';
-  return 'ℹ️';
-}
-
-function principalRiskLabel({
-  mainAlarm,
-  temp,
-  humidity,
-  weather,
-}: {
-  mainAlarm: PulseAlarm | null;
-  temp: number;
-  humidity: number | null;
-  weather: WeatherPayload | null;
-}): string {
-  if (temp >= 38) return 'Demasiado calor';
-  if (temp >= 32 && (humidity ?? 100) <= 30) return 'Calor y sequedad';
-  if ((humidity ?? 100) <= 15) return 'Ambiente muy seco';
-  if (weather?.agricultural?.frostRisk48h && weather.agricultural.frostRisk48h !== 'none') return 'Posible helada';
-  if (mainAlarm?.level === 'critico') return 'Hay una alerta importante';
-  if (mainAlarm?.level === 'precaucion') return 'Conviene estar atento';
-  return 'Sin problemas destacados';
-}
-
-function useModeState(): [UiMode, (mode: UiMode) => void] {
-  const [mode, setMode] = useState<UiMode>('essential');
-  const [hydrated, setHydrated] = useState(false);
-
-  useEffect(() => {
-    const stored = window.localStorage.getItem(MODE_STORAGE_KEY);
-    if (stored === 'technical' || stored === 'practical' || stored === 'essential') {
-      setMode(stored);
-    } else if (stored === 'simple') {
-      setMode('essential');
-    }
-    setHydrated(true);
-  }, []);
-
-  useEffect(() => {
-    if (hydrated) {
-      window.localStorage.setItem(MODE_STORAGE_KEY, mode);
-      window.dispatchEvent(new CustomEvent('llano-pulse-mode-changed', { detail: mode }));
-    }
-  }, [mode, hydrated]);
-
-  const effectiveMode = hydrated ? mode : 'essential';
-  return [effectiveMode, setMode];
-}
-
-function LoadingState() {
-  return (
-    <div className="surface-card flex min-h-[360px] items-center justify-center rounded-[28px] p-12">
-      <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-slate-500" />
-    </div>
-  );
-}
-
-function ErrorState({ message }: { message: string }) {
-  return (
-    <div className="surface-card rounded-[28px] p-10 text-center">
-      <p className="font-semibold text-red-500">❌ No se pudo cargar la página de Huéscar</p>
-      <p className="mt-2 text-sm text-slate-500">{message}</p>
-    </div>
-  );
-}
-
-export default function LlanoPulseDashboard({
-  initialClimateData = null,
-  initialWeatherData = null,
-  initialForecastData = null,
-}: {
-  initialClimateData?: ClimateCalibrationPayload | null;
-  initialWeatherData?: WeatherPayload | null;
-  initialForecastData?: ForecastPayload | null;
-}) {
-  const [mode, setMode] = useModeState();
-  const [activeTab, setActiveTab] = useState<TabId>('now');
-  const climate = useClimateCalibration('llano-pulse-climate', initialClimateData);
-  const weather = useWeatherData('llano-pulse-weather', initialWeatherData);
-  const forecast = useForecast(5, 'llano-pulse-forecast', initialForecastData);
-
-  if (climate.loading || weather.loading) {
-    return <LoadingState />;
-  }
-
-  if ((climate.error && !climate.data) || (!climate.data && !climate.isStale)) {
-    return <ErrorState message={climate.error?.message ?? 'Sin datos del motor climático'} />;
-  }
-
-  const cd = climate.data!;
-  const wd = weather.data;
-
-  const alarms = buildAlarms(cd, {
-    daily: wd?.daily,
-    weather: wd,
-    agricultural: wd?.agricultural,
-  });
-
-  return (
-    <div className="min-h-screen bg-[#f4f7fb]">
-      <LocalAlarmNotifier alarms={alarms} />
-      <div className="mx-auto max-w-lg px-4 pt-4" style={mode === 'technical' ? { paddingBottom: 'calc(72px + env(safe-area-inset-bottom) + 16px)' } : { paddingBottom: '16px' }}>
-        <header className="mb-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-sky-700">🏔️ Meteo Huéscar</p>
-              <h1 className="mt-0.5 text-xl font-black text-slate-900">Huéscar</h1>
-            </div>
-            <ModeSwitcher mode={mode} onChange={setMode} />
-          </div>
-        </header>
-
-        {(mode === 'practical' || (mode === 'technical' && activeTab === 'now')) && (
-          <div className="mb-3 min-h-[92px]">
-            <NotificationPermission />
-          </div>
-        )}
-
-        {(climate.isStale || weather.isStale) && (
-          <div className="mb-3 min-h-[56px]">
-            <OfflineBanner
-              isStale
-              cachedAt={climate.cachedAt ?? weather.cachedAt}
-            />
-          </div>
-        )}
-
-        <main>
-          {mode === 'technical' ? (
-            <TabContent
-              activeTab={activeTab}
-              climate={cd}
-              weather={wd}
-              forecast={forecast.data}
-              alarms={alarms}
-            />
-          ) : (
-            <LazySummaryPanel
-              depth={mode}
-              climate={cd}
-              weather={wd}
-              alarms={alarms}
-              onShowPractical={() => setMode('practical')}
-              onShowTechnical={() => setMode('technical')}
-            />
-          )}
-        </main>
-      </div>
-
-      {mode === 'technical' && <NavBottom active={activeTab} onChange={setActiveTab} alertCount={alarms.length} />}
-    </div>
-  );
-}
-
-function ModeSwitcher({ mode, onChange }: { mode: UiMode; onChange: (mode: UiMode) => void }) {
-  return (
-    <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white p-1 shadow-sm">
-      <span className="pl-2 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-700">Modo:</span>
-      <button
-        type="button"
-        onClick={() => onChange('essential')}
-        className={`rounded-full px-3 py-1.5 text-xs font-bold transition ${mode === 'essential' ? 'bg-sky-700 text-white' : 'text-slate-700 hover:bg-slate-100'}`}
-      >
-        Esencial
-      </button>
-      <button
-        type="button"
-        onClick={() => onChange('practical')}
-        className={`rounded-full px-3 py-1.5 text-xs font-bold transition ${mode === 'practical' ? 'bg-emerald-700 text-white' : 'text-slate-700 hover:bg-slate-100'}`}
-      >
-        Práctico
-      </button>
-      <button
-        type="button"
-        onClick={() => onChange('technical')}
-        className={`rounded-full px-3 py-1.5 text-xs font-bold transition ${mode === 'technical' ? 'bg-slate-900 text-white' : 'text-slate-700 hover:bg-slate-100'}`}
-      >
-        Técnico
-      </button>
-    </div>
-  );
-}
-
-function SummaryPanel({
+export function SummaryPanel({
   depth,
   climate,
   weather,
@@ -273,7 +25,7 @@ function SummaryPanel({
   onShowPractical,
   onShowTechnical,
 }: {
-  depth: 'essential' | 'practical';
+  depth: Depth;
   climate: ClimateCalibrationPayload;
   weather: WeatherPayload | null;
   alarms: PulseAlarm[];
@@ -315,10 +67,9 @@ function SummaryPanel({
   const mainWeatherLabel =
     temp >= 38 ? 'Hace mucho calor' : temp >= 32 && (humidity ?? 100) <= 30 ? 'Hace calor y el ambiente está seco' : tempInsight.label;
 
-  // Alarmas para mostrar en simple
-  const criticalAlarms = alarms.filter(a => a.level === 'critico');
-  const warningAlarms = alarms.filter(a => a.level === 'precaucion');
-  const infoAlarms = alarms.filter(a => a.level === 'aviso' || a.level === 'info');
+  const criticalAlarms = alarms.filter((a) => a.level === 'critico');
+  const warningAlarms = alarms.filter((a) => a.level === 'precaucion');
+  const infoAlarms = alarms.filter((a) => a.level === 'aviso' || a.level === 'info');
 
   return (
     <div className="space-y-4 pb-24">
@@ -361,7 +112,7 @@ function SummaryPanel({
       {depth === 'essential' ? (
         <>
           <section className="rounded-[24px] bg-white p-5 shadow-md border border-slate-100">
-            <div className="flex items-center gap-2 mb-3">
+            <div className="mb-3 flex items-center gap-2">
               <span className="text-2xl">📌</span>
               <h2 className="text-base font-black text-slate-900">Lo importante hoy</h2>
             </div>
@@ -372,7 +123,7 @@ function SummaryPanel({
           <button
             type="button"
             onClick={onShowPractical}
-            className="w-full rounded-2xl bg-sky-700 px-4 py-4 text-base font-black text-white transition hover:bg-sky-800 shadow-lg flex items-center justify-center gap-2"
+            className="flex w-full items-center justify-center gap-2 rounded-2xl bg-sky-700 px-4 py-4 text-base font-black text-white shadow-lg transition hover:bg-sky-800"
           >
             👀 Ver modo práctico
           </button>
@@ -518,24 +269,72 @@ function SummaryPanel({
   );
 }
 
-function QuickCard({ emoji, label, value, bg, text }: { emoji: string; label: string; value: string; bg: string; text: string }) {
-  return (
-    <div className={`rounded-2xl ${bg} p-4 text-center shadow-sm border border-white`}>
-      <p className="text-2xl mb-1">{emoji}</p>
-      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">{label}</p>
-      <p className={`text-lg font-black ${text}`}>{value}</p>
-    </div>
-  );
+function windLabel(speedKmh: number): string {
+  if (speedKmh < 10) return 'flojo';
+  if (speedKmh < 25) return 'moderado';
+  return 'fuerte';
 }
 
-function FieldQuickCard({ emoji, label, value, color }: { emoji: string; label: string; value: string; color: string }) {
-  return (
-    <div className="rounded-xl bg-white/80 p-3 text-center shadow-sm">
-      <p className="text-xl mb-1">{emoji}</p>
-      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">{label}</p>
-      <p className={`text-sm font-black ${color}`}>{value}</p>
-    </div>
-  );
+function irrigationLabel(liters?: number | null): string {
+  if (liters === null || liters === undefined || !Number.isFinite(liters)) return 'sin datos';
+  if (liters >= 40) return 'alto';
+  if (liters >= 20) return 'medio';
+  if (liters > 0) return 'bajo';
+  return 'sin riego adicional';
+}
+
+function tempColor(t: number): string {
+  if (t <= 0) return '#3b82f6';
+  if (t <= 10) return '#06b6d4';
+  if (t <= 20) return '#10b981';
+  if (t <= 25) return '#f59e0b';
+  if (t <= 32) return '#f97316';
+  if (t <= 38) return '#ef4444';
+  return '#dc2626';
+}
+
+function tempBg(t: number): string {
+  if (t <= 0) return 'from-blue-500 to-cyan-400';
+  if (t <= 10) return 'from-cyan-500 to-teal-400';
+  if (t <= 20) return 'from-emerald-400 to-teal-300';
+  if (t <= 25) return 'from-amber-400 to-orange-300';
+  if (t <= 32) return 'from-orange-400 to-red-400';
+  if (t <= 38) return 'from-red-400 to-rose-500';
+  return 'from-red-600 to-rose-700';
+}
+
+function alarmColor(level: string): string {
+  if (level === 'critico') return 'bg-red-500 text-white border-red-400';
+  if (level === 'precaucion') return 'bg-orange-400 text-white border-orange-300';
+  if (level === 'aviso') return 'bg-yellow-400 text-yellow-900 border-yellow-300';
+  return 'bg-sky-400 text-white border-sky-300';
+}
+
+function alarmEmoji(level: string): string {
+  if (level === 'critico') return '🚨';
+  if (level === 'precaucion') return '⚠️';
+  if (level === 'aviso') return '⚡';
+  return 'ℹ️';
+}
+
+function principalRiskLabel({
+  mainAlarm,
+  temp,
+  humidity,
+  weather,
+}: {
+  mainAlarm: PulseAlarm | null;
+  temp: number;
+  humidity: number | null;
+  weather: WeatherPayload | null;
+}): string {
+  if (temp >= 38) return 'Demasiado calor';
+  if (temp >= 32 && (humidity ?? 100) <= 30) return 'Calor y sequedad';
+  if ((humidity ?? 100) <= 15) return 'Ambiente muy seco';
+  if (weather?.agricultural?.frostRisk48h && weather.agricultural.frostRisk48h !== 'none') return 'Posible helada';
+  if (mainAlarm?.level === 'critico') return 'Hay una alerta importante';
+  if (mainAlarm?.level === 'precaucion') return 'Conviene estar atento';
+  return 'Sin problemas destacados';
 }
 
 function buildSimpleActionPlan({
@@ -582,36 +381,22 @@ function buildSimpleActionPlan({
   return { canDo, caution, avoid };
 }
 
-function TabContent({
-  activeTab,
-  climate,
-  weather,
-  forecast,
-  alarms,
-}: {
-  activeTab: TabId;
-  climate: ClimateCalibrationPayload;
-  weather: WeatherPayload | null;
-  forecast: ForecastPayload | null;
-  alarms: ReturnType<typeof buildAlarms>;
-}) {
-  switch (activeTab) {
-    case 'now':
-      return <NowTab climate={climate} weather={weather} alarms={alarms} />;
-    case 'hours':
-      return <HoursTab hourly={weather?.hourly} forecast={forecast} daily={weather?.daily} weather={weather} />;
-    case 'field':
-      return (
-        <FieldTab
-          climate={climate}
-          weather={weather}
-          agricultural={weather?.agricultural ?? null}
-          livestock={weather?.livestock ?? null}
-        />
-      );
-    case 'alerts':
-      return <AlertsTab alarms={alarms} />;
-    case 'data':
-      return <DataTab climate={climate} weather={weather} forecast={forecast} />;
-  }
+function QuickCard({ emoji, label, value, bg, text }: { emoji: string; label: string; value: string; bg: string; text: string }) {
+  return (
+    <div className={`rounded-2xl ${bg} p-4 text-center shadow-sm border border-white`}>
+      <p className="text-2xl mb-1">{emoji}</p>
+      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">{label}</p>
+      <p className={`text-lg font-black ${text}`}>{value}</p>
+    </div>
+  );
+}
+
+function FieldQuickCard({ emoji, label, value, color }: { emoji: string; label: string; value: string; color: string }) {
+  return (
+    <div className="rounded-xl bg-white/80 p-3 text-center shadow-sm">
+      <p className="text-xl mb-1">{emoji}</p>
+      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">{label}</p>
+      <p className={`text-sm font-black ${color}`}>{value}</p>
+    </div>
+  );
 }
