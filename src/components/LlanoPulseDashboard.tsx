@@ -31,7 +31,7 @@ const FieldTab = dynamic(() => import('@/components/llano/field-tab').then((m) =
 const AlertsTab = dynamic(() => import('@/components/llano/alerts-tab').then((m) => ({ default: m.AlertsTab })));
 const DataTab = dynamic(() => import('@/components/llano/data-tab').then((m) => ({ default: m.DataTab })));
 
-type UiMode = 'simple' | 'technical';
+type UiMode = 'essential' | 'practical' | 'technical';
 const MODE_STORAGE_KEY = 'llano-pulse-mode';
 
 function windLabel(speedKmh: number): string {
@@ -103,13 +103,15 @@ function principalRiskLabel({
 }
 
 function useModeState(): [UiMode, (mode: UiMode) => void] {
-  const [mode, setMode] = useState<UiMode>('simple');
+  const [mode, setMode] = useState<UiMode>('essential');
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
     const stored = window.localStorage.getItem(MODE_STORAGE_KEY);
-    if (stored === 'technical' || stored === 'simple') {
+    if (stored === 'technical' || stored === 'practical' || stored === 'essential') {
       setMode(stored);
+    } else if (stored === 'simple') {
+      setMode('essential');
     }
     setHydrated(true);
   }, []);
@@ -117,10 +119,11 @@ function useModeState(): [UiMode, (mode: UiMode) => void] {
   useEffect(() => {
     if (hydrated) {
       window.localStorage.setItem(MODE_STORAGE_KEY, mode);
+      window.dispatchEvent(new CustomEvent('llano-pulse-mode-changed', { detail: mode }));
     }
   }, [mode, hydrated]);
 
-  const effectiveMode = hydrated ? mode : 'simple';
+  const effectiveMode = hydrated ? mode : 'essential';
   return [effectiveMode, setMode];
 }
 
@@ -187,13 +190,7 @@ export default function LlanoPulseDashboard({
           </div>
         </header>
 
-        {mode === 'simple' && (
-          <div className="mb-3">
-            <NotificationPermission />
-          </div>
-        )}
-
-        {mode === 'technical' && activeTab === 'now' && (
+        {(mode === 'practical' || (mode === 'technical' && activeTab === 'now')) && (
           <div className="mb-3">
             <NotificationPermission />
           </div>
@@ -209,15 +206,22 @@ export default function LlanoPulseDashboard({
         )}
 
         <main>
-          {mode === 'simple' ? (
-            <SimpleSummaryPanel climate={cd} weather={wd} alarms={alarms} onShowTechnical={() => setMode('technical')} />
-          ) : (
+          {mode === 'technical' ? (
             <TabContent
               activeTab={activeTab}
               climate={cd}
               weather={wd}
               forecast={forecast.data}
               alarms={alarms}
+            />
+          ) : (
+            <SummaryPanel
+              depth={mode}
+              climate={cd}
+              weather={wd}
+              alarms={alarms}
+              onShowPractical={() => setMode('practical')}
+              onShowTechnical={() => setMode('technical')}
             />
           )}
         </main>
@@ -234,10 +238,17 @@ function ModeSwitcher({ mode, onChange }: { mode: UiMode; onChange: (mode: UiMod
       <span className="pl-2 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-700">Modo:</span>
       <button
         type="button"
-        onClick={() => onChange('simple')}
-        className={`rounded-full px-3 py-1.5 text-xs font-bold transition ${mode === 'simple' ? 'bg-sky-700 text-white' : 'text-slate-700 hover:bg-slate-100'}`}
+        onClick={() => onChange('essential')}
+        className={`rounded-full px-3 py-1.5 text-xs font-bold transition ${mode === 'essential' ? 'bg-sky-700 text-white' : 'text-slate-700 hover:bg-slate-100'}`}
       >
-        Simple
+        Esencial
+      </button>
+      <button
+        type="button"
+        onClick={() => onChange('practical')}
+        className={`rounded-full px-3 py-1.5 text-xs font-bold transition ${mode === 'practical' ? 'bg-emerald-700 text-white' : 'text-slate-700 hover:bg-slate-100'}`}
+      >
+        Práctico
       </button>
       <button
         type="button"
@@ -250,15 +261,19 @@ function ModeSwitcher({ mode, onChange }: { mode: UiMode; onChange: (mode: UiMod
   );
 }
 
-function SimpleSummaryPanel({
+function SummaryPanel({
+  depth,
   climate,
   weather,
   alarms,
+  onShowPractical,
   onShowTechnical,
 }: {
+  depth: 'essential' | 'practical';
   climate: ClimateCalibrationPayload;
   weather: WeatherPayload | null;
   alarms: PulseAlarm[];
+  onShowPractical: () => void;
   onShowTechnical: () => void;
 }) {
   const local = climate.nodes.localStation;
@@ -303,7 +318,6 @@ function SimpleSummaryPanel({
 
   return (
     <div className="space-y-4 pb-24">
-      {/* TARJETA PRINCIPAL DE TEMPERATURA - MUY VISUAL */}
       <section className={`overflow-hidden rounded-[28px] bg-gradient-to-br ${tempBg(temp)} p-6 text-white shadow-lg`}>
         <div className="flex items-start justify-between">
           <div>
@@ -318,12 +332,8 @@ function SimpleSummaryPanel({
             <p className="mt-1 text-6xl font-black tracking-tight drop-shadow-md" style={{ textShadow: '0 2px 10px rgba(0,0,0,0.2)' }}>
               {fmtN(temp, 1)}°C
             </p>
-            <p className="mt-2 text-lg font-bold">
-              {mainWeatherLabel}
-            </p>
-            <p className="mt-1 text-sm opacity-90">
-              {weatherCodeDescription(wcode)}
-            </p>
+            <p className="mt-2 text-lg font-bold">{mainWeatherLabel}</p>
+            <p className="mt-1 text-sm opacity-90">{weatherCodeDescription(wcode)}</p>
           </div>
           <div className="shrink-0 rounded-2xl bg-white/20 backdrop-blur-sm px-4 py-3 text-center">
             <span className="text-4xl">{weatherEmoji(wcode)}</span>
@@ -331,32 +341,12 @@ function SimpleSummaryPanel({
         </div>
       </section>
 
-      {/* DATOS RÁPIDOS EN HORIZONTAL */}
       <div className="grid grid-cols-3 gap-3">
-        <QuickCard 
-          emoji="🌡️" 
-          label="Sensación" 
-          value={`${fmtN(feelsLike, 0)}°`} 
-          bg="bg-orange-50" 
-          text="text-orange-700" 
-        />
-        <QuickCard 
-          emoji="💧" 
-          label="Humedad" 
-          value={`${fmtN(humidity, 0)}%`} 
-          bg="bg-sky-50" 
-          text="text-sky-700" 
-        />
-        <QuickCard 
-          emoji="💨" 
-          label="Viento" 
-          value={`${fmtN(windSpeed, 0)} km/h`} 
-          bg="bg-emerald-50" 
-          text="text-emerald-700" 
-        />
+        <QuickCard emoji="🌡️" label="Sensación" value={`${fmtN(feelsLike, 0)}°`} bg="bg-orange-50" text="text-orange-700" />
+        <QuickCard emoji="💧" label="Humedad" value={`${fmtN(humidity, 0)}%`} bg="bg-sky-50" text="text-sky-700" />
+        <QuickCard emoji="💨" label="Viento" value={`${fmtN(windSpeed, 0)} km/h`} bg="bg-emerald-50" text="text-emerald-700" />
       </div>
 
-      {/* INDICADOR DE ESTACIÓN LOCAL */}
       {!hasLocalStation && (
         <div className="flex items-center gap-2 rounded-2xl bg-white/60 px-4 py-2 text-xs text-slate-500 shadow-sm ring-1 ring-slate-100">
           <span className="text-base">📡</span>
@@ -364,187 +354,162 @@ function SimpleSummaryPanel({
         </div>
       )}
 
-      {/* ALERTAS ACTIVAS */}
-      {alarms.length > 0 && (
-        <section className="rounded-[24px] border-2 border-amber-200 bg-amber-50 p-5 shadow-sm">
-          <div className="flex items-center gap-2 mb-3">
-            <span className="text-2xl">🔔</span>
-            <h2 className="text-base font-black text-amber-900">
-              {alarms.length === 1 ? '1 alerta activa' : `${alarms.length} alertas activas`}
-            </h2>
-          </div>
-          <div className="space-y-2">
-            {criticalAlarms.slice(0, 2).map((a, i) => (
-              <div key={`crit-${i}`} className={`rounded-xl p-3 ${alarmColor(a.level)} shadow-sm`}>
-                <p className="font-bold text-sm">{alarmEmoji(a.level)} {a.title}</p>
-                <p className="text-xs mt-1 opacity-90">{a.message}</p>
+      {depth === 'essential' ? (
+        <>
+          <section className="rounded-[24px] bg-white p-5 shadow-md border border-slate-100">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-2xl">📌</span>
+              <h2 className="text-base font-black text-slate-900">Lo importante hoy</h2>
+            </div>
+            <p className="text-lg font-bold text-slate-800">{principalRisk}</p>
+            <p className="mt-2 text-sm text-slate-600">{whatToDo.canDo[0]}</p>
+          </section>
+
+          <button
+            type="button"
+            onClick={onShowPractical}
+            className="w-full rounded-2xl bg-sky-700 px-4 py-4 text-base font-black text-white transition hover:bg-sky-800 shadow-lg flex items-center justify-center gap-2"
+          >
+            👀 Ver modo práctico
+          </button>
+        </>
+      ) : (
+        <>
+          {alarms.length > 0 && (
+            <section className="rounded-[24px] border-2 border-amber-200 bg-amber-50 p-5 shadow-sm">
+              <div className="mb-3 flex items-center gap-2">
+                <span className="text-2xl">🔔</span>
+                <h2 className="text-base font-black text-amber-900">{alarms.length === 1 ? '1 alerta activa' : `${alarms.length} alertas activas`}</h2>
               </div>
-            ))}
-            {warningAlarms.slice(0, 2).map((a, i) => (
-              <div key={`warn-${i}`} className={`rounded-xl p-3 ${alarmColor(a.level)} shadow-sm`}>
-                <p className="font-bold text-sm">{alarmEmoji(a.level)} {a.title}</p>
-                <p className="text-xs mt-1 opacity-90">{a.message}</p>
+              <div className="space-y-2">
+                {criticalAlarms.slice(0, 2).map((a, i) => (
+                  <div key={`crit-${i}`} className={`rounded-xl p-3 ${alarmColor(a.level)} shadow-sm`}>
+                    <p className="text-sm font-bold">{alarmEmoji(a.level)} {a.title}</p>
+                    <p className="mt-1 text-xs opacity-90">{a.message}</p>
+                  </div>
+                ))}
+                {warningAlarms.slice(0, 2).map((a, i) => (
+                  <div key={`warn-${i}`} className={`rounded-xl p-3 ${alarmColor(a.level)} shadow-sm`}>
+                    <p className="text-sm font-bold">{alarmEmoji(a.level)} {a.title}</p>
+                    <p className="mt-1 text-xs opacity-90">{a.message}</p>
+                  </div>
+                ))}
+                {infoAlarms.slice(0, 1).map((a, i) => (
+                  <div key={`info-${i}`} className={`rounded-xl p-3 ${alarmColor(a.level)} shadow-sm`}>
+                    <p className="text-sm font-bold">{alarmEmoji(a.level)} {a.title}</p>
+                  </div>
+                ))}
+                {alarms.length > 5 && <p className="mt-2 text-center text-xs font-bold text-amber-800">+{alarms.length - 5} alertas más en modo técnico</p>}
               </div>
-            ))}
-            {infoAlarms.slice(0, 1).map((a, i) => (
-              <div key={`info-${i}`} className={`rounded-xl p-3 ${alarmColor(a.level)} shadow-sm`}>
-                <p className="font-bold text-sm">{alarmEmoji(a.level)} {a.title}</p>
-              </div>
-            ))}
-            {alarms.length > 5 && (
-              <p className="text-xs font-bold text-amber-800 text-center mt-2">
-                +{alarms.length - 5} alertas más en modo técnico
+            </section>
+          )}
+
+          <section className="rounded-[24px] bg-white p-5 shadow-md border border-slate-100">
+            <div className="mb-4 flex items-center gap-2">
+              <span className="text-2xl">✅</span>
+              <h2 className="text-base font-black text-slate-900">Qué hacer hoy</h2>
+            </div>
+            <div className="space-y-3">
+              {whatToDo.canDo.length > 0 && (
+                <div className="rounded-2xl border-2 border-emerald-200 bg-emerald-50 p-4">
+                  <p className="mb-2 text-sm font-black text-emerald-800">✅ Puedes hacer</p>
+                  <ul className="space-y-2">
+                    {whatToDo.canDo.slice(0, 2).map((item, i) => (
+                      <li key={i} className="flex items-start gap-2 text-sm text-emerald-900">
+                        <span className="mt-0.5 text-emerald-500">✓</span>
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {whatToDo.caution.length > 0 && (
+                <div className="rounded-2xl border-2 border-amber-200 bg-amber-50 p-4">
+                  <p className="mb-2 text-sm font-black text-amber-800">⚠️ Ten cuidado</p>
+                  <ul className="space-y-2">
+                    {whatToDo.caution.slice(0, 2).map((item, i) => (
+                      <li key={i} className="flex items-start gap-2 text-sm text-amber-900">
+                        <span className="mt-0.5 text-amber-500">!</span>
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {whatToDo.avoid.length > 0 && (
+                <div className="rounded-2xl border-2 border-rose-200 bg-rose-50 p-4">
+                  <p className="mb-2 text-sm font-black text-rose-800">❌ Evita</p>
+                  <ul className="space-y-2">
+                    {whatToDo.avoid.slice(0, 2).map((item, i) => (
+                      <li key={i} className="flex items-start gap-2 text-sm text-rose-900">
+                        <span className="mt-0.5 text-rose-500">✕</span>
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          </section>
+
+          <section className="rounded-[24px] bg-gradient-to-br from-sky-50 to-blue-50 p-5 shadow-md border-2 border-sky-200">
+            <div className="mb-4 flex items-center gap-2">
+              <span className="text-2xl">🌾</span>
+              <h2 className="text-base font-black text-sky-900">Campo</h2>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <FieldQuickCard emoji="💧" label="Riego" value={irrigation} color={agri?.recommendedIrrigationLitersM2 != null && agri.recommendedIrrigationLitersM2 > 0 ? 'text-sky-700' : 'text-emerald-700'} />
+              <FieldQuickCard emoji="❄️" label="Helada" value={frostInsight.label} color={frostInsight.label === 'Sin riesgo' ? 'text-emerald-700' : 'text-rose-700'} />
+              <FieldQuickCard emoji="🌬️" label="Tratamientos" value={treatmentInsight.label} color={windSpeed <= 15 ? 'text-emerald-700' : windSpeed <= 25 ? 'text-amber-700' : 'text-rose-700'} />
+              <FieldQuickCard emoji="🌡️" label="Suelo" value={soilInsight10.label === 'Sin dato' ? 'Sin dato' : `${fmtN(soil10, 0)}°C`} color="text-slate-700" />
+            </div>
+            <div className="mt-4 rounded-xl bg-white/70 p-3">
+              <p className="text-sm font-semibold text-slate-700">
+                {agri?.recommendedIrrigationLitersM2 != null && agri.recommendedIrrigationLitersM2 > 0 ? '💧 Revisa la humedad del suelo antes de regar' : '✅ Riego normal, sin cambios urgentes'}
               </p>
-            )}
-          </div>
-        </section>
+            </div>
+          </section>
+
+          {livestock && (
+            <section className="rounded-[24px] border-2 border-amber-200 bg-gradient-to-br from-amber-50 to-orange-50 p-5 shadow-md">
+              <div className="mb-4 flex items-center gap-2">
+                <span className="text-2xl">🐄</span>
+                <h2 className="text-base font-black text-amber-900">Ganadería</h2>
+              </div>
+              <div className="rounded-xl bg-white/70 p-4">
+                <div className="flex items-center gap-3">
+                  <span className="text-3xl">{livestock?.thi != null && livestock.thi >= 80 ? '🥵' : livestock?.thi != null && livestock.thi >= 72 ? '😰' : '😊'}</span>
+                  <div>
+                    <p className="text-lg font-black text-amber-900">{thiInsight.label}</p>
+                    <p className="text-sm text-amber-800">{thiInsight.action}</p>
+                  </div>
+                </div>
+              </div>
+            </section>
+          )}
+
+          <section className={`rounded-[24px] border-2 p-5 shadow-md ${
+            mainAlarm?.level === 'critico' ? 'border-red-300 bg-red-50' :
+            mainAlarm?.level === 'precaucion' ? 'border-orange-300 bg-orange-50' :
+            'border-emerald-300 bg-emerald-50'
+          }`}>
+            <div className="mb-2 flex items-center gap-2">
+              <span className="text-2xl">{mainAlarm?.level === 'critico' ? '🚨' : mainAlarm?.level === 'precaucion' ? '⚠️' : '✅'}</span>
+              <h2 className="text-base font-black text-slate-900">Situación</h2>
+            </div>
+            <p className="text-lg font-bold text-slate-800">{principalRisk}</p>
+            <p className="mt-2 text-sm text-slate-600">{temp >= 32 ? '🔥 Mucho calor. Bebe agua y busca sombra.' : temp <= 5 ? '❄️ Frío intenso. Abrígate bien.' : '🌤️ Condiciones normales. Disfruta del día.'}</p>
+          </section>
+
+          <button
+            type="button"
+            onClick={onShowTechnical}
+            className="flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 px-4 py-4 text-base font-black text-white shadow-lg transition hover:bg-slate-800"
+          >
+            🔧 Ver detalle técnico
+          </button>
+        </>
       )}
-
-      {/* QUÉ HACER HOY - MUY VISUAL */}
-      <section className="rounded-[24px] bg-white p-5 shadow-md border border-slate-100">
-        <div className="flex items-center gap-2 mb-4">
-          <span className="text-2xl">✅</span>
-          <h2 className="text-base font-black text-slate-900">Qué hacer hoy</h2>
-        </div>
-        
-        <div className="space-y-3">
-          {whatToDo.canDo.length > 0 && (
-            <div className="rounded-2xl bg-emerald-50 border-2 border-emerald-200 p-4">
-              <p className="font-black text-emerald-800 text-sm mb-2">✅ Puedes hacer</p>
-              <ul className="space-y-2">
-                {whatToDo.canDo.slice(0, 2).map((item, i) => (
-                  <li key={i} className="text-sm text-emerald-900 flex items-start gap-2">
-                    <span className="text-emerald-500 mt-0.5">✓</span>
-                    {item}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-          
-          {whatToDo.caution.length > 0 && (
-            <div className="rounded-2xl bg-amber-50 border-2 border-amber-200 p-4">
-              <p className="font-black text-amber-800 text-sm mb-2">⚠️ Ten cuidado</p>
-              <ul className="space-y-2">
-                {whatToDo.caution.slice(0, 2).map((item, i) => (
-                  <li key={i} className="text-sm text-amber-900 flex items-start gap-2">
-                    <span className="text-amber-500 mt-0.5">!</span>
-                    {item}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-          
-          {whatToDo.avoid.length > 0 && (
-            <div className="rounded-2xl bg-rose-50 border-2 border-rose-200 p-4">
-              <p className="font-black text-rose-800 text-sm mb-2">❌ Evita</p>
-              <ul className="space-y-2">
-                {whatToDo.avoid.slice(0, 2).map((item, i) => (
-                  <li key={i} className="text-sm text-rose-900 flex items-start gap-2">
-                    <span className="text-rose-500 mt-0.5">✕</span>
-                    {item}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* CAMPO - TARJETA COLORIDA */}
-      <section className="rounded-[24px] bg-gradient-to-br from-sky-50 to-blue-50 p-5 shadow-md border-2 border-sky-200">
-        <div className="flex items-center gap-2 mb-4">
-          <span className="text-2xl">🌾</span>
-          <h2 className="text-base font-black text-sky-900">Campo</h2>
-        </div>
-        
-        <div className="grid grid-cols-2 gap-3">
-          <FieldQuickCard 
-            emoji="💧" 
-            label="Riego" 
-            value={irrigation} 
-            color={agri?.recommendedIrrigationLitersM2 != null && agri.recommendedIrrigationLitersM2 > 0 ? 'text-sky-700' : 'text-emerald-700'} 
-          />
-          <FieldQuickCard 
-            emoji="❄️" 
-            label="Helada" 
-            value={frostInsight.label} 
-            color={frostInsight.label === 'Sin riesgo' ? 'text-emerald-700' : 'text-rose-700'} 
-          />
-          <FieldQuickCard 
-            emoji="🌬️" 
-            label="Tratamientos" 
-            value={treatmentInsight.label} 
-            color={windSpeed <= 15 ? 'text-emerald-700' : windSpeed <= 25 ? 'text-amber-700' : 'text-rose-700'} 
-          />
-          <FieldQuickCard 
-            emoji="🌡️" 
-            label="Suelo" 
-            value={soilInsight10.label === 'Sin dato' ? 'Sin dato' : `${fmtN(soil10, 0)}°C`} 
-            color="text-slate-700" 
-          />
-        </div>
-        
-        <div className="mt-4 rounded-xl bg-white/70 p-3">
-          <p className="text-sm text-slate-700 font-semibold">
-            {agri?.recommendedIrrigationLitersM2 != null && agri.recommendedIrrigationLitersM2 > 0 
-              ? '💧 Revisa la humedad del suelo antes de regar' 
-              : '✅ Riego normal, sin cambios urgentes'}
-          </p>
-        </div>
-      </section>
-
-      {/* GANADERÍA - TARJETA COLORIDA */}
-      {livestock && (
-        <section className="rounded-[24px] bg-gradient-to-br from-amber-50 to-orange-50 p-5 shadow-md border-2 border-amber-200">
-        <div className="flex items-center gap-2 mb-4">
-          <span className="text-2xl">🐄</span>
-          <h2 className="text-base font-black text-amber-900">Ganadería</h2>
-        </div>
-        
-        <div className="rounded-xl bg-white/70 p-4">
-          <div className="flex items-center gap-3">
-            <span className="text-3xl">
-              {livestock?.thi != null && livestock.thi >= 80 ? '🥵' : livestock?.thi != null && livestock.thi >= 72 ? '😰' : '😊'}
-            </span>
-            <div>
-              <p className="font-black text-lg text-amber-900">{thiInsight.label}</p>
-              <p className="text-sm text-amber-800">{thiInsight.action}</p>
-            </div>
-          </div>
-        </div>
-      </section>
-      )}
-
-      {/* RIESGO PRINCIPAL */}
-      <section className={`rounded-[24px] p-5 shadow-md border-2 ${
-        mainAlarm?.level === 'critico' ? 'bg-red-50 border-red-300' : 
-        mainAlarm?.level === 'precaucion' ? 'bg-orange-50 border-orange-300' : 
-        'bg-emerald-50 border-emerald-300'
-      }`}>
-        <div className="flex items-center gap-2 mb-2">
-          <span className="text-2xl">
-            {mainAlarm?.level === 'critico' ? '🚨' : mainAlarm?.level === 'precaucion' ? '⚠️' : '✅'}
-          </span>
-          <h2 className="text-base font-black text-slate-900">Situación</h2>
-        </div>
-        <p className="text-lg font-bold text-slate-800">{principalRisk}</p>
-        <p className="text-sm text-slate-600 mt-2">
-          {temp >= 32 ? '🔥 Mucho calor. Bebe agua y busca sombra.' : 
-           temp <= 5 ? '❄️ Frío intenso. Abrígate bien.' : 
-           '🌤️ Condiciones normales. Disfruta del día.'}
-        </p>
-      </section>
-
-      {/* BOTÓN TÉCNICO */}
-      <button
-        type="button"
-        onClick={onShowTechnical}
-        className="w-full rounded-2xl bg-slate-950 px-4 py-4 text-base font-black text-white transition hover:bg-slate-800 shadow-lg flex items-center justify-center gap-2"
-      >
-        🔧 Ver detalle técnico
-      </button>
     </div>
   );
 }

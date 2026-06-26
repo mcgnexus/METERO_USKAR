@@ -11,11 +11,15 @@ const STORAGE_KEY = 'pwa-install-dismissed';
 const VISIT_KEY = 'meteo_notifications_visits';
 const NOTIFY_DISMISS_KEY = 'meteo_notifications_dismissed';
 const NOTIFY_COOLDOWN_MS = 7 * 86400000;
+const MODE_KEY = 'llano-pulse-mode';
+
+type PulseMode = 'essential' | 'practical' | 'technical';
 
 export default function PwaRegister() {
   const [installEvent, setInstallEvent] = useState<BeforeInstallPromptEvent | null>(null);
   const [showPrompt, setShowPrompt] = useState(false);
   const [dismissed, setDismissed] = useState(false);
+  const [mode, setMode] = useState<PulseMode>('essential');
 
   useEffect(() => {
     if ('serviceWorker' in navigator) {
@@ -24,12 +28,26 @@ export default function PwaRegister() {
         .catch(() => {});
     }
 
+    const syncMode = () => {
+      const rawMode = localStorage.getItem(MODE_KEY);
+      if (rawMode === 'technical' || rawMode === 'practical' || rawMode === 'essential') {
+        setMode(rawMode);
+      } else if (rawMode === 'simple') {
+        setMode('essential');
+      }
+    };
+
+    syncMode();
+    window.addEventListener('llano-pulse-mode-changed', syncMode as EventListener);
+
+    const cleanup = () => window.removeEventListener('llano-pulse-mode-changed', syncMode as EventListener);
+
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
       const { date } = JSON.parse(stored);
       const daysSince = (Date.now() - new Date(date).getTime()) / 86400000;
       if (daysSince < 30) {
-        return;
+        return cleanup;
       }
     }
 
@@ -37,14 +55,16 @@ export default function PwaRegister() {
     try {
       visits = parseInt(localStorage.getItem(VISIT_KEY) || '0', 10);
     } catch {}
-    if (visits < 2) return;
+    if (visits < 2) return cleanup;
 
     const notifyRaw = localStorage.getItem(NOTIFY_DISMISS_KEY);
     const notificationWillShow =
       typeof Notification !== 'undefined' &&
       Notification.permission === 'default' &&
       (!notifyRaw || Date.now() - JSON.parse(notifyRaw).ts >= NOTIFY_COOLDOWN_MS);
-    if (notificationWillShow) return;
+    if (notificationWillShow) return cleanup;
+
+    return cleanup;
   }, []);
 
   useEffect(() => {
@@ -87,6 +107,7 @@ export default function PwaRegister() {
     } catch {}
   };
 
+  if (mode === 'essential') return null;
   if (!showPrompt || dismissed) return null;
 
   return (

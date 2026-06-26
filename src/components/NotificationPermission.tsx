@@ -15,6 +15,9 @@ function urlBase64ToUint8Array(base64String: string): ArrayBuffer {
 
 const LS_KEY = 'meteo_notifications_dismissed';
 const VISIT_KEY = 'meteo_notifications_visits';
+const MODE_KEY = 'llano-pulse-mode';
+
+type PulseMode = 'essential' | 'practical' | 'technical';
 
 export function NotificationPermission() {
   const [mounted, setMounted] = useState(false);
@@ -22,9 +25,21 @@ export function NotificationPermission() {
   const [error, setError] = useState<string | null>(null);
   const [dismissed, setDismissed] = useState(true);
   const [visits, setVisits] = useState(0);
+  const [mode, setMode] = useState<PulseMode>('essential');
 
   useEffect(() => {
     setMounted(true);
+    const syncMode = () => {
+      const rawMode = localStorage.getItem(MODE_KEY);
+      if (rawMode === 'technical' || rawMode === 'practical' || rawMode === 'essential') {
+        setMode(rawMode);
+      } else if (rawMode === 'simple') {
+        setMode('essential');
+      }
+    };
+    syncMode();
+    window.addEventListener('llano-pulse-mode-changed', syncMode as EventListener);
+
     const nextStatus: NotificationPermission | 'loading' =
       typeof window !== 'undefined' && 'Notification' in window
         ? Notification.permission
@@ -50,9 +65,12 @@ export function NotificationPermission() {
       nextDismissed = false;
     }
     setDismissed(nextDismissed);
+
+    return () => window.removeEventListener('llano-pulse-mode-changed', syncMode as EventListener);
   }, []);
 
   if (visits > 0 && visits < 2) return null;
+  if (mode === 'essential') return null;
 
   const handleEnable = useCallback(async () => {
     setError(null);
