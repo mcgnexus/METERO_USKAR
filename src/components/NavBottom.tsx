@@ -1,13 +1,13 @@
 'use client';
 
-export type TabId = 'now' | 'hours' | 'field' | 'alerts' | 'data';
+export type TabId = 'hoy' | 'horas' | 'semana' | 'campo' | 'alertas';
 
 const TABS: { id: TabId; icon: string; label: string }[] = [
-  { id: 'now', icon: '🏠', label: 'Ahora' },
-  { id: 'hours', icon: '🕒', label: 'Horas' },
-  { id: 'field', icon: '🌱', label: 'Campo' },
-  { id: 'alerts', icon: '⚠️', label: 'Alertas' },
-  { id: 'data', icon: '📊', label: 'Datos' },
+  { id: 'hoy', icon: '🏠', label: 'Hoy' },
+  { id: 'horas', icon: '🕒', label: 'Horas' },
+  { id: 'semana', icon: '📅', label: 'Semana' },
+  { id: 'campo', icon: '🌱', label: 'Campo' },
+  { id: 'alertas', icon: '⚠️', label: 'Alertas' },
 ];
 
 export function NavBottom({ active, onChange, alertCount }: {
@@ -20,7 +20,7 @@ export function NavBottom({ active, onChange, alertCount }: {
       <div className="mx-auto flex max-w-lg items-center justify-around px-1 pb-safe-bottom">
         {TABS.map((tab) => {
           const isActive = active === tab.id;
-          const showBadge = tab.id === 'alerts' && alertCount && alertCount > 0;
+          const showBadge = tab.id === 'alertas' && alertCount && alertCount > 0;
           return (
             <button
               key={tab.id}

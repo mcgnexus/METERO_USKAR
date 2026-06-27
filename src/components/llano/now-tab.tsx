@@ -235,6 +235,36 @@ export function NowTab({ climate, weather, alarms }: {
             )}
           </div>
         </details>
+
+        <section className="rounded-[22px] border border-sky-100 bg-gradient-to-br from-sky-50 to-white p-5 shadow-sm">
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-lg">💡</span>
+            <h2 className="text-xs font-bold uppercase tracking-[0.16em] text-sky-700">Consejos para hoy</h2>
+          </div>
+          <div className="space-y-3">
+            {[
+              temp >= 32 && '🌡️ Evita el sol directo entre 12:00 y 18:00. Mantente hidratado.',
+              temp <= 3 && '❄️ Abrígate bien y protege plantas o tuberías sensibles.',
+              humidity !== null && humidity <= 25 && '💧 El ambiente está muy seco. Bebe más agua de lo normal.',
+              windSpeed > 30 && '💨 Viento fuerte. Asegura objetos sueltos en terrazas y jardines.',
+              windSpeed <= 15 && '🌿 Buen momento para tratamientos agrícolas si no hay lluvia prevista.',
+              agri?.frostRisk48h && agri.frostRisk48h !== 'none' && '❄️ Riesgo de helada. Protege cultivos sensibles.',
+              agri?.recommendedIrrigationLitersM2 != null && agri.recommendedIrrigationLitersM2 > 0 && '🚿 Revisa la humedad del suelo antes de regar.',
+              weather?.livestock?.thi != null && weather.livestock.thi >= 72 && '🐄 Vigila al ganado: proporciona sombra y agua fresca.',
+              agri?.workability?.workable === false && '🌾 Evita labores pesadas: el suelo no está en condiciones.',
+            ].filter(Boolean).map((tip, i) => (
+              <p key={i} className="text-sm leading-6 text-slate-800">{tip}</p>
+            ))}
+          </div>
+          {agri && (
+            <a
+              href="/huescar/agricultura"
+              className="mt-3 inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-800 transition hover:bg-emerald-100"
+            >
+              🌾 Ver detalle Campo
+            </a>
+          )}
+        </section>
       </section>
     </div>
   );
