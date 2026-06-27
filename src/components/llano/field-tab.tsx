@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { fmtN } from '@/components/llano/atoms';
 import { IndicatorHelp } from '@/components/llano/indicator-help';
+import { levelClass, type PulseAlarm } from '@/components/llano/alarms-logic';
 import { interpretTHI, interpretFrostRisk, interpretSoilTemp, interpretWindForTreatment, interpretETo } from '@/lib/interpretation';
 import type { ClimateCalibrationPayload } from '@/hooks/useClimateCalibration';
 import type { AgriculturalData, LivestockData, WeatherPayload } from '@/types/weather';
@@ -16,11 +17,12 @@ const PROFILES: { id: Profile; icon: string; label: string }[] = [
   { id: 'huerto', icon: '🥬', label: 'Huerto/Jardín' },
 ];
 
-export function FieldTab({ climate, weather, agricultural, livestock }: {
+export function FieldTab({ climate, weather, agricultural, livestock, alarms }: {
   climate: ClimateCalibrationPayload;
   weather: WeatherPayload | null;
   agricultural: AgriculturalData | null;
   livestock: LivestockData | null;
+  alarms?: PulseAlarm[];
 }) {
   const [profile, setProfile] = useState<Profile>('agricultura');
 
@@ -32,6 +34,21 @@ export function FieldTab({ climate, weather, agricultural, livestock }: {
 
   return (
     <div className="space-y-4 pb-24">
+      {alarms && alarms.length > 0 && (
+        <div className="rounded-[22px] border border-rose-200 bg-rose-50/90 p-4">
+          <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-rose-700">🔔 Alertas activas</p>
+          <div className="mt-2 space-y-1">
+            {alarms.filter(a => a.level === 'critico' || a.level === 'precaucion').slice(0, 4).map((a) => (
+              <p key={a.title} className={`rounded-xl px-3 py-1.5 text-sm font-semibold ${levelClass(a.level)}`}>
+                {a.level === 'critico' ? '🚨' : '⚠️'} {a.title}
+              </p>
+            ))}
+            {alarms.length > 4 && (
+              <p className="text-xs font-bold text-rose-600">+{alarms.length - 4} más · Revisa la pestaña Alertas</p>
+            )}
+          </div>
+        </div>
+      )}
       <section className="rounded-[22px] border border-slate-200 bg-white p-5">
         <h2 className="text-xs font-bold uppercase tracking-[0.18em] text-slate-700">Tu perfil</h2>
         <div className="mt-3 flex flex-wrap gap-2">

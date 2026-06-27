@@ -105,9 +105,6 @@ export function NotificationPermission() {
     }
   }, []);
 
-  if (visits > 0 && visits < 2) return null;
-  if (mode === 'essential') return null;
-
   if (!mounted) return null;
 
   if (status === 'granted' || status === 'done') {

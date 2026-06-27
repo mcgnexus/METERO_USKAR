@@ -1,9 +1,10 @@
 import { HUESCAR_COORDS } from "@/lib/geo";
 import { cacheGet, cacheSet } from "@/lib/inMemoryCache";
-import type { WeatherPayload } from "@/types/weather";
+import type { WeatherAlert, WeatherPayload } from "@/types/weather";
 import { fetchLightningData } from "@/services/lightningService";
 import { fetchNowcast } from "@/services/nowcastService";
 import { fetchRadarPrecipitation } from "@/services/radarService";
+import { fetchAEMETWarnings } from "@/services/aemetWarningsService";
 import { aggregateWeather } from "@/services/weatherAggregator";
 
 const CURRENT_WEATHER_CACHE_KEY = "weather:current-payload:v1";
@@ -45,11 +46,14 @@ export async function getCurrentWeatherPayload(): Promise<WeatherPayload> {
     ).catch(() => null),
   ]);
 
+  const aemetAlerts = await fetchAEMETWarnings().catch(() => [] as WeatherAlert[]);
+
   const payload: WeatherPayload = {
     ...weather,
     lightning: lightning ?? undefined,
     radar: radar ?? undefined,
     nowcast: nowcast ?? undefined,
+    alerts: [...weather.alerts, ...aemetAlerts],
   };
 
   cacheSet(CURRENT_WEATHER_CACHE_KEY, payload, CURRENT_WEATHER_CACHE_TTL_MS);
