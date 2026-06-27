@@ -69,9 +69,6 @@ export function NotificationPermission() {
     return () => window.removeEventListener('llano-pulse-mode-changed', syncMode as EventListener);
   }, []);
 
-  if (visits > 0 && visits < 2) return null;
-  if (mode === 'essential') return null;
-
   const handleEnable = useCallback(async () => {
     setError(null);
     try {
@@ -107,6 +104,9 @@ export function NotificationPermission() {
       setError('No se pudieron activar las notificaciones');
     }
   }, []);
+
+  if (visits > 0 && visits < 2) return null;
+  if (mode === 'essential') return null;
 
   if (!mounted) return null;
 

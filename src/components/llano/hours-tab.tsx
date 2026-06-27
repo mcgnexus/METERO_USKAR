@@ -60,44 +60,34 @@ export function HoursTab({ hourly, forecast, daily, weather }: {
   const referenceTime = weather?.current?.time ?? weather?.fetchedAt ?? null;
   const now = referenceTime ? new Date(referenceTime).getTime() : Date.now();
 
-  if (!hourly?.time?.length) {
-    return (
-      <div className="flex min-h-[200px] items-center justify-center rounded-[22px] border border-slate-200 bg-white p-8">
-        <p className="text-sm text-slate-700">Datos horarios no disponibles</p>
-      </div>
-    );
-  }
-
-  const upcoming = useMemo(() => hourly.time
+  const upcoming = useMemo(() => (hourly?.time ?? [])
     .map((time, index) => ({ time, index, ts: new Date(time).getTime() }))
     .filter((h) => h.ts >= now)
-    .slice(0, 12), [hourly.time, now]);
+    .slice(0, 12), [hourly?.time, now]);
 
-  if (upcoming.length === 0) return null;
-
-  const temps = useMemo(() => upcoming.map((h) => hourly.temperatureC[h.index] ?? 0), [upcoming, hourly.temperatureC]);
+  const temps = useMemo(() => upcoming.map((h) => hourly?.temperatureC[h.index] ?? 0), [upcoming, hourly?.temperatureC]);
   const { maxTemp, minTemp, maxTempHour, rainHours, workText, treatText, rainText, firstWindLabel } = useMemo(() => {
     const max = Math.max(...temps);
     const min = Math.min(...temps);
     const maxHour = upcoming[temps.indexOf(max)];
-    const rain = upcoming.filter((h) => (hourly.precipitationProbabilityPct[h.index] ?? 0) >= 40);
+    const rain = upcoming.filter((h) => (hourly?.precipitationProbabilityPct[h.index] ?? 0) >= 40);
     const firstHour = upcoming[0];
-    const firstWind = firstHour ? hourly.windSpeedKmh[firstHour.index] ?? 0 : 0;
+    const firstWind = firstHour ? hourly?.windSpeedKmh[firstHour.index] ?? 0 : 0;
     const firstWindLabelNext = interpretWind(firstWind, null).label;
 
     const workHours = upcoming.filter((h) => {
-      const tempValue = hourly.temperatureC[h.index] ?? 0;
-      const windValue = hourly.windSpeedKmh[h.index] ?? 0;
-      return tempValue <= 30 && windValue <= 20 && (hourly.precipitationProbabilityPct[h.index] ?? 0) < 40;
+      const tempValue = hourly?.temperatureC[h.index] ?? 0;
+      const windValue = hourly?.windSpeedKmh[h.index] ?? 0;
+      return tempValue <= 30 && windValue <= 20 && (hourly?.precipitationProbabilityPct[h.index] ?? 0) < 40;
     });
 
     const treatOptimal = upcoming.filter((h) => {
-      const windValue = hourly.windSpeedKmh[h.index] ?? 0;
-      return windValue <= 15 && (hourly.precipitationProbabilityPct[h.index] ?? 0) < 40;
+      const windValue = hourly?.windSpeedKmh[h.index] ?? 0;
+      return windValue <= 15 && (hourly?.precipitationProbabilityPct[h.index] ?? 0) < 40;
     });
     const treatApto = upcoming.filter((h) => {
-      const windValue = hourly.windSpeedKmh[h.index] ?? 0;
-      return windValue <= 25 && (hourly.precipitationProbabilityPct[h.index] ?? 0) < 40;
+      const windValue = hourly?.windSpeedKmh[h.index] ?? 0;
+      return windValue <= 25 && (hourly?.precipitationProbabilityPct[h.index] ?? 0) < 40;
     });
 
     return {
@@ -118,7 +108,17 @@ export function HoursTab({ hourly, forecast, daily, weather }: {
         ? `Probable sobre las ${rain.slice(0, 2).map((h) => fmtHour(h.time)).join(' y ')}`
         : 'No prevista',
     };
-  }, [hourly.precipitationProbabilityPct, hourly.temperatureC, hourly.windSpeedKmh, upcoming, temps]);
+  }, [hourly?.precipitationProbabilityPct, hourly?.temperatureC, hourly?.windSpeedKmh, upcoming, temps]);
+
+  if (!hourly?.time?.length) {
+    return (
+      <div className="flex min-h-[200px] items-center justify-center rounded-[22px] border border-slate-200 bg-white p-8">
+        <p className="text-sm text-slate-700">Datos horarios no disponibles</p>
+      </div>
+    );
+  }
+
+  if (upcoming.length === 0) return null;
 
   return (
     <div className="space-y-4 pb-24">

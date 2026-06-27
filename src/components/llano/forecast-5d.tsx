@@ -5,7 +5,7 @@ import type { ReactNode } from 'react';
 import { dayLabel, weatherCodeDescription, weatherEmoji } from '@/lib/display';
 import { type ForecastPayload } from '@/hooks/useForecast';
 import { type DailyWeather } from '@/types/weather';
-import { fmtN, KpiChip } from '@/components/llano/atoms';
+import { fmtN } from '@/components/llano/atoms';
 
 interface ForecastDetail {
   title: string;
@@ -92,6 +92,31 @@ function ForecastClickable({ detail, onOpen, children }: {
         {children}
       </div>
     </button>
+  );
+}
+
+function ForecastMetricCard({ label, value, unit, caption, tone = 'slate' }: {
+  label: string;
+  value: string;
+  unit?: string;
+  caption: string;
+  tone?: 'sky' | 'amber' | 'slate';
+}) {
+  const toneClass = tone === 'sky'
+    ? 'border-sky-100 bg-sky-50/80 text-sky-950'
+    : tone === 'amber'
+      ? 'border-amber-100 bg-amber-50/80 text-amber-950'
+      : 'border-slate-100 bg-white/85 text-slate-950';
+
+  return (
+    <article className={`h-full rounded-[20px] border p-3.5 shadow-sm ${toneClass}`}>
+      <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">{label}</p>
+      <p className="mt-1.5 text-2xl font-black leading-none tabular-nums">
+        {value}
+        {unit && <span className="ml-1 text-xs font-bold text-slate-600">{unit}</span>}
+      </p>
+      <p className="mt-2 text-xs font-semibold leading-4 text-slate-600">{caption}</p>
+    </article>
   );
 }
 
@@ -225,7 +250,15 @@ export function Forecast5d({ forecast, daily }: { forecast: ForecastPayload | nu
         })}
       </div>
 
-      <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mt-5 rounded-[24px] border border-slate-100 bg-white/65 p-3.5 sm:p-4">
+        <div className="mb-3 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">Ajustes del periodo</p>
+            <p className="text-sm font-bold text-slate-700">Correcciones usadas para afinar el pronóstico local</p>
+          </div>
+          <p className="text-xs font-bold text-slate-500">Toca cualquier métrica para ver el detalle</p>
+        </div>
+        <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
         <ForecastClickable
           onOpen={setExpandedDetail}
           detail={{
@@ -240,7 +273,7 @@ export function Forecast5d({ forecast, daily }: { forecast: ForecastPayload | nu
             ],
           }}
         >
-          <KpiChip label="ET0 total 5d" value={fmtN(totalEto, 1)} unit="mm" caption="Demanda atmosférica acumulada" tone="accent" />
+          <ForecastMetricCard label="ET0 total 5d" value={fmtN(totalEto, 1)} unit="mm" caption="Demanda atmosférica acumulada" tone={totalEto >= 20 ? 'amber' : 'sky'} />
         </ForecastClickable>
         <ForecastClickable
           onOpen={setExpandedDetail}
@@ -260,7 +293,7 @@ export function Forecast5d({ forecast, daily }: { forecast: ForecastPayload | nu
             ],
           }}
         >
-          <KpiChip label="Sesgo T" value={formatSigned(bias.temperature.all, 2)} unit="°C" caption={`Día: ${bias.temperature.day.toFixed(2)}°C · Noche: ${bias.temperature.night.toFixed(2)}°C`} tone="default" />
+          <ForecastMetricCard label="Sesgo T" value={formatSigned(bias.temperature.all, 2)} unit="°C" caption={`Día: ${bias.temperature.day.toFixed(2)}°C · Noche: ${bias.temperature.night.toFixed(2)}°C`} />
         </ForecastClickable>
         <ForecastClickable
           onOpen={setExpandedDetail}
@@ -276,7 +309,7 @@ export function Forecast5d({ forecast, daily }: { forecast: ForecastPayload | nu
             ],
           }}
         >
-          <KpiChip label="Sesgo HR" value={formatSigned(bias.humidity, 1)} unit="%" caption="Corrección aplicada a humedad" />
+          <ForecastMetricCard label="Sesgo HR" value={formatSigned(bias.humidity, 1)} unit="%" caption="Corrección aplicada a humedad" tone="sky" />
         </ForecastClickable>
         <ForecastClickable
           onOpen={setExpandedDetail}
@@ -292,8 +325,9 @@ export function Forecast5d({ forecast, daily }: { forecast: ForecastPayload | nu
             ],
           }}
         >
-          <KpiChip label="Sesgo viento" value={formatSigned(bias.wind, 1)} unit="km/h" caption="Corrección aplicada a viento" />
+          <ForecastMetricCard label="Sesgo viento" value={formatSigned(bias.wind, 1)} unit="km/h" caption="Corrección aplicada a viento" />
         </ForecastClickable>
+        </div>
       </div>
 
       {expandedDetail && <ForecastModal detail={expandedDetail} onClose={() => setExpandedDetail(null)} />}

@@ -62,7 +62,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  event.respondWith(fetch(request));
+  event.respondWith(fetch(request).catch(() => new Response('Sin conexión', { status: 503 })));
 });
 
 async function networkFirst(request, cacheName, ttl) {
