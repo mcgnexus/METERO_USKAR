@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { fmtN } from '@/components/llano/atoms';
 import { weatherCodeDescription, weatherEmoji, windDirection } from '@/lib/display';
+import { thermalBg } from '@/components/llano/thermal-style';
 import {
   interpretTemperature,
   interpretHumidity,
@@ -23,15 +24,6 @@ function tempColor(t: number): string {
   if (t <= 30) return '#b45309';
   if (t <= 35) return '#c2410c';
   return '#b91c1c';
-}
-
-function tempBg(t: number): string {
-  if (t <= 0) return 'from-blue-600 to-cyan-500';
-  if (t <= 10) return 'from-cyan-600 to-teal-500';
-  if (t <= 20) return 'from-emerald-500 to-teal-400';
-  if (t <= 30) return 'from-amber-500 to-orange-400';
-  if (t <= 35) return 'from-orange-500 to-red-500';
-  return 'from-red-600 to-rose-700';
 }
 
 function dewPointC(tempC: number | null | undefined, rhPct: number | null | undefined): number | null {
@@ -130,8 +122,9 @@ export function NowTab({ climate, weather, alarms }: {
         </button>
       </div>
 
-        <section className={`overflow-hidden rounded-[24px] bg-gradient-to-br ${tempBg(temp)} text-white shadow-lg`}>
-        <div className="px-5 py-5">
+        <section className={`relative overflow-hidden rounded-[24px] bg-gradient-to-br ${thermalBg(temp)} text-white shadow-xl ring-1 ring-white/15`}>
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(255,255,255,0.18),_transparent_36%),linear-gradient(180deg,rgba(255,255,255,0.06),transparent_32%)]" />
+        <div className="relative px-5 py-5">
           <div className="flex items-baseline justify-between">
             <div>
               <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/85">Huéscar ahora</p>

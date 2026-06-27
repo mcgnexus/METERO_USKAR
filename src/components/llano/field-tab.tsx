@@ -1,15 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { fmtN } from '@/components/llano/atoms';
 import { IndicatorHelp } from '@/components/llano/indicator-help';
-import { IrrigationCard } from '@/components/llano/irrigation';
 import { interpretTHI, interpretFrostRisk, interpretSoilTemp, interpretWindForTreatment, interpretETo } from '@/lib/interpretation';
 import type { ClimateCalibrationPayload } from '@/hooks/useClimateCalibration';
 import type { AgriculturalData, LivestockData, WeatherPayload } from '@/types/weather';
-
-const LS_CROPS = 'meteo_favorite_crops';
-const LS_ZONE = 'meteo_selected_zone';
 
 type Profile = 'general' | 'agricultura' | 'ganaderia' | 'huerto';
 
@@ -20,27 +16,6 @@ const PROFILES: { id: Profile; icon: string; label: string }[] = [
   { id: 'huerto', icon: '🥬', label: 'Huerto/Jardín' },
 ];
 
-const QUICK_CROPS = ['Olivo', 'Almendro', 'Pistacho', 'Tomate', 'Vid', 'Huerto'];
-const ZONES = ['Huéscar centro', 'La Sagra', 'Campo total', 'Zona norte'];
-
-function loadCrops(): string[] {
-  return ['Olivo', 'Almendro'];
-}
-
-function saveCrops(crops: string[]) {
-  if (typeof window === 'undefined') return;
-  localStorage.setItem(LS_CROPS, JSON.stringify(crops));
-}
-
-function loadZone(): string {
-  return 'Campo total';
-}
-
-function saveZone(zone: string) {
-  if (typeof window === 'undefined') return;
-  localStorage.setItem(LS_ZONE, zone);
-}
-
 export function FieldTab({ climate, weather, agricultural, livestock }: {
   climate: ClimateCalibrationPayload;
   weather: WeatherPayload | null;
@@ -48,39 +23,12 @@ export function FieldTab({ climate, weather, agricultural, livestock }: {
   livestock: LivestockData | null;
 }) {
   const [profile, setProfile] = useState<Profile>('agricultura');
-  const [favoriteCrops, setFavoriteCrops] = useState<string[]>(loadCrops);
-  const [zone, setZone] = useState<string>(loadZone);
-  const [hydrated, setHydrated] = useState(false);
-
-  useEffect(() => {
-    try {
-      const rawCrops = localStorage.getItem(LS_CROPS);
-      if (rawCrops) {
-        const parsed = JSON.parse(rawCrops);
-        if (Array.isArray(parsed) && parsed.length > 0) setFavoriteCrops(parsed);
-      }
-    } catch {}
-    try {
-      const storedZone = localStorage.getItem(LS_ZONE);
-      if (storedZone) setZone(storedZone);
-    } catch {}
-    setHydrated(true);
-  }, []);
-
-  useEffect(() => { if (hydrated) saveCrops(favoriteCrops); }, [favoriteCrops, hydrated]);
-  useEffect(() => { if (hydrated) saveZone(zone); }, [zone, hydrated]);
 
   const exotic = climate.exoticVariables;
   const airTemp = climate.calibration.realTemperatureC ?? climate.interpolation.estimatedTemperatureC;
   const soil10 = exotic.soilTemp10cmC;
   const humidity = climate.nodes.localStation?.humidityPct ?? climate.eto.inputs.humidityPct ?? weather?.current?.humidityPct;
   const windSpeed = climate.nodes.radiationWind.windSpeed2mKmh;
-
-  const toggleCrop = (crop: string) => {
-    setFavoriteCrops(prev =>
-      prev.includes(crop) ? prev.filter(c => c !== crop) : [...prev, crop]
-    );
-  };
 
   return (
     <div className="space-y-4 pb-24">
@@ -100,50 +48,12 @@ export function FieldTab({ climate, weather, agricultural, livestock }: {
             >
               {p.icon} {p.label}
             </button>
-          ))}
-        </div>
-        <div className="mt-3">
-          <p className="mb-1.5 text-[10px] font-bold uppercase tracking-[0.12em] text-slate-600">Zona</p>
-          <div className="flex flex-wrap gap-1.5">
-            {ZONES.map((z) => (
-              <button
-                key={z}
-                type="button"
-                onClick={() => { setZone(z); }}
-                className={`rounded-full px-2.5 py-1 text-xs font-semibold transition ${
-                  zone === z ? 'bg-sky-700 text-white shadow-sm' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                }`}
-                aria-label={`Seleccionar zona ${z}`}
-              >
-                {z}
-              </button>
             ))}
-          </div>
         </div>
       </section>
 
       {profile === 'agricultura' && (
         <>
-          <section className="rounded-[22px] border border-slate-200 bg-white p-5">
-            <h2 className="text-xs font-bold uppercase tracking-[0.18em] text-slate-700">Mis cultivos</h2>
-            <div className="mt-3 flex flex-wrap gap-2">
-              {QUICK_CROPS.map((crop) => (
-                <button
-                  key={crop}
-                  type="button"
-                  onClick={() => toggleCrop(crop)}
-                  className={`rounded-full px-3 py-1.5 text-sm font-semibold transition ${
-                    favoriteCrops.includes(crop)
-                      ? 'bg-emerald-600 text-white shadow-sm'
-                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                  }`}
-                >
-                  {crop}
-                </button>
-              ))}
-            </div>
-          </section>
-
           {agricultural && (() => {
             const irrigation = agricultural.recommendedIrrigationLitersM2 ?? null;
             const frost = interpretFrostRisk(agricultural.frostRisk48h);
@@ -212,33 +122,6 @@ export function FieldTab({ climate, weather, agricultural, livestock }: {
                   <div className="mt-4 grid gap-3 sm:grid-cols-2">
                     <ActionBox title="Qué hacer" tone="emerald" items={canDo} />
                     <ActionBox title="Qué evitar" tone="rose" items={avoid} />
-                  </div>
-                </section>
-
-                <section className="rounded-[24px] border border-emerald-200 bg-emerald-50/80 p-5 shadow-sm">
-                  <div className="flex items-center justify-between gap-3">
-                    <div>
-                      <h2 className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-700">Tus cultivos</h2>
-                      <p className="mt-1 text-sm text-slate-600">Mostrando solo los seleccionados como referencia práctica.</p>
-                    </div>
-                  </div>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {favoriteCrops.map((crop) => (
-                      <span key={crop} className="rounded-full bg-white px-3 py-1.5 text-xs font-bold text-emerald-800 shadow-sm ring-1 ring-emerald-100">
-                        {crop}
-                      </span>
-                    ))}
-                  </div>
-                  <div className="mt-4">
-                    <IrrigationCard
-                      litersPerM2={irrigation}
-                      title="Riego recomendado esta semana"
-                      subtitle={`Referencia para: ${favoriteCrops.join(' / ')}`}
-                      et0Mm={agricultural.et0CumulativeMm}
-                      kc={0.70}
-                      precipitationMm={weather?.daily?.precipitationSumMm?.[0] ?? null}
-                      cropContext="Ajusta según tipo de suelo, edad del cultivo, humedad real, sistema de riego y estado fenológico."
-                    />
                   </div>
                 </section>
 

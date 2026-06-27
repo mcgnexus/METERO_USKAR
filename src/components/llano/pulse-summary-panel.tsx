@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { fmtN } from '@/components/llano/atoms';
 import { weatherEmoji, weatherCodeDescription } from '@/lib/display';
+import { thermalBg, thermalSurface } from '@/components/llano/thermal-style';
 import {
   interpretTemperature,
   interpretRain,
@@ -73,8 +74,9 @@ export function SummaryPanel({
 
   return (
     <div className="space-y-4 pb-24">
-      <section className={`overflow-hidden rounded-[28px] bg-gradient-to-br ${tempBg(temp)} p-6 text-white shadow-lg`}>
-        <div className="flex items-start justify-between">
+      <section className={`relative overflow-hidden rounded-[28px] bg-gradient-to-br ${thermalBg(temp)} p-6 text-white shadow-xl ring-1 ring-white/15`}>
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(255,255,255,0.18),_transparent_36%),linear-gradient(180deg,rgba(255,255,255,0.06),transparent_32%)]" />
+        <div className="relative flex items-start justify-between">
           <div>
             <div className="flex items-center gap-2">
               <p className="text-sm font-bold uppercase tracking-wider opacity-90">Hoy en Huéscar</p>
@@ -97,7 +99,7 @@ export function SummaryPanel({
       </section>
 
       <div className="grid grid-cols-3 gap-3">
-        <QuickCard emoji="🌡️" label="Sensación" value={`${fmtN(feelsLike, 0)}°`} bg="bg-orange-50" text="text-orange-700" />
+        <QuickCard emoji="🌡️" label="Sensación" value={`${fmtN(feelsLike, 0)}°`} bg={thermalSurface(feelsLike)} text="text-current" />
         <QuickCard emoji="💧" label="Humedad" value={`${fmtN(humidity, 0)}%`} bg="bg-sky-50" text="text-sky-700" />
         <QuickCard emoji="💨" label="Viento" value={`${fmtN(windSpeed, 0)} km/h`} bg="bg-emerald-50" text="text-emerald-700" />
       </div>
@@ -291,16 +293,6 @@ function tempColor(t: number): string {
   if (t <= 32) return '#f97316';
   if (t <= 38) return '#ef4444';
   return '#dc2626';
-}
-
-function tempBg(t: number): string {
-  if (t <= 0) return 'from-blue-500 to-cyan-400';
-  if (t <= 10) return 'from-cyan-500 to-teal-400';
-  if (t <= 20) return 'from-emerald-400 to-teal-300';
-  if (t <= 25) return 'from-amber-400 to-orange-300';
-  if (t <= 32) return 'from-orange-400 to-red-400';
-  if (t <= 38) return 'from-red-400 to-rose-500';
-  return 'from-red-600 to-rose-700';
 }
 
 function alarmColor(level: string): string {
