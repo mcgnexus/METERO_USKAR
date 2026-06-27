@@ -128,7 +128,7 @@ export type LightningData = {
   strikeCount: number;
   strikes: LightningStrike[];
   lastCheckedAt: string;
-  source: "blitzortung" | "unavailable";
+  source: "blitzortung" | "openmeteo_fallback" | "unavailable";
   message: string;
 };
 

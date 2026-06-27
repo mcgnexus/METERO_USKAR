@@ -4,8 +4,8 @@ import PwaRegister from "@/components/PwaRegister";
 import { Analytics } from "@vercel/analytics/react";
 
 export const metadata: Metadata = {
-  title: "Meteo Huéscar | Tiempo local, alertas y previsión agrícola",
-  description: "Consulta el tiempo local en Huéscar, alertas meteorológicas, previsión por horas, riesgo de heladas, recomendaciones de riego y datos agrícolas adaptados al microclima del Altiplano.",
+  title: "Meteo Huéscar",
+  description: "Previsión local, lluvia, viento, frío, calor, alertas y consejos útiles para vecinos, campo y actividades al aire libre.",
   keywords: [
     "tiempo Huéscar", "meteorología Huéscar", "alertas Huéscar",
     "tiempo agrícola Huéscar", "riesgo heladas Huéscar", "riego olivo Huéscar",
@@ -28,8 +28,8 @@ export const metadata: Metadata = {
     "apple-mobile-web-app-capable": "yes",
   },
   openGraph: {
-    title: "Meteo Huéscar | Tiempo local y agrícola",
-    description: "Previsión meteorológica local para Huéscar y comarca: tiempo actual, radar, avisos y datos agrícolas adaptados al microclima.",
+    title: "Meteo Huéscar",
+    description: "Previsión local, lluvia, viento, frío, calor, alertas y consejos útiles para vecinos, campo y actividades al aire libre.",
     locale: "es_ES",
     type: "website",
   },
