@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { fmtN, KpiChip } from '@/components/llano/atoms';
+import { fmtN } from '@/components/llano/atoms';
 import { IrrigationCard } from '@/components/llano/irrigation';
 import { CropRequirements } from '@/components/llano/crop-requirements';
 import type { ClimateCalibrationPayload } from '@/hooks/useClimateCalibration';
@@ -89,6 +89,32 @@ function ClickableCard({ detail, onOpen, children }: {
   );
 }
 
+function AgriMetricCard({ label, value, unit, caption, tone = 'slate' }: {
+  label: string;
+  value: string;
+  unit?: string;
+  caption: string;
+  tone?: 'sky' | 'slate' | 'emerald' | 'rose' | 'amber';
+}) {
+  const toneClass =
+    tone === 'sky' ? 'border-sky-200 bg-sky-50/80 text-sky-950'
+      : tone === 'emerald' ? 'border-emerald-200 bg-emerald-50/80 text-emerald-950'
+        : tone === 'rose' ? 'border-rose-200 bg-rose-50/80 text-rose-950'
+          : tone === 'amber' ? 'border-amber-200 bg-amber-50/80 text-amber-950'
+            : 'border-slate-200 bg-white text-slate-950';
+
+  return (
+    <article className={`h-full rounded-[20px] border p-3 shadow-sm ${toneClass}`}>
+      <p className="truncate text-[10px] font-bold uppercase tracking-[0.12em] opacity-70">{label}</p>
+      <p className="mt-2 text-2xl font-black leading-none">
+        {value}
+        {unit && <span className="ml-1 text-xs font-bold opacity-70">{unit}</span>}
+      </p>
+      <p className="mt-2 line-clamp-2 text-[11px] leading-4 opacity-75">{caption}</p>
+    </article>
+  );
+}
+
 export function AgricultureSection({ agricultural, climate, precipitacionSemanal }: {
   agricultural: AgriculturalData | null;
   climate: ClimateCalibrationPayload;
@@ -127,22 +153,23 @@ export function AgricultureSection({ agricultural, climate, precipitacionSemanal
   } : null;
 
   return (
-    <section className="surface-card-strong rounded-[28px] p-5 sm:p-6">
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+    <section className="rounded-[26px] border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
+      <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-sky-700">Agricultura</p>
-          <h2 className="mt-1 text-2xl font-black text-slate-950">Capa agronómica</h2>
+          <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-emerald-700">Agricultura</p>
+          <h2 className="mt-1 text-xl font-black text-slate-950">Capa agronómica</h2>
+          <p className="mt-1 text-xs leading-5 text-slate-500">Indicadores clave para riego, suelo y fenología.</p>
         </div>
         {agricultural && (
-          <span className={`rounded-full px-3 py-1 text-xs font-bold ${agricultural.workability.workable ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}`}>
-            {agricultural.workability.workable ? 'Suelo operable' : 'Labores no recomendadas'}
+          <span className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-bold ${agricultural.workability.workable ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}`}>
+            {agricultural.workability.workable ? 'Operable' : 'No apto'}
           </span>
         )}
       </div>
 
       {agricultural ? (
         <>
-          <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-4 grid grid-cols-2 gap-2 sm:gap-3">
             <ClickableCard
               onOpen={setExpandedDetail}
               detail={{
@@ -157,7 +184,7 @@ export function AgricultureSection({ agricultural, climate, precipitacionSemanal
                 ],
               }}
             >
-              <KpiChip label="ET0 acumulada 7d" value={fmtN(agricultural.et0CumulativeMm, 1)} unit="mm" caption="Evapotranspiración de referencia" tone="accent" help="et0" />
+              <AgriMetricCard label="ET0 7d" value={fmtN(agricultural.et0CumulativeMm, 1)} unit="mm" caption="Demanda de agua" tone="sky" />
             </ClickableCard>
             <ClickableCard
               onOpen={setExpandedDetail}
@@ -172,7 +199,7 @@ export function AgricultureSection({ agricultural, climate, precipitacionSemanal
                 ],
               }}
             >
-              <KpiChip label="GDD" value={fmtN(agricultural.gddCumulative, 0)} caption="Grados día acumulados" help="gdd" />
+              <AgriMetricCard label="GDD" value={fmtN(agricultural.gddCumulative, 0)} caption="Calor útil" />
             </ClickableCard>
             <ClickableCard
               onOpen={setExpandedDetail}
@@ -188,7 +215,7 @@ export function AgricultureSection({ agricultural, climate, precipitacionSemanal
                 ],
               }}
             >
-              <KpiChip label="Horas-frío 7d" value={fmtN(agricultural.chillHours, 0)} unit="h" caption={agricultural.yearlyChillHoursAccumulated !== undefined ? `Acumulado estacional: ${agricultural.yearlyChillHoursAccumulated} h` : 'Pronóstico'} help="chillHours" />
+              <AgriMetricCard label="Frío 7d" value={fmtN(agricultural.chillHours, 0)} unit="h" caption={agricultural.yearlyChillHoursAccumulated !== undefined ? `Estacional ${agricultural.yearlyChillHoursAccumulated} h` : 'Pronóstico'} />
             </ClickableCard>
             <ClickableCard
               onOpen={setExpandedDetail}
@@ -203,11 +230,16 @@ export function AgricultureSection({ agricultural, climate, precipitacionSemanal
                 ],
               }}
             >
-              <KpiChip label="Helada 48h" value={frostLabel(agricultural.frostRisk48h)} caption="Riesgo microclimático local" tone={frostTone(agricultural.frostRisk48h)} help="frostRisk" />
+              <AgriMetricCard
+                label="Helada 48h"
+                value={frostLabel(agricultural.frostRisk48h)}
+                caption="Riesgo local"
+                tone={agricultural.frostRisk48h === 'none' ? 'emerald' : agricultural.frostRisk48h === 'media' ? 'amber' : 'rose'}
+              />
             </ClickableCard>
           </div>
 
-          <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-2">
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
             <ClickableCard
               onOpen={setExpandedDetail}
               detail={{
@@ -222,10 +254,10 @@ export function AgricultureSection({ agricultural, climate, precipitacionSemanal
                 ],
               }}
             >
-              <article className="rounded-[22px] border border-sky-200 bg-sky-50/60 p-5">
-                <p className="text-xs font-bold uppercase tracking-[0.18em] text-sky-700">Suelo y siembra</p>
+              <article className="rounded-[22px] border border-sky-200 bg-sky-50/60 p-4">
+                <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-sky-700">Suelo y siembra</p>
                 <h3 className="mt-1 text-lg font-black text-slate-950">Temperatura del suelo</h3>
-                <div className="mt-4 grid grid-cols-2 gap-3">
+                <div className="mt-3 grid grid-cols-2 gap-2">
                   <div className="rounded-2xl bg-white p-3">
                     <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500">T 10 cm</p>
                     <p className="mt-1 text-xl font-black text-slate-950">{fmtN(soil10, 1)}°C</p>
