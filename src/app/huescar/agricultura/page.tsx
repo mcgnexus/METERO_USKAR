@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import AgriculturaDashboard from '@/components/AgriculturaDashboard';
+import AgriculturaClientShell from '@/components/AgriculturaClientShell';
 import { getClimateCalibrationPayload } from '@/services/climateCalibrationPayloadService';
 import { getCurrentWeatherPayload } from '@/services/currentWeatherService';
 
@@ -30,7 +30,7 @@ export default async function AgriculturaPage() {
         </header>
 
         <main>
-          <AgriculturaDashboard
+          <AgriculturaClientShell
             initialClimateData={climateResult.status === 'fulfilled' ? climateResult.value : null}
             initialWeatherData={weatherResult.status === 'fulfilled' ? weatherResult.value : null}
           />
