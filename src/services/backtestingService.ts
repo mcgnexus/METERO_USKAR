@@ -28,6 +28,10 @@ function getHourBand(hour: number): string {
   return "noche";
 }
 
+function getDayNightBand(hour: number): string {
+  return (hour < 8 || hour >= 20) ? "noche" : "dia";
+}
+
 function getSeason(month: number): string {
   if (month >= 3 && month <= 5) return "primavera";
   if (month >= 6 && month <= 8) return "verano";
@@ -165,6 +169,32 @@ export async function runDailyBacktest(targetDate?: Date): Promise<BacktestResul
           rmse: Math.round(hourBandMetrics.rmse * 1000) / 1000,
           bias: Math.round(hourBandMetrics.bias * 1000) / 1000,
           sampleCount: hourBandMetrics.count,
+        });
+        rowsSaved++;
+      }
+
+      for (const dayNight of ["dia", "noche"] as const) {
+        const dnFiltered = subset.filter((measurement) => getDayNightBand(measurement.hour) === dayNight);
+        if (dnFiltered.length < 2) continue;
+
+        const dnGroup: MetricGroup = {
+          errors: dnFiltered.map((measurement) => measurement.error),
+          absErrors: dnFiltered.map((measurement) => measurement.absolute_error),
+          sqErrors: dnFiltered.map((measurement) => measurement.squared_error),
+        };
+
+        const dnMetrics = computeMetrics(dnGroup);
+
+        await saveValidationDaily({
+          validationDate: dateStr,
+          source,
+          variable,
+          hourBand: dayNight,
+          season: "all",
+          mae: Math.round(dnMetrics.mae * 1000) / 1000,
+          rmse: Math.round(dnMetrics.rmse * 1000) / 1000,
+          bias: Math.round(dnMetrics.bias * 1000) / 1000,
+          sampleCount: dnMetrics.count,
         });
         rowsSaved++;
       }

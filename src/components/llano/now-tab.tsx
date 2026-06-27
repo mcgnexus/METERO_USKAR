@@ -258,7 +258,7 @@ export function NowTab({ climate, weather, alarms }: {
           </div>
           {agri && (
             <a
-              href="/huescar/agricultura"
+              href="/huescar/campo"
               className="mt-3 inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-800 transition hover:bg-emerald-100"
             >
               🌾 Ver detalle Campo

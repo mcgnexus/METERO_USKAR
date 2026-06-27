@@ -130,7 +130,7 @@ export function correctForecastHour(raw: RawHour, bias: OpenMeteoBiasSet): Corre
     ? Math.min(100, Math.max(0, raw.humidityPct - bias.humidityAll))
     : null;
   const correctedWind10m = raw.windSpeed10mKmh !== null
-    ? Math.round((raw.windSpeed10mKmh - bias.windAll) * 100) / 100
+    ? Math.max(0, Math.round((raw.windSpeed10mKmh - bias.windAll) * 100) / 100)
     : null;
   const correctedWind2m = correctedWind10m !== null
     ? Math.round(correctedWind10m * 0.748 * 100) / 100

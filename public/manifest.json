@@ -68,10 +68,10 @@
       "url": "/motor-climatico"
     },
     {
-      "name": "Capa agronómica",
-      "short_name": "Agro",
-      "description": "Datos agrícolas y cultivos",
-      "url": "/huescar/agricultura"
+      "name": "Campo",
+      "short_name": "Campo",
+      "description": "Agricultura, ganadería y huerto",
+      "url": "/huescar/campo"
     }
   ]
 }

@@ -33,7 +33,7 @@ export default async function VisualizacionPage() {
           </div>
           <div className="flex flex-wrap items-center gap-3">
             <Link href="/huescar" className="rounded-full border border-slate-200 bg-white/70 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-white">Panel general</Link>
-            <Link href="/huescar/agricultura" className="rounded-full border border-slate-200 bg-white/70 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-white">Meteo Huéscar Campo</Link>
+            <Link href="/huescar/campo" className="rounded-full border border-slate-200 bg-white/70 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-white">Meteo Huéscar Campo</Link>
           </div>
         </header>
         <main>

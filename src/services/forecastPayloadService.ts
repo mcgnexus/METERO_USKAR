@@ -41,12 +41,6 @@ function applyLiveObservationAnchor(
     windSpeed2mKmh: hour.windSpeed2mKmh !== null
       ? Math.round(Math.max(0, hour.windSpeed2mKmh + windDelta * weatherFactor) * 100) / 100
       : hour.windSpeed2mKmh,
-    biasApplied: {
-      ...hour.biasApplied,
-      temperature: Math.round((hour.biasApplied.temperature - tempDelta * tempFactor) * 100) / 100,
-      humidity: Math.round((hour.biasApplied.humidity - humidityDelta * weatherFactor) * 100) / 100,
-      wind: Math.round((hour.biasApplied.wind - windDelta * weatherFactor) * 100) / 100,
-    },
   };
 }
 

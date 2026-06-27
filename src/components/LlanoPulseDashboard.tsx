@@ -116,7 +116,7 @@ export default function LlanoPulseDashboard({
         </main>
       </div>
 
-      <NavBottom active={activeTab} onChange={setActiveTab} alertCount={alarms.length} />
+      <NavBottom alertCount={alarms.length} />
     </div>
   );
 }

@@ -1,20 +1,17 @@
-import { getClimateCalibrationPayload } from '@/services/climateCalibrationPayloadService';
 import { getCurrentWeatherPayload } from '@/services/currentWeatherService';
 import { getForecastPayload } from '@/services/forecastPayloadService';
-import { HoyPageClient } from '@/components/HoyPageClient';
+import { SemanaPageClient } from '@/components/SemanaPageClient';
 
 export const dynamic = 'force-dynamic';
 
-export default async function HuescarHoyPage() {
-  const [climateResult, weatherResult, forecastResult] = await Promise.allSettled([
-    getClimateCalibrationPayload(),
+export default async function HuescarSemanaPage() {
+  const [weatherResult, forecastResult] = await Promise.allSettled([
     getCurrentWeatherPayload(),
     getForecastPayload(5),
   ]);
 
   return (
-    <HoyPageClient
-      initialClimateData={climateResult.status === 'fulfilled' ? climateResult.value : null}
+    <SemanaPageClient
       initialWeatherData={weatherResult.status === 'fulfilled' ? weatherResult.value : null}
       initialForecastData={forecastResult.status === 'fulfilled' ? forecastResult.value : null}
     />
