@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
-import PwaRegister from "@/components/PwaRegister";
 import { Analytics } from "@vercel/analytics/react";
 
 export const metadata: Metadata = {
@@ -53,7 +52,6 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col">
         {children}
         <Analytics />
-        <PwaRegister />
       </body>
     </html>
   );

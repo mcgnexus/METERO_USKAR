@@ -11,6 +11,8 @@ import { OfflineBanner } from '@/components/OfflineBanner';
 import { NotificationPermission } from '@/components/NotificationPermission';
 import { LocalAlarmNotifier } from '@/components/LocalAlarmNotifier';
 import { fmtN } from '@/components/llano/atoms';
+import { LightningPanel } from '@/components/llano/lightning-panel';
+import PwaRegister from '@/components/PwaRegister';
 import {
   interpretTemperature,
   interpretRain,
@@ -190,7 +192,16 @@ export default function LlanoPulseDashboard({
               <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-sky-700">🏔️ Meteo Huéscar</p>
               <h1 className="mt-0.5 text-xl font-black text-slate-900">Meteo Huéscar</h1>
             </div>
-            <ModeSwitcher mode={mode} onChange={setMode} />
+            <div className="flex items-center gap-2">
+              <a
+                href="/huescar/agricultura"
+                className="flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-800 transition hover:bg-emerald-100"
+                aria-label="Ir a Meteo Huéscar Campo"
+              >
+                🌾 Campo
+              </a>
+              <ModeSwitcher mode={mode} onChange={setMode} />
+            </div>
           </div>
         </header>
 
@@ -208,6 +219,27 @@ export default function LlanoPulseDashboard({
             />
           </div>
         )}
+
+        {wd?.lightning && (
+          <div className="mb-3">
+            <LightningPanel lightning={wd.lightning} />
+          </div>
+        )}
+
+        <PwaRegister />
+
+        <a href="/huescar/agricultura" className="mb-3 block">
+          <div className="flex items-center justify-between gap-3 rounded-[22px] border border-emerald-200 bg-gradient-to-br from-emerald-50 to-green-50 p-4 shadow-sm transition hover:shadow-md">
+            <div className="flex items-center gap-3">
+              <span className="text-2xl">🌾</span>
+              <div>
+                <p className="text-sm font-black text-emerald-900">Meteo Huéscar Campo</p>
+                <p className="text-xs text-emerald-700">Riego, cultivos, fenología, heladas y alertas agrícolas</p>
+              </div>
+            </div>
+            <span className="shrink-0 text-emerald-600 text-lg">→</span>
+          </div>
+        </a>
 
         <main>
           {mode === 'technical' ? (
