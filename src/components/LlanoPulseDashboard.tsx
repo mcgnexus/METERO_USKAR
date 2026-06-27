@@ -229,15 +229,20 @@ export default function LlanoPulseDashboard({
         <PwaRegister />
 
         <a href="/huescar/agricultura" className="mb-3 block">
-          <div className="flex items-center justify-between gap-3 rounded-[22px] border border-emerald-200 bg-gradient-to-br from-emerald-50 to-green-50 p-4 shadow-sm transition hover:shadow-md">
+          <div className="flex items-center justify-between gap-4 rounded-[22px] border border-emerald-200 bg-gradient-to-br from-emerald-50 to-green-50 p-4 shadow-sm transition hover:shadow-md">
             <div className="flex items-center gap-3">
-              <span className="text-2xl">🌾</span>
+              <div className="rounded-full bg-emerald-100 p-2">
+                <span className="text-xl">🌾</span>
+              </div>
               <div>
+                <p className="text-xs font-bold uppercase tracking-[0.1em] text-emerald-700">Campo</p>
                 <p className="text-sm font-black text-emerald-900">Meteo Huéscar Campo</p>
-                <p className="text-xs text-emerald-700">Riego, cultivos, fenología, heladas y alertas agrícolas</p>
+                <p className="text-xs text-emerald-600">Riego, fenología y alertas agrícolas</p>
               </div>
             </div>
-            <span className="shrink-0 text-emerald-600 text-lg">→</span>
+            <div className="flex items-center gap-2">
+              <span className="text-emerald-600 text-lg">→</span>
+            </div>
           </div>
         </a>
 
