@@ -25,6 +25,15 @@ function tempColor(t: number): string {
   return '#b91c1c';
 }
 
+function tempBg(t: number): string {
+  if (t <= 0) return 'from-blue-600 to-cyan-500';
+  if (t <= 10) return 'from-cyan-600 to-teal-500';
+  if (t <= 20) return 'from-emerald-500 to-teal-400';
+  if (t <= 30) return 'from-amber-500 to-orange-400';
+  if (t <= 35) return 'from-orange-500 to-red-500';
+  return 'from-red-600 to-rose-700';
+}
+
 function dewPointC(tempC: number | null | undefined, rhPct: number | null | undefined): number | null {
   if (tempC == null || rhPct == null || rhPct <= 0) return null;
   const a = 17.62, b = 243.12;
@@ -121,21 +130,21 @@ export function NowTab({ climate, weather, alarms }: {
         </button>
       </div>
 
-        <section className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-sm">
+        <section className={`overflow-hidden rounded-[24px] bg-gradient-to-br ${tempBg(temp)} text-white shadow-lg`}>
         <div className="px-5 py-5">
           <div className="flex items-baseline justify-between">
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-600">Huéscar ahora</p>
+              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/85">Huéscar ahora</p>
               <p className="mt-1 text-5xl font-black tracking-tight" style={{ color: tempColor(temp) }}>
                 {fmtN(temp, 1)}°C
               </p>
             </div>
             <div className="text-right">
               <p className="text-lg">{weatherEmoji(wcode)} {weatherCodeDescription(wcode)}</p>
-              <p className="mt-0.5 text-sm text-slate-700">Sensación {fmtN(temp, 1)}°C</p>
+              <p className="mt-0.5 text-sm text-white/90">Sensación {fmtN(temp, 1)}°C</p>
             </div>
           </div>
-          <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-sm text-slate-700">
+          <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-sm text-white/85">
             <span>💧 {humidity != null ? `${humidity.toFixed(0)}%` : '--'}</span>
             <span>💨 {windSpeed.toFixed(0)} km/h {windDir != null ? windDirection(windDir) : ''}{windGust != null ? ` (ráf. ${windGust.toFixed(0)})` : ''}</span>
           </div>

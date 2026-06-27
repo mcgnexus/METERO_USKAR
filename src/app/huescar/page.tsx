@@ -1,7 +1,7 @@
-import LlanoPulseDashboard from '@/components/LlanoPulseDashboard';
 import { getClimateCalibrationPayload } from '@/services/climateCalibrationPayloadService';
 import { getCurrentWeatherPayload } from '@/services/currentWeatherService';
 import { getForecastPayload } from '@/services/forecastPayloadService';
+import { HuescarClientShell } from '@/components/HuescarClientShell';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,7 +17,7 @@ export default async function HuescarPage() {
   const initialForecastData = forecastResult.status === 'fulfilled' ? forecastResult.value : null;
 
   return (
-    <LlanoPulseDashboard
+    <HuescarClientShell
       initialClimateData={initialClimateData}
       initialWeatherData={initialWeatherData}
       initialForecastData={initialForecastData}
