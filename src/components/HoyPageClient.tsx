@@ -99,6 +99,13 @@ export function HoyPageClient({
               <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-sky-700">🏔️ Meteo Huéscar</p>
               <h1 className="mt-0.5 text-xl font-black text-slate-900">Meteo Huéscar</h1>
             </div>
+            <a
+              href="/api/daily-card"
+              download
+              className="flex items-center gap-1.5 rounded-full bg-slate-900 px-3 py-1.5 text-[11px] font-bold text-white shadow-sm transition hover:bg-slate-700 active:scale-95"
+            >
+              📷 Ficha
+            </a>
           </div>
         </header>
 
