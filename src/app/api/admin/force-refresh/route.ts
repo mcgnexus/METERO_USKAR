@@ -7,6 +7,13 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  cacheClear();
-  return NextResponse.json({ success: true, message: "Caches y cooldowns limpiados correctamente" });
+  try {
+    cacheClear();
+    return NextResponse.json({ success: true, message: "Caches y cooldowns limpiados correctamente" });
+  } catch (e) {
+    return NextResponse.json(
+      { error: e instanceof Error ? e.message : "Error interno" },
+      { status: 500 }
+    );
+  }
 }

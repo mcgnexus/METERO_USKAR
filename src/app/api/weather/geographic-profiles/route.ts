@@ -4,8 +4,12 @@ import { generateGeographicProfiles } from "@/services/geographicProfileService"
 import { verifyCronAuthorization } from "@/services/cronAuth";
 
 export async function GET(): Promise<NextResponse> {
-  const profiles = await getLocationProfiles("huescar");
-  return NextResponse.json(profiles);
+  try {
+    const profiles = await getLocationProfiles("huescar");
+    return NextResponse.json(profiles);
+  } catch (e) {
+    return NextResponse.json({ error: e instanceof Error ? e.message : "Error interno" }, { status: 500 });
+  }
 }
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
@@ -14,6 +18,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const profiles = await generateGeographicProfiles();
-  return NextResponse.json({ success: true, profiles });
+  try {
+    const profiles = await generateGeographicProfiles();
+    return NextResponse.json({ success: true, profiles });
+  } catch (e) {
+    return NextResponse.json({ error: e instanceof Error ? e.message : "Error interno" }, { status: 500 });
+  }
 }

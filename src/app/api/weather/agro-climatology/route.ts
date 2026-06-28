@@ -7,14 +7,18 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export async function GET() {
-  const data = await fetchAgroClimatology(LLANO.lat, LLANO.lon, LLANO.elevation);
+  try {
+    const data = await fetchAgroClimatology(LLANO.lat, LLANO.lon, LLANO.elevation);
 
-  if (!data) {
-    return NextResponse.json(
-      { error: "Agro-climatology data unavailable" },
-      { status: 503 }
-    );
+    if (!data) {
+      return NextResponse.json(
+        { error: "Agro-climatology data unavailable" },
+        { status: 503 }
+      );
+    }
+
+    return NextResponse.json(data);
+  } catch (e) {
+    return NextResponse.json({ error: e instanceof Error ? e.message : "Error interno" }, { status: 500 });
   }
-
-  return NextResponse.json(data);
 }

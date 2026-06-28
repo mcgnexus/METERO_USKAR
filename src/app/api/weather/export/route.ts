@@ -16,18 +16,19 @@ function csvEscape(v: string | number | null | undefined): string {
 }
 
 export async function GET(request: Request) {
-  const url = new URL(request.url);
-  const format = url.searchParams.get("format") || "forecast";
-  const days = Math.min(16, Math.max(1, parseInt(url.searchParams.get("days") || "14", 10)));
+  try {
+    const url = new URL(request.url);
+    const format = url.searchParams.get("format") || "forecast";
+    const days = Math.min(16, Math.max(1, parseInt(url.searchParams.get("days") || "14", 10)));
 
-  const [forecastPayload, agro] = await Promise.all([
-    getForecastPayload(days),
-    fetchAgroClimatology(LLANO.lat, LLANO.lon, LLANO.elevation),
-  ]);
+    const [forecastPayload, agro] = await Promise.all([
+      getForecastPayload(days),
+      fetchAgroClimatology(LLANO.lat, LLANO.lon, LLANO.elevation),
+    ]);
 
-  if (!forecastPayload) {
-    return new Response("Forecast unavailable", { status: 503 });
-  }
+    if (!forecastPayload) {
+      return new Response("Forecast unavailable", { status: 503 });
+    }
 
   const bias = forecastPayload.biasCorrection;
   const biasTemp = bias.temperature.all.toFixed(2);
@@ -135,4 +136,10 @@ export async function GET(request: Request) {
       "Cache-Control": "no-store",
     },
   });
+  } catch (e) {
+    return new Response(
+      e instanceof Error ? e.message : "Error interno",
+      { status: 500 }
+    );
+  }
 }
