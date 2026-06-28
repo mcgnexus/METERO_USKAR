@@ -1,5 +1,9 @@
 import type { ClimateCalibrationPayload } from "@/types/climate";
 
+export function ascii(s: string): string {
+  return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^\x00-\x7F]/g, "");
+}
+
 export type Platform = "ig" | "og" | "story";
 
 export function platformSize(p: Platform): { width: number; height: number } {
