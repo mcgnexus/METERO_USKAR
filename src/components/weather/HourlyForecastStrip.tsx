@@ -23,7 +23,7 @@ export function HourlyForecastStrip({ hours }: { hours: HourBlock[] }) {
         {display.map((h, i) => (
           <div key={i} className="flex flex-col items-center gap-1 min-w-[56px]">
             <span className="text-[10px] font-semibold text-slate-500 uppercase">
-              {new Date(h.time).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
+              {h.time.slice(11, 16)}
             </span>
             <span className="text-xl">{weatherEmoji(h.weatherCode ?? 0)}</span>
             <span className="text-sm font-bold text-slate-800">{fmt(h.temp, 1)}°</span>

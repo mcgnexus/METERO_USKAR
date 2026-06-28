@@ -5,7 +5,7 @@ import { weatherCodeDescription, weatherEmoji } from '@/lib/display';
 import type { HourlyWeather } from '@/types/weather';
 
 function fmtHour(iso: string): string {
-  return new Date(iso).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+  return iso.slice(11, 16);
 }
 
 export function Forecast24h({ hourly, count = 8 }: { hourly?: HourlyWeather; count?: number }) {

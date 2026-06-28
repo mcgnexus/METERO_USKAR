@@ -54,8 +54,12 @@ export function HoyPageClient({
     const windGust = wd?.current?.windGustKmh != null
       ? wd.current.windGustKmh * cd.microclimate.windGustReductionFactor
       : null;
-    const now = new Date(cd.generatedAt);
-    const month = now.getMonth();
+    const iso = cd.generatedAt;
+    const utcHour = parseInt(iso.slice(11, 13), 10);
+    const utcMonth = parseInt(iso.slice(5, 7), 10) - 1;
+    const madridOffset = utcMonth >= 2 && utcMonth <= 9 ? 2 : 1;
+    const madridHour = (utcHour + madridOffset) % 24;
+    const month = utcMonth;
     return {
       tempC: temp,
       feelsLikeC: wd?.current?.apparentTemperatureC ?? temp,
@@ -66,7 +70,7 @@ export function HoyPageClient({
       precipitationMm: wd?.hourly?.precipitationMm?.[0] ?? null,
       cloudCoverPct: cd.exoticVariables.cloudCoverPct ?? null,
       weatherCode: wd?.current?.weatherCode ?? 0,
-      isDaytime: now.getHours() >= 7 && now.getHours() < 20,
+      isDaytime: madridHour >= 7 && madridHour < 20,
       month,
       season: month >= 3 && month <= 5 ? 'spring' : month >= 6 && month <= 8 ? 'summer' : month >= 9 && month <= 11 ? 'autumn' : 'winter',
     };

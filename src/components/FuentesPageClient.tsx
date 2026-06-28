@@ -44,7 +44,7 @@ export function FuentesPageClient({
                       <p className="text-sm font-bold text-slate-800">{sh.source}</p>
                       <p className="text-xs text-slate-500">{sh.message}</p>
                       {sh.dataAgeMinutes != null && (
-                        <p className="text-[10px] text-slate-600 mt-0.5">
+                        <p className="text-[10px] text-slate-600 mt-0.5" suppressHydrationWarning>
                           Datos de hace {sh.dataAgeMinutes} min · {sh.checkedAt ? new Date(sh.checkedAt).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }) : '—'}
                         </p>
                       )}

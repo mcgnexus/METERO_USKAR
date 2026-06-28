@@ -24,11 +24,11 @@ const Forecast5d = dynamic(() => import('@/components/llano/forecast-5d').then((
 });
 
 function fmtHour(iso: string): string {
-  return new Date(iso).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+  return iso.slice(11, 16);
 }
 
 function fmtHourShort(iso: string): string {
-  return new Date(iso).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+  return iso.slice(11, 16);
 }
 
 function riskLabel(temp: number): string {
