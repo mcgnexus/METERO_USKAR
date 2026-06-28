@@ -4,7 +4,7 @@ import { getCurrentWeatherPayload } from "@/services/currentWeatherService";
 import type { WeatherPayload } from "@/types/weather";
 import type { ClimateCalibrationPayload } from "@/types/climate";
 
-export const runtime = "edge";
+export const runtime = "nodejs";
 
 type CardData = {
   tempMax: number;
