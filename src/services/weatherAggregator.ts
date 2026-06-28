@@ -16,7 +16,7 @@ import type {
   LightningData,
 } from "@/types/weather";
 
-const OBSERVATION_TIMEOUT_MS = 15000;
+const OBSERVATION_TIMEOUT_MS = parseInt(process.env.OBSERVATION_TIMEOUT_MS || "5000", 10);
 
 function fetchWithTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
   return Promise.race([

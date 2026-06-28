@@ -17,7 +17,7 @@ import { fetchCurrentCloudCover } from "@/services/openMeteoForecastService";
 import type { ZoneType } from "@/lib/geo";
 
 const AEMET_API_KEY = process.env.AEMET_API_KEY || "";
-const AEMET_TIMEOUT_MS = parseInt(process.env.AEMET_TIMEOUT_MS || "12000");
+const AEMET_TIMEOUT_MS = parseInt(process.env.AEMET_TIMEOUT_MS || "5000", 10);
 const AEMET_CACHE_TTL_MS = 60 * 60 * 1000;
 const AEMET_FAILURE_CACHE_TTL_MS = parseInt(process.env.AEMET_RATE_LIMIT_COOLDOWN_MS || "900000");
 const GROUND_TRUTH_NODE_CODE = (process.env.GROUND_TRUTH_NODE_CODE || "").trim();
