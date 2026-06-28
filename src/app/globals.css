@@ -5,7 +5,6 @@
   --foreground: #0f172a;
   --surface: rgba(255, 255, 255, 0.88);
   --surface-strong: #ffffff;
-  --surface-muted: #e8eef6;
   --stroke: rgba(15, 23, 42, 0.1);
   --stroke-strong: rgba(15, 23, 42, 0.18);
   --brand-900: #0f172a;
@@ -16,7 +15,6 @@
   --danger: #dc2626;
   --text-primary: #0f172a;
   --text-secondary: #334155;
-  --text-muted: #64748b;
   --shadow-soft: 0 24px 60px rgba(17, 37, 63, 0.08);
   --shadow-card: 0 12px 30px rgba(17, 37, 63, 0.08);
   --radius-xl: 28px;
@@ -24,15 +22,11 @@
   --radius-md: 14px;
   --font-body: "Aptos", "Segoe UI Variable Text", "Segoe UI", "Helvetica Neue", sans-serif;
   --font-display: "Bahnschrift", "Aptos Display", "Segoe UI Variable Display", "Segoe UI", sans-serif;
-  --ayto-primary: #1b3668;
-  --ayto-border: #e8e4d8;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --color-ayto-primary: var(--ayto-primary);
-  --color-ayto-border: var(--ayto-border);
 }
 
 html {
@@ -92,16 +86,7 @@ h1, h2, h3, h4, h5, h6 {
   letter-spacing: 0.08em;
 }
 
-.section-title {
-  font-size: clamp(1.8rem, 3vw, 3.4rem);
-  line-height: 1;
-}
-
-.section-copy {
-  color: var(--text-secondary);
-  font-size: 1.02rem;
-  line-height: 1.7;
-}
+/* Unused CSS removed: soft-grid, section-title, section-copy, animate-slide-down */
 
 .cta-primary {
   display: inline-flex;
@@ -179,21 +164,7 @@ h1, h2, h3, h4, h5, h6 {
   margin-bottom: 0.25rem;
 }
 
-@keyframes slide-down {
-  from { opacity: 0; transform: translateY(-24px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.animate-slide-down {
-  animation: slide-down 0.4s ease-out;
-}
-
-.soft-grid {
-  background-image:
-    linear-gradient(rgba(17, 37, 63, 0.04) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(17, 37, 63, 0.04) 1px, transparent 1px);
-  background-size: 22px 22px;
-}
+/* Unused: slide-down animation removed */
 
 @media (max-width: 640px) {
   body {
