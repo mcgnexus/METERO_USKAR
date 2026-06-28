@@ -101,7 +101,7 @@ export function HoyPageClient({
             </div>
             <a
               href="/api/daily-card"
-              download
+              download="ficha-meteo-huescar"
               className="flex items-center gap-1.5 rounded-full bg-slate-900 px-3 py-1.5 text-[11px] font-bold text-white shadow-sm transition hover:bg-slate-700 active:scale-95"
             >
               📷 Ficha
