@@ -23,15 +23,15 @@ export function TodaySummaryCard({ forecast }: { forecast: CurrentWeather }) {
 
       <div className="mt-4 grid grid-cols-3 gap-3 text-center text-sm">
         <div className="bg-white/15 rounded-xl py-2">
-          <p className="text-blue-200 text-[10px] uppercase tracking-wide">Viento</p>
+          <p className="text-white/80 text-[10px] uppercase tracking-wide">Viento</p>
           <p className="font-semibold text-white">{fmt(forecast.windSpeedKmh, 0)} km/h</p>
         </div>
         <div className="bg-white/15 rounded-xl py-2">
-          <p className="text-blue-200 text-[10px] uppercase tracking-wide">Humedad</p>
+          <p className="text-white/80 text-[10px] uppercase tracking-wide">Humedad</p>
           <p className="font-semibold text-white">{fmt(forecast.humidityPct, 0)}%</p>
         </div>
         <div className="bg-white/15 rounded-xl py-2">
-          <p className="text-blue-200 text-[10px] uppercase tracking-wide">Lluvia</p>
+          <p className="text-white/80 text-[10px] uppercase tracking-wide">Lluvia</p>
           <p className="font-semibold text-white">
             {forecast.precipitationMm != null ? `${fmt(forecast.precipitationMm, 1)} mm` : '—'}
           </p>

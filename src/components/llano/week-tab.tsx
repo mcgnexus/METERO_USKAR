@@ -62,7 +62,7 @@ export function WeekTab({ daily, forecast }: {
                 <p className="text-xs font-semibold text-slate-700">{weatherCodeDescription(wcode)}</p>
                 <div className="mt-1 flex items-center gap-3">
                   <span className="text-lg font-black text-slate-900">{fmtN(maxT, 0)}°</span>
-                  <span className="text-xs text-slate-400">/ {fmtN(minT, 0)}°</span>
+                  <span className="text-xs text-slate-600">/ {fmtN(minT, 0)}°</span>
                   {precip !== undefined && precip > 0 && (
                     <span className="ml-auto rounded-full bg-sky-100 px-2.5 py-0.5 text-[10px] font-bold text-sky-800">
                       🌧️ {precip}%

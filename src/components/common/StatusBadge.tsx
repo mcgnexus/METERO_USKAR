@@ -1,10 +1,10 @@
 import type { AdviceStatus } from '@/lib/weather-advice/types';
 
 const config: Record<AdviceStatus, { bg: string; text: string; label: string }> = {
-  good:    { bg: 'bg-emerald-500/15',    text: 'text-emerald-600',  label: 'Bien' },
-  caution: { bg: 'bg-amber-400/15',      text: 'text-amber-600',   label: 'Precaución' },
-  bad:     { bg: 'bg-red-500/15',        text: 'text-red-600',     label: 'Malo' },
-  neutral: { bg: 'bg-slate-400/15',      text: 'text-slate-600',   label: 'Regular' },
+  good:    { bg: 'bg-emerald-100',    text: 'text-emerald-800',  label: 'Bien' },
+  caution: { bg: 'bg-amber-100',      text: 'text-amber-800',   label: 'Precaución' },
+  bad:     { bg: 'bg-red-100',        text: 'text-red-800',     label: 'Malo' },
+  neutral: { bg: 'bg-slate-200',      text: 'text-slate-700',   label: 'Regular' },
 };
 
 export function StatusBadge({ status }: { status: AdviceStatus }) {

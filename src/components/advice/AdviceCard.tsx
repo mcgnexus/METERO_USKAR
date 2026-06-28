@@ -18,7 +18,7 @@ export function AdviceCard({ advice }: { advice: Advice }) {
       <p className="text-xs font-semibold text-slate-700 mb-1">{advice.label}</p>
       <p className="text-xs text-slate-600 leading-relaxed">{advice.message}</p>
       {advice.reason && (
-        <p className="text-[11px] text-slate-400 italic mt-1.5">{advice.reason}</p>
+        <p className="text-[11px] text-slate-600 italic mt-1.5">{advice.reason}</p>
       )}
     </div>
   );

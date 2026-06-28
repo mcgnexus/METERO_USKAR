@@ -173,7 +173,7 @@ export function HoyPageClient({
           </section>
 
           <div className="text-center pb-4">
-            <a href="/huescar/fuentes" className="text-[10px] font-bold uppercase tracking-wider text-slate-400 hover:text-slate-600">
+            <a href="/huescar/fuentes" className="text-[10px] font-bold uppercase tracking-wider text-slate-600 hover:text-slate-800">
               🔍 Fuentes y fiabilidad
             </a>
           </div>

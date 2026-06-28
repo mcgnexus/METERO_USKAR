@@ -35,7 +35,7 @@ function StrikeMap({ strikes, size = 220 }: { strikes: LightningStrike[]; size?:
   if (strikes.length === 0) {
     return (
       <div className="flex items-center justify-center rounded-2xl bg-slate-50 border border-slate-100" style={{ width: size, height: size }}>
-        <p className="text-xs font-semibold text-slate-400">Sin rayos detectados</p>
+        <p className="text-xs font-semibold text-slate-600">Sin rayos detectados</p>
       </div>
     );
   }
@@ -103,7 +103,7 @@ export function LightningPanel({ lightning }: { lightning?: LightningData | null
         </div>
         <div className="flex items-center gap-2">
           <SourceBadge source={lightning.source} />
-          <span className="text-slate-400 text-xs">{expanded ? '▲' : '▼'}</span>
+          <span className="text-slate-600 text-xs">{expanded ? '▲' : '▼'}</span>
         </div>
       </button>
 
@@ -135,18 +135,18 @@ export function LightningPanel({ lightning }: { lightning?: LightningData | null
                       <div key={i} className="flex items-center justify-between rounded-lg bg-slate-50 px-2.5 py-1.5">
                         <span className={`inline-block h-2 w-2 rounded-full ${s.distanceKm < 5 ? 'bg-rose-500' : s.distanceKm < 15 ? 'bg-amber-400' : s.distanceKm < 30 ? 'bg-yellow-300' : 'bg-sky-300'}`} />
                         <span className="text-xs text-slate-700">{fmtN(s.distanceKm, 1)} km · {s.bearing}</span>
-                        <span className="text-[11px] text-slate-400">{ageMin < 1 ? 'ahora' : `hace ${ageMin} min`}</span>
+                        <span className="text-[11px] text-slate-600">{ageMin < 1 ? 'ahora' : `hace ${ageMin} min`}</span>
                       </div>
                     );
                   })}
                   {recentStrikes.length > 10 && (
-                    <p className="text-center text-[11px] text-slate-400">+{recentStrikes.length - 10} más</p>
+                    <p className="text-center text-[11px] text-slate-600">+{recentStrikes.length - 10} más</p>
                   )}
                 </div>
               </div>
             )}
 
-            <p className="text-[11px] text-slate-400">{lightning.message}</p>
+            <p className="text-[11px] text-slate-600">{lightning.message}</p>
             <p className="text-[10px] text-slate-300">
               Actualizado: {new Date(lightning.lastCheckedAt).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
             </p>
