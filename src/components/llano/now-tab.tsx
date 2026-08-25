@@ -93,7 +93,7 @@ export function NowTab({ climate, weather, alarms }: {
     agri?.frostRisk48h && agri.frostRisk48h !== 'none' ? `❄️ Riesgo helada: ${agri.frostRisk48h}` : '',
     agri?.recommendedIrrigationLitersM2 != null && agri.recommendedIrrigationLitersM2 > 0 ? `🚿 Riego: ${agri.recommendedIrrigationLitersM2.toFixed(1)} L/m²` : '',
     '',
-    'meteohuescar.es',
+    'meteo.tecrural.es',
   ].filter(Boolean).join('\n');
 
   const shareOnWhatsApp = () => {

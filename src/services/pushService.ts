@@ -11,7 +11,7 @@ import type { PulseAlarm } from '@/components/llano/alarms-logic';
 
 if (process.env.VAPID_PRIVATE_KEY && process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY) {
   webpush.setVapidDetails(
-    'mailto:meteo@huescar.es',
+    'mailto:mcgtecrural@gmail.com',
     process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
     process.env.VAPID_PRIVATE_KEY
   );

@@ -9,6 +9,6 @@ export default function robots(): MetadataRoute.Robots {
         disallow: ['/api/', '/admin/', '/_next/'],
       },
     ],
-    sitemap: 'https://meteohuescar.es/sitemap.xml',
+    sitemap: 'https://meteo.tecrural.es/sitemap.xml',
   };
 }

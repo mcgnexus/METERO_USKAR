@@ -1,8 +1,10 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { Analytics } from "@vercel/analytics/react";
+import { SiteFooter } from "@/components/SiteFooter";
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://meteo.tecrural.es"),
   title: "Meteo Huéscar",
   description: "Previsión local, lluvia, viento, frío, calor, alertas y consejos útiles para vecinos, campo y actividades al aire libre.",
   keywords: [
@@ -29,8 +31,21 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Meteo Huéscar",
     description: "Previsión local, lluvia, viento, frío, calor, alertas y consejos útiles para vecinos, campo y actividades al aire libre.",
+    url: "https://meteo.tecrural.es",
+    siteName: "Meteo Huéscar",
+    images: [
+      {
+        url: "/icons/icon-512.png",
+        width: 512,
+        height: 512,
+        alt: "Meteo Huéscar",
+      },
+    ],
     locale: "es_ES",
     type: "website",
+  },
+  alternates: {
+    canonical: "https://meteo.tecrural.es",
   },
 };
 
@@ -51,6 +66,7 @@ export default function RootLayout({
     <html lang="es" className="h-full antialiased">
       <body className="min-h-full flex flex-col">
         {children}
+        <SiteFooter />
         <Analytics />
       </body>
     </html>

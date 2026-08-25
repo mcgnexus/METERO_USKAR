@@ -1,0 +1,4 @@
+Contact: mailto:mcgtecrural@gmail.com
+Expires: 2027-08-25T00:00:00.000Z
+Preferred-Languages: es, en
+Canonical: https://meteo.tecrural.es/.well-known/security.txt

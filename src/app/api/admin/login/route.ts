@@ -1,26 +1,33 @@
 import { NextRequest, NextResponse } from "next/server";
+import crypto from "node:crypto";
 import { generateAdminToken, verifyAdminPassword } from "@/services/adminAuth";
+import { consumeAdminLoginAttempt, initializeDatabase } from "@/lib/weatherStore";
 
-const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
-const MAX_ATTEMPTS = 5;
-const WINDOW_MS = 60 * 1000;
+function getClientAddress(request: NextRequest): string {
+  const vercelAddress = request.headers.get("x-vercel-forwarded-for");
+  if (vercelAddress) return vercelAddress.trim();
+
+  const realAddress = request.headers.get("x-real-ip");
+  if (realAddress) return realAddress.trim();
+
+  const forwarded = request.headers.get("x-forwarded-for");
+  if (forwarded) return forwarded.split(",").map((value) => value.trim()).filter(Boolean).at(-1) ?? "unknown";
+  return "unknown";
+}
+
+function hashClientAddress(address: string): string {
+  return crypto.createHash("sha256").update(address).digest("hex");
+}
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
-    const ip = request.headers.get("x-forwarded-for") ?? request.headers.get("x-real-ip") ?? "unknown";
-    const now = Date.now();
-    const entry = rateLimitMap.get(ip);
-
-    if (entry && now < entry.resetAt) {
-      if (entry.count >= MAX_ATTEMPTS) {
-        return NextResponse.json(
-          { error: "Demasiados intentos. Intenta de nuevo en 1 minuto." },
-          { status: 429 }
-        );
-      }
-      entry.count++;
-    } else {
-      rateLimitMap.set(ip, { count: 1, resetAt: now + WINDOW_MS });
+    await initializeDatabase();
+    const limit = await consumeAdminLoginAttempt(hashClientAddress(getClientAddress(request)));
+    if (!limit.allowed) {
+      return NextResponse.json(
+        { error: "Demasiados intentos. Intenta de nuevo en 1 minuto." },
+        { status: 429, headers: { "Retry-After": String(limit.retryAfterSeconds) } },
+      );
     }
 
     const body = await request.json();

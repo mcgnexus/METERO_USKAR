@@ -1,3 +1,4 @@
+import { unstable_cache } from 'next/cache';
 import { getClimateCalibrationPayload } from '@/services/climateCalibrationPayloadService';
 import { getCurrentWeatherPayload } from '@/services/currentWeatherService';
 import { getForecastPayload } from '@/services/forecastPayloadService';
@@ -6,6 +7,16 @@ import type { ForecastPayload } from '@/types/forecast';
 import type { WeatherPayload } from '@/types/weather';
 
 export const dynamic = 'force-dynamic';
+
+const getCachedHomeData = unstable_cache(
+  async () => Promise.allSettled([
+    getClimateCalibrationPayload(),
+    getCurrentWeatherPayload(),
+    getForecastPayload(5),
+  ]),
+  ['huescar-home-data-v1'],
+  { revalidate: 60 },
+);
 
 function slimForecast(payload: ForecastPayload): ForecastPayload {
   return {
@@ -39,11 +50,7 @@ function slimWeather(payload: WeatherPayload): WeatherPayload {
 }
 
 export default async function HuescarHoyPage() {
-  const [climateResult, weatherResult, forecastResult] = await Promise.allSettled([
-    getClimateCalibrationPayload(),
-    getCurrentWeatherPayload(),
-    getForecastPayload(5),
-  ]);
+  const [climateResult, weatherResult, forecastResult] = await getCachedHomeData();
 
   return (
     <HoyPageClient

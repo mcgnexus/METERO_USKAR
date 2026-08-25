@@ -197,6 +197,12 @@ CREATE TABLE IF NOT EXISTS push_notification_log (
   endpoint TEXT,
   sent_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+CREATE TABLE IF NOT EXISTS admin_login_rate_limits (
+  client_key TEXT PRIMARY KEY,
+  window_started_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  attempt_count INT NOT NULL DEFAULT 0,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
 `;
 
 let initialized = false;
@@ -205,6 +211,43 @@ export async function initializeDatabase(): Promise<void> {
   if (initialized) return;
   await safeExecute(CREATE_TABLES_SQL);
   initialized = true;
+}
+
+export async function consumeAdminLoginAttempt(
+  clientKey: string,
+  maxAttempts = 5,
+  windowMs = 60_000,
+): Promise<{ allowed: boolean; retryAfterSeconds: number }> {
+  try {
+    const result = await getPool().query(
+      `INSERT INTO admin_login_rate_limits (client_key, window_started_at, attempt_count, updated_at)
+       VALUES ($1, NOW(), 1, NOW())
+       ON CONFLICT (client_key) DO UPDATE SET
+         window_started_at = CASE
+           WHEN admin_login_rate_limits.window_started_at <= NOW() - ($2 * INTERVAL '1 millisecond')
+           THEN NOW()
+           ELSE admin_login_rate_limits.window_started_at
+         END,
+         attempt_count = CASE
+           WHEN admin_login_rate_limits.window_started_at <= NOW() - ($2 * INTERVAL '1 millisecond')
+           THEN 1
+           ELSE admin_login_rate_limits.attempt_count + 1
+         END,
+         updated_at = NOW()
+       RETURNING attempt_count, window_started_at`,
+      [clientKey, windowMs],
+    );
+
+    const row = result.rows[0] as { attempt_count?: number | string; window_started_at?: string } | undefined;
+    const attemptCount = Number(row?.attempt_count ?? 0);
+    const windowStartedAt = row?.window_started_at ? new Date(row.window_started_at).getTime() : Date.now();
+    const retryAfterSeconds = Math.max(1, Math.ceil((windowStartedAt + windowMs - Date.now()) / 1000));
+
+    return { allowed: attemptCount <= maxAttempts, retryAfterSeconds };
+  } catch {
+    // Keep login available if the optional limiter database is temporarily unavailable.
+    return { allowed: true, retryAfterSeconds: 0 };
+  }
 }
 
 export async function saveConsensusSnapshot(
