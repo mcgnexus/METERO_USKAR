@@ -20,6 +20,11 @@ interface DecodedStrike {
   time: Date;
 }
 
+interface BlitzortungResult {
+  connected: boolean;
+  strikes: LightningStrike[];
+}
+
 function decodeStrike(data: unknown): DecodedStrike | null {
   if (Buffer.isBuffer(data)) {
     const buf = data as Buffer;
@@ -53,13 +58,14 @@ function decodeStrike(data: unknown): DecodedStrike | null {
         typeof parsed.lat === "number" &&
         typeof parsed.lon === "number"
       ) {
-        const ts =
+        const rawTimestamp =
           typeof parsed.time === "number"
             ? parsed.time
             : typeof parsed.timestamp === "number"
               ? parsed.timestamp
               : Date.now();
-        return { lat: parsed.lat, lon: parsed.lon, time: new Date(ts) };
+        const timestampMs = rawTimestamp < 1_000_000_000_000 ? rawTimestamp * 1000 : rawTimestamp;
+        return { lat: parsed.lat, lon: parsed.lon, time: new Date(timestampMs) };
       }
     } catch {
       return null;
@@ -81,9 +87,10 @@ async function tryBlitzortungServer(
   lat: number,
   lon: number,
   radiusKm: number
-): Promise<LightningStrike[]> {
-  return new Promise<LightningStrike[]>((resolve, reject) => {
+): Promise<BlitzortungResult> {
+  return new Promise<BlitzortungResult>((resolve, reject) => {
     const strikes: LightningStrike[] = [];
+    let connected = false;
     let settled = false;
 
     const cleanup = () => {
@@ -99,6 +106,7 @@ async function tryBlitzortungServer(
     const connectTimeout = setTimeout(() => {
       if (!settled) {
         settled = true;
+        clearTimeout(collectTimeout);
         cleanup();
         reject(new Error(`connect timeout on ${serverUrl}`));
       }
@@ -109,11 +117,12 @@ async function tryBlitzortungServer(
         settled = true;
         clearTimeout(connectTimeout);
         cleanup();
-        resolve(strikes);
+        resolve({ connected, strikes });
       }
     }, COLLECT_MS);
 
     ws.on("open", () => {
+      connected = true;
       clearTimeout(connectTimeout);
       try {
         ws.send(JSON.stringify({ a: 1 }));
@@ -149,7 +158,7 @@ async function tryBlitzortungServer(
         settled = true;
         clearTimeout(connectTimeout);
         clearTimeout(collectTimeout);
-        resolve(strikes);
+        resolve({ connected, strikes });
       }
     });
   });
@@ -162,21 +171,19 @@ async function fetchBlitzortung(
 ): Promise<LightningStrike[] | null> {
   const shuffled = [...BLITZORTUNG_SERVERS].sort(() => Math.random() - 0.5);
   const toTry = shuffled.slice(0, MAX_SERVERS_TO_TRY);
+  let connected = false;
 
   for (const server of toTry) {
     try {
-      const strikes = await tryBlitzortungServer(server, lat, lon, radiusKm);
-      if (strikes.length > 0) return strikes;
+      const result = await tryBlitzortungServer(server, lat, lon, radiusKm);
+      connected ||= result.connected;
+      if (result.strikes.length > 0) return result.strikes;
     } catch {
       continue;
     }
   }
 
-  const connected = toTry.some(
-    (s) => !s.includes("timeout")
-  );
-  if (!connected) return null;
-  return [];
+  return connected ? [] : null;
 }
 
 async function fetchOpenMeteoCapeFallback(
@@ -187,7 +194,7 @@ async function fetchOpenMeteoCapeFallback(
     const url =
       `https://api.open-meteo.com/v1/forecast` +
       `?latitude=${lat}&longitude=${lon}` +
-      `&current=cape,lifted_index,cloud_to_ground_lightning` +
+      `&current=cape,lifted_index` +
       `&models=gem_global`;
 
     const res = await fetch(url, {
@@ -198,22 +205,6 @@ async function fetchOpenMeteoCapeFallback(
 
     const cape: number | undefined = data?.current?.cape;
     const liftedIndex: number | undefined = data?.current?.lifted_index;
-    const omLightning: number | undefined =
-      data?.current?.cloud_to_ground_lightning;
-
-    if (omLightning !== undefined && omLightning > 0) {
-      return {
-        active: true,
-        level: "alerta",
-        nearestStrikeKm: null,
-        strikeCount: omLightning,
-        strikes: [],
-        lastCheckedAt: new Date().toISOString(),
-        source: "openmeteo_fallback",
-        message: `Open-Meteo detecta ${omLightning} descarga(s) eléctrica(s) reciente(s) en la zona`,
-      };
-    }
-
     const thunderstormLikely =
       (cape !== undefined && cape > 1000 && liftedIndex !== undefined && liftedIndex < -2) ||
       (cape !== undefined && cape > 2000);
@@ -253,10 +244,10 @@ export async function fetchLightningData(
   lon: number = HUESCAR_COORDS.lon,
   radiusKm?: number
 ): Promise<LightningData> {
-  const cached = cacheGet<LightningData>(CACHE_KEY);
-  if (cached) return cached;
-
   const effectiveRadius = radiusKm ?? 50;
+  const cacheKey = `${CACHE_KEY}:${lat.toFixed(4)}:${lon.toFixed(4)}:${effectiveRadius}`;
+  const cached = cacheGet<LightningData>(cacheKey);
+  if (cached) return cached;
 
   const blitzortungStrikes = await fetchBlitzortung(lat, lon, effectiveRadius);
 
@@ -282,13 +273,13 @@ export async function fetchLightningData(
           : "No se detectaron rayos en el área",
     };
 
-    cacheSet(CACHE_KEY, result, CACHE_TTL_MS);
+    cacheSet(cacheKey, result, CACHE_TTL_MS);
     return result;
   }
 
   const fallback = await fetchOpenMeteoCapeFallback(lat, lon);
   if (fallback) {
-    cacheSet(CACHE_KEY, fallback, CACHE_TTL_MS);
+    cacheSet(cacheKey, fallback, CACHE_TTL_MS);
     return fallback;
   }
 

@@ -179,7 +179,7 @@ export function buildAlarms(
         audience: 'Poblacion',
         title: `AEMET: ${a.title}`,
         message: a.message,
-        source: 'aemet',
+        source: 'sensor',
       });
     }
   }
