@@ -1,10 +1,11 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { buildAlarms } from '@/components/llano/alarms-logic';
 import { NavBottom } from '@/components/NavBottom';
 import { NotificationPermission } from '@/components/NotificationPermission';
+import { AgriculturalLeadForm } from '@/components/AgriculturalLeadForm';
 import { LocalAlarmNotifier } from '@/components/LocalAlarmNotifier';
 import { LightningPanel } from '@/components/llano/lightning-panel';
 import { TodaySummaryCard } from '@/components/weather/TodaySummaryCard';
@@ -13,6 +14,7 @@ import { QuickDecisionGrid } from '@/components/weather/QuickDecisionGrid';
 import { AdviceGrid } from '@/components/advice/AdviceGrid';
 import { SectionTitle } from '@/components/common/SectionTitle';
 import PwaRegister from '@/components/PwaRegister';
+import { useTrackEvent } from '@/hooks/useTrackEvent';
 import type { ClimateCalibrationPayload } from '@/types/climate';
 import type { WeatherPayload } from '@/types/weather';
 import type { ForecastPayload } from '@/types/forecast';
@@ -76,6 +78,9 @@ export function HoyPageClient({
     };
   }, [cd, wd]);
 
+  const track = useTrackEvent();
+  useEffect(() => { track('weather_view'); }, [track]);
+
   if (!cd) {
     return (
       <div className="min-h-screen bg-[#f4f7fb] flex items-center justify-center">
@@ -111,6 +116,15 @@ export function HoyPageClient({
 
         <div className="mb-3 min-h-[92px]">
           <NotificationPermission />
+        </div>
+
+        <div className="mb-3">
+          <AgriculturalLeadForm />
+          <p className="mt-2 text-center">
+            <a href="/huescar/contacto" className="text-[10px] font-bold uppercase tracking-wider text-sky-700 hover:text-sky-900">
+              ¿Necesitas ayuda personalizada? → Contacto
+            </a>
+          </p>
         </div>
 
         {wd?.lightning && (

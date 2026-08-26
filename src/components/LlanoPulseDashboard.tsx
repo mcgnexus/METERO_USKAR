@@ -9,6 +9,7 @@ import { buildAlarms } from '@/components/llano/alarms-logic';
 import { NavBottom, type TabId } from '@/components/NavBottom';
 import { OfflineBanner } from '@/components/OfflineBanner';
 import { NotificationPermission } from '@/components/NotificationPermission';
+import { AgriculturalLeadForm } from '@/components/AgriculturalLeadForm';
 import { LocalAlarmNotifier } from '@/components/LocalAlarmNotifier';
 import { LightningPanel } from '@/components/llano/lightning-panel';
 import PwaRegister from '@/components/PwaRegister';
@@ -85,6 +86,12 @@ export default function LlanoPulseDashboard({
         {(activeTab === 'hoy') && (
           <div className="mb-3 min-h-[92px]">
             <NotificationPermission />
+          </div>
+        )}
+
+        {activeTab === 'hoy' && (
+          <div className="mb-3">
+            <AgriculturalLeadForm />
           </div>
         )}
 

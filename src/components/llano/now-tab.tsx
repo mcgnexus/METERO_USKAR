@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { fmtN } from '@/components/llano/atoms';
 import { weatherCodeDescription, weatherEmoji, windDirection } from '@/lib/display';
 import { thermalBg } from '@/components/llano/thermal-style';
+import { useTrackEvent } from '@/hooks/useTrackEvent';
 import {
   interpretTemperature,
   interpretHumidity,
@@ -48,6 +49,7 @@ export function NowTab({ climate, weather, alarms }: {
   const windDir = climate.extrapolation.bazaWindDirectionDeg ?? weather?.current?.windDirectionDeg ?? null;
   const wcode = weather?.current?.weatherCode ?? 0;
   const [updateAge, setUpdateAge] = useState<number | null>(null);
+  const track = useTrackEvent();
 
   useEffect(() => {
     setUpdateAge(ageFromIso(climate.generatedAt));
@@ -97,7 +99,8 @@ export function NowTab({ climate, weather, alarms }: {
   ].filter(Boolean).join('\n');
 
   const shareOnWhatsApp = () => {
-    const url = `https://wa.me/?text=${encodeURIComponent(shareText)}`;
+    track('whatsapp_clicked', { context: 'now-tab' });
+    const url = `https://wa.me/34614242716?text=${encodeURIComponent(shareText)}`;
     window.open(url, '_blank', 'noopener,noreferrer');
   };
 

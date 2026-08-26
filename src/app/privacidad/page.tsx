@@ -20,11 +20,12 @@ export default function PrivacidadPage() {
 
         <h2 className="pt-4 text-xl font-bold">2. Datos tratados y finalidades</h2>
         <p>El sitio puede tratar datos técnicos de navegación necesarios para prestar el servicio y mantener su seguridad. Si activas las notificaciones, se guarda la suscripción push, que incluye el endpoint del navegador y las claves técnicas necesarias para enviar avisos. No se solicita nombre, teléfono ni ubicación precisa para activar este servicio.</p>
+        <p>Si solicitas avisos para una finca, trataremos tu nombre, teléfono o WhatsApp, municipio, cultivo, tramo de superficie e intereses agrícolas para responder a la solicitud y ofrecerte avisos meteorológicos adaptados. La información comercial solo se enviará si marcas expresamente su casilla.</p>
         <p>Las suscripciones push se utilizan exclusivamente para enviar avisos meteorológicos y resúmenes del tiempo. Puedes retirarlas desde la configuración de notificaciones del navegador o solicitando su eliminación.</p>
         <p>La zona de administración utiliza una cookie técnica de sesión para autenticar al personal autorizado. No se utiliza para publicidad.</p>
 
         <h2 className="pt-4 text-xl font-bold">3. Base jurídica y conservación</h2>
-        <p>La base jurídica para las notificaciones es tu consentimiento, que puedes retirar en cualquier momento. Los datos de suscripción se conservan mientras permanezca activa y se eliminan cuando se solicita la baja o el navegador la invalida. Los registros técnicos se conservan durante el tiempo necesario para la seguridad y el funcionamiento del servicio.</p>
+        <p>La base jurídica para las notificaciones y la atención de solicitudes agrícolas es tu consentimiento, que puedes retirar en cualquier momento. Los datos de los formularios agrícolas se conservarán durante un máximo de 12 meses desde el último contacto, salvo que exista una obligación legal o una relación activa que justifique otro plazo. Los datos de suscripción push se conservan mientras permanezca activa y se eliminan cuando se solicita la baja o el navegador la invalida.</p>
 
         <h2 className="pt-4 text-xl font-bold">4. Proveedores</h2>
         <p>El servicio puede utilizar Vercel para alojamiento y analítica, Neon/PostgreSQL para almacenar suscripciones y proveedores de datos meteorológicos. Estos proveedores actúan conforme a sus propias condiciones y garantías de protección de datos.</p>

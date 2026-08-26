@@ -203,6 +203,43 @@ CREATE TABLE IF NOT EXISTS admin_login_rate_limits (
   attempt_count INT NOT NULL DEFAULT 0,
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+CREATE TABLE IF NOT EXISTS agricultural_leads (
+  id BIGSERIAL PRIMARY KEY,
+  name TEXT NOT NULL,
+  phone TEXT NOT NULL,
+  municipality TEXT NOT NULL,
+  crop TEXT NOT NULL,
+  area TEXT NOT NULL,
+  interests JSONB NOT NULL DEFAULT '[]'::jsonb,
+  meteorological_consent BOOLEAN NOT NULL,
+  commercial_consent BOOLEAN NOT NULL DEFAULT false,
+  consented_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  ip_hash TEXT,
+  status TEXT NOT NULL DEFAULT 'new',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS agricultural_leads_created_at_idx ON agricultural_leads (created_at DESC);
+CREATE TABLE IF NOT EXISTS lead_rate_limits (
+  client_key TEXT PRIMARY KEY,
+  window_started_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  submission_count INT NOT NULL DEFAULT 0,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE TABLE IF NOT EXISTS business_events (
+  id BIGSERIAL PRIMARY KEY,
+  event_name TEXT NOT NULL,
+  page TEXT,
+  metadata JSONB,
+  ip_hash TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS business_events_created_at_idx ON business_events (created_at DESC);
+CREATE INDEX IF NOT EXISTS business_events_event_name_idx ON business_events (event_name);
+ALTER TABLE agricultural_leads ADD COLUMN IF NOT EXISTS source TEXT DEFAULT 'direct';
+ALTER TABLE agricultural_leads ADD COLUMN IF NOT EXISTS landing_page TEXT DEFAULT '/';
+ALTER TABLE agricultural_leads ADD COLUMN IF NOT EXISTS utm_source TEXT;
+ALTER TABLE agricultural_leads ADD COLUMN IF NOT EXISTS utm_medium TEXT;
+ALTER TABLE agricultural_leads ADD COLUMN IF NOT EXISTS utm_campaign TEXT;
 `;
 
 let initialized = false;
@@ -247,6 +284,165 @@ export async function consumeAdminLoginAttempt(
   } catch {
     // Keep login available if the optional limiter database is temporarily unavailable.
     return { allowed: true, retryAfterSeconds: 0 };
+  }
+}
+
+export async function consumeLeadAttempt(
+  clientKey: string,
+  maxAttempts = 3,
+  windowMs = 60 * 60_000,
+): Promise<boolean> {
+  try {
+    const result = await getPool().query(
+      `INSERT INTO lead_rate_limits (client_key, window_started_at, submission_count, updated_at)
+       VALUES ($1, NOW(), 1, NOW())
+       ON CONFLICT (client_key) DO UPDATE SET
+         window_started_at = CASE
+           WHEN lead_rate_limits.window_started_at <= NOW() - ($2 * INTERVAL '1 millisecond')
+           THEN NOW()
+           ELSE lead_rate_limits.window_started_at
+         END,
+         submission_count = CASE
+           WHEN lead_rate_limits.window_started_at <= NOW() - ($2 * INTERVAL '1 millisecond')
+           THEN 1
+           ELSE lead_rate_limits.submission_count + 1
+         END,
+         updated_at = NOW()
+       RETURNING submission_count`,
+      [clientKey, windowMs],
+    );
+    return Number(result.rows[0]?.submission_count ?? 0) <= maxAttempts;
+  } catch {
+    return false;
+  }
+}
+
+export async function saveAgriculturalLead(input: {
+  name: string;
+  phone: string;
+  municipality: string;
+  crop: string;
+  area: string;
+  interests: string[];
+  meteorologicalConsent: boolean;
+  commercialConsent: boolean;
+  ipHash: string;
+  source?: string;
+  landingPage?: string;
+  utmSource?: string;
+  utmMedium?: string;
+  utmCampaign?: string;
+}): Promise<boolean> {
+  try {
+    await getPool().query(
+      `INSERT INTO agricultural_leads
+        (name, phone, municipality, crop, area, interests, meteorological_consent, commercial_consent, ip_hash,
+         source, landing_page, utm_source, utm_medium, utm_campaign)
+       VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7, $8, $9, $10, $11, $12, $13, $14)`,
+      [
+        input.name,
+        input.phone,
+        input.municipality,
+        input.crop,
+        input.area,
+        JSON.stringify(input.interests),
+        input.meteorologicalConsent,
+        input.commercialConsent,
+        input.ipHash,
+        input.source ?? 'direct',
+        input.landingPage ?? '/',
+        input.utmSource ?? null,
+        input.utmMedium ?? null,
+        input.utmCampaign ?? null,
+      ],
+    );
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export async function getRecentAgriculturalLeads(limit = 50): Promise<Array<{
+  id: number | string;
+  name: string;
+  phone: string;
+  municipality: string;
+  crop: string;
+  area: string;
+  interests: string[];
+  meteorological_consent: boolean;
+  commercial_consent: boolean;
+  consented_at: string;
+  status: string;
+  source: string;
+  landing_page: string;
+  utm_source: string | null;
+  utm_medium: string | null;
+  utm_campaign: string | null;
+  created_at: string;
+}>> {
+  const rows = await safeQuery<{
+    id: number | string;
+    name: string;
+    phone: string;
+    municipality: string;
+    crop: string;
+    area: string;
+    interests: string[] | null;
+    meteorological_consent: boolean;
+    commercial_consent: boolean;
+    consented_at: string;
+    status: string;
+    source: string;
+    landing_page: string;
+    utm_source: string | null;
+    utm_medium: string | null;
+    utm_campaign: string | null;
+    created_at: string;
+  }>(
+    `SELECT id, name, phone, municipality, crop, area, interests,
+            meteorological_consent, commercial_consent, consented_at, status,
+            source, landing_page, utm_source, utm_medium, utm_campaign, created_at
+       FROM agricultural_leads
+      ORDER BY created_at DESC
+      LIMIT $1`,
+    [Math.min(Math.max(limit, 1), 100)],
+  );
+  return rows.map((row) => ({ ...row, interests: Array.isArray(row.interests) ? row.interests : [] }));
+}
+
+const VALID_EVENTS = new Set([
+  'weather_view',
+  'push_prompt_shown',
+  'push_subscribed',
+  'lead_form_opened',
+  'lead_form_started',
+  'lead_form_submitted',
+  'whatsapp_clicked',
+  'daily_card_shared',
+]);
+
+export async function recordBusinessEvent(input: {
+  event: string;
+  page?: string;
+  metadata?: Record<string, unknown>;
+  ipHash?: string;
+}): Promise<boolean> {
+  if (!VALID_EVENTS.has(input.event)) return false;
+  try {
+    await getPool().query(
+      `INSERT INTO business_events (event_name, page, metadata, ip_hash)
+       VALUES ($1, $2, $3::jsonb, $4)`,
+      [
+        input.event,
+        input.page ?? null,
+        input.metadata ? JSON.stringify(input.metadata) : null,
+        input.ipHash ?? null,
+      ],
+    );
+    return true;
+  } catch {
+    return false;
   }
 }
 

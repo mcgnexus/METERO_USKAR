@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useWeatherData } from '@/hooks/useWeatherData';
+import { useTrackEvent } from '@/hooks/useTrackEvent';
 import RadarPanel from '@/components/RadarPanel';
 import {
   dayLabel,
@@ -178,11 +179,12 @@ function MicroclimateCard({ data }: { data: WeatherPayload }) {
 
 export default function WeatherFreeDashboard() {
   const { data, error, loading, refresh } = useWeatherData('meteo-free-dashboard');
+  const track = useTrackEvent();
   const shareUrl = typeof window !== 'undefined' ? window.location.href : '';
   const shareText = data
     ? `Tiempo en ${data.location}: ${data.current.temperatureC.toFixed(1)}°C, ${weatherCodeDescription(data.current.weatherCode)}.`
     : 'Tiempo local de Huéscar.';
-  const shareHref = `https://wa.me/?text=${encodeURIComponent(`${shareText} ${shareUrl}`)}`;
+  const shareHref = `https://wa.me/34614242716?text=${encodeURIComponent(`${shareText} ${shareUrl}`)}`;
   const rainToday = data?.daily.precipitationProbabilityPct[0] ?? 0;
   const freeSummary = data
     ? `Hoy: ${weatherCodeDescription(data.current.weatherCode).toLowerCase()}, lluvia ${rainToday.toFixed(0)}% y rachas de hasta ${data.current.windGustKmh.toFixed(0)} km/h.`
@@ -227,7 +229,7 @@ export default function WeatherFreeDashboard() {
                 Informacion rapida para vecinos, campo, ganaderia, turismo y actividades al aire libre. Datos completos y alertas avanzadas disponibles en versiones Pro o institucionales.
               </p>
               <div className="mt-6 flex flex-wrap gap-3">
-                <a href={shareHref} target="_blank" rel="noreferrer" className="rounded-full bg-white px-5 py-3 text-sm font-bold text-slate-950 transition hover:bg-sky-50">
+                <a href={shareHref} target="_blank" rel="noreferrer" onClick={() => track('whatsapp_clicked', { context: 'weather-free-dashboard' })} className="rounded-full bg-white px-5 py-3 text-sm font-bold text-slate-950 transition hover:bg-sky-50">
                   Compartir por WhatsApp
                 </a>
                 <a href="mailto:?subject=Patrocinar Meteo Huéscar&body=Quiero informacion para patrocinar el servicio meteorologico local de Huéscar." className="rounded-full border border-white/20 bg-white/10 px-5 py-3 text-sm font-bold text-white transition hover:bg-white/15">

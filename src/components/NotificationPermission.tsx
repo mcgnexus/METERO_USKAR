@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
+import { useTrackEvent } from '@/hooks/useTrackEvent';
 
 function urlBase64ToUint8Array(base64String: string): ArrayBuffer {
   const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
@@ -26,6 +27,7 @@ export function NotificationPermission() {
   const [dismissed, setDismissed] = useState(true);
   const [visits, setVisits] = useState(0);
   const [mode, setMode] = useState<PulseMode>('essential');
+  const track = useTrackEvent();
 
   useEffect(() => {
     setMounted(true);
@@ -66,6 +68,10 @@ export function NotificationPermission() {
     }
     setDismissed(nextDismissed);
 
+    if (!nextDismissed && nextStatus !== 'granted' && nextStatus !== 'denied') {
+      track('push_prompt_shown');
+    }
+
     return () => window.removeEventListener('llano-pulse-mode-changed', syncMode as EventListener);
   }, []);
 
@@ -100,6 +106,7 @@ export function NotificationPermission() {
       });
 
       setStatus('done');
+      track('push_subscribed');
     } catch {
       setError('No se pudieron activar las notificaciones');
     }

@@ -28,6 +28,18 @@ interface AdminOverview {
   uptime: string;
 }
 
+interface AgriculturalLead {
+  id: number | string;
+  name: string;
+  phone: string;
+  municipality: string;
+  crop: string;
+  area: string;
+  interests: string[];
+  commercial_consent: boolean;
+  created_at: string;
+}
+
 function StatusCard({ health }: { health: SourceHealthStatus }) {
   const colors: Record<string, string> = {
     OK: 'border-green-700 bg-green-900/20',
@@ -62,6 +74,7 @@ export default function AdminConsole() {
   const [confirmRefresh, setConfirmRefresh] = useState(false);
   const [refreshError, setRefreshError] = useState<string | null>(null);
   const { data: overview, loading, refresh } = useApiData<AdminOverview>('/api/admin/overview', 'admin-overview');
+  const { data: leads } = useApiData<{ leads: AgriculturalLead[] }>('/api/admin/leads', 'admin-leads');
 
   async function handleForceRefresh() {
     setRefreshing(true);
@@ -182,6 +195,40 @@ export default function AdminConsole() {
             <p className="col-span-full text-sm text-slate-500">Sin métricas disponibles</p>
           )}
         </div>
+      </section>
+
+      <section>
+        <h2 className="mb-4 text-lg font-semibold">Solicitudes agrícolas</h2>
+        {leads?.leads.length ? (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-slate-700 text-slate-400">
+                  <th className="px-3 py-2 text-left">Persona</th>
+                  <th className="px-3 py-2 text-left">Finca</th>
+                  <th className="px-3 py-2 text-left">Intereses</th>
+                  <th className="px-3 py-2 text-left">Fecha</th>
+                </tr>
+              </thead>
+              <tbody>
+                {leads.leads.map((lead) => (
+                  <tr key={lead.id} className="border-b border-slate-800 align-top">
+                    <td className="px-3 py-2">
+                      <p className="font-semibold">{lead.name}</p>
+                      <a className="text-xs text-sky-400 hover:underline" href={`tel:${lead.phone}`}>{lead.phone}</a>
+                      {lead.commercial_consent && <p className="mt-1 text-[10px] text-emerald-400">Comercial: sí</p>}
+                    </td>
+                    <td className="px-3 py-2 text-xs text-slate-300">{lead.municipality}<br />{lead.crop} · {lead.area}</td>
+                    <td className="px-3 py-2 text-xs text-slate-300">{lead.interests.join(', ')}</td>
+                    <td className="whitespace-nowrap px-3 py-2 text-xs text-slate-400">{new Date(lead.created_at).toLocaleString('es-ES')}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <p className="text-sm text-slate-500">Todavía no hay solicitudes agrícolas.</p>
+        )}
       </section>
 
       <section className="rounded-xl border border-slate-700 bg-slate-900 p-4 text-slate-100">
