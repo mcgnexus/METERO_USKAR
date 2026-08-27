@@ -29,7 +29,7 @@ export async function getCurrentWeatherPayload(): Promise<WeatherPayload> {
     ttlMs: CURRENT_WEATHER_CACHE_TTL_MS,
     staleMs: CURRENT_WEATHER_STALE_MS,
     load: async () => {
-      const lightningPromise = fetchLightningData(HUESCAR_COORDS.lat, HUESCAR_COORDS.lon, 20).catch(() => null);
+      const lightningPromise = fetchLightningData(HUESCAR_COORDS.lat, HUESCAR_COORDS.lon, 30).catch(() => null);
       const aemetAlertsPromise = fetchAEMETWarnings().catch(() => [] as WeatherAlert[]);
 
       const weather = await aggregateWeather();

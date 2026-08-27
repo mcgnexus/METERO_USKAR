@@ -77,7 +77,7 @@ pm2 logs blitzortung-worker
 Después de que el worker lleve unos segundos conectado:
 
 ```bash
-curl -s 'https://meteo.tecrural.es/api/weather/lightning?radius=20'
+curl -s 'https://meteo.tecrural.es/api/weather/lightning?radius=30'
 ```
 
 La respuesta debe contener:
