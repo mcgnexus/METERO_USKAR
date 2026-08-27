@@ -4,7 +4,7 @@ import { Pool } from "@neondatabase/serverless";
 const LAT = Number(process.env.LIGHTNING_LAT ?? 37.8094);
 const LON = Number(process.env.LIGHTNING_LON ?? -2.5392);
 const RADIUS_KM = Number(process.env.LIGHTNING_RADIUS_KM ?? 50);
-const SERVERS = Array.from({ length: 8 }, (_, index) => `wss://ws${index + 1}.blitzortung.org:3000/`);
+const SERVERS = ["ws8", "ws7", "ws2", "ws1"].map((server) => `wss://${server}.blitzortung.org`);
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 
 function distanceKm(lat1, lon1, lat2, lon2) {
@@ -23,27 +23,45 @@ function bearing(lat1, lon1, lat2, lon2) {
   return degrees(Math.atan2(y, x));
 }
 
-function decodeStrike(data) {
-  if (Buffer.isBuffer(data) && data.length >= 12) {
-    const lat = data.readInt32LE(0) / 1_000_000;
-    const lon = data.readInt32LE(4) / 1_000_000;
-    const timestamp = data.readUInt32LE(8);
-    if (Number.isFinite(lat) && Number.isFinite(lon) && timestamp > 0) {
-      return { lat, lon, time: new Date(timestamp * 1000) };
-    }
-  }
+function lzwDecode(compressed) {
+  const dictionary = {};
+  const data = compressed.split("");
+  if (data.length === 0) return "";
+  let current = data[0];
+  let previous = current;
+  const output = [current];
+  let code = 256;
 
-  if (typeof data !== "string") return null;
+  for (let index = 1; index < data.length; index += 1) {
+    const currentCode = data[index].charCodeAt(0);
+    const phrase = currentCode < 256
+      ? data[index]
+      : (dictionary[currentCode] ?? previous + current);
+    output.push(phrase);
+    current = phrase.charAt(0);
+    dictionary[code] = previous + current;
+    code += 1;
+    previous = phrase;
+  }
+  return output.join("");
+}
+
+function decodeStrike(data) {
+  const raw = Buffer.isBuffer(data) ? data.toString("utf8") : data;
+  if (typeof raw !== "string") return null;
   try {
-    const parsed = JSON.parse(data);
-    if (Array.isArray(parsed) && parsed.length >= 3
-      && typeof parsed[0] === "number" && typeof parsed[1] === "number" && typeof parsed[2] === "number") {
-      return { lat: parsed[1], lon: parsed[2], time: new Date(parsed[0] * 1000) };
+    let parsed;
+    try {
+      parsed = JSON.parse(raw);
+    } catch {
+      parsed = JSON.parse(lzwDecode(raw));
     }
     if (parsed && typeof parsed.lat === "number" && typeof parsed.lon === "number") {
       const rawTime = typeof parsed.time === "number" ? parsed.time : parsed.timestamp;
       const time = typeof rawTime === "number"
-        ? new Date(rawTime < 1_000_000_000_000 ? rawTime * 1000 : rawTime)
+        ? new Date(rawTime < 1_000_000_000_000
+          ? rawTime * 1_000
+          : rawTime < 1_000_000_000_000_000 ? rawTime : rawTime / 1_000)
         : new Date();
       return { lat: parsed.lat, lon: parsed.lon, time };
     }
@@ -111,7 +129,7 @@ function connect() {
 
   socket.once("open", async () => {
     console.log(`[blitzortung] connected ${url}`);
-    socket.send(JSON.stringify({ a: 1 }));
+    socket.send(JSON.stringify({ a: 111 }));
     await touchHeartbeat().catch((error) => console.error("[db] heartbeat", error.message));
     heartbeatTimer = setInterval(() => touchHeartbeat().catch((error) => console.error("[db] heartbeat", error.message)), 30_000);
   });
