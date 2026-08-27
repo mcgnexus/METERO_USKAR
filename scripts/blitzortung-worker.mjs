@@ -140,9 +140,9 @@ function connect() {
   });
 
   socket.once("error", (error) => console.error(`[blitzortung] ${url}`, error.message));
-  socket.once("close", () => {
+  socket.once("close", (code, reason) => {
     clearInterval(heartbeatTimer);
-    console.log(`[blitzortung] disconnected ${url}`);
+    console.log(`[blitzortung] disconnected ${url} code=${code} reason=${reason.toString() || "none"}`);
     scheduleReconnect();
   });
 }
