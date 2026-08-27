@@ -236,6 +236,12 @@ CREATE TABLE IF NOT EXISTS business_events (
 );
 CREATE INDEX IF NOT EXISTS business_events_created_at_idx ON business_events (created_at DESC);
 CREATE INDEX IF NOT EXISTS business_events_event_name_idx ON business_events (event_name);
+CREATE TABLE IF NOT EXISTS event_rate_limits (
+  client_key TEXT PRIMARY KEY,
+  window_started_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  event_count INT NOT NULL DEFAULT 0,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
 CREATE TABLE IF NOT EXISTS lightning_strikes (
   id BIGSERIAL PRIMARY KEY,
   strike_time TIMESTAMPTZ NOT NULL,
@@ -329,6 +335,36 @@ export async function consumeLeadAttempt(
       [clientKey, windowMs],
     );
     return Number(result.rows[0]?.submission_count ?? 0) <= maxAttempts;
+  } catch {
+    return false;
+  }
+}
+
+export async function consumeEventAttempt(
+  clientKey: string,
+  maxAttempts = 60,
+  windowMs = 60_000,
+): Promise<boolean> {
+  try {
+    const result = await getPool().query(
+      `INSERT INTO event_rate_limits (client_key, window_started_at, event_count, updated_at)
+       VALUES ($1, NOW(), 1, NOW())
+       ON CONFLICT (client_key) DO UPDATE SET
+         window_started_at = CASE
+           WHEN event_rate_limits.window_started_at <= NOW() - ($2 * INTERVAL '1 millisecond')
+           THEN NOW()
+           ELSE event_rate_limits.window_started_at
+         END,
+         event_count = CASE
+           WHEN event_rate_limits.window_started_at <= NOW() - ($2 * INTERVAL '1 millisecond')
+           THEN 1
+           ELSE event_rate_limits.event_count + 1
+         END,
+         updated_at = NOW()
+       RETURNING event_count`,
+      [clientKey, windowMs],
+    );
+    return Number(result.rows[0]?.event_count ?? 0) <= maxAttempts;
   } catch {
     return false;
   }

@@ -37,6 +37,11 @@ interface AgriculturalLead {
   area: string;
   interests: string[];
   commercial_consent: boolean;
+  source: string;
+  landing_page: string;
+  utm_source: string | null;
+  utm_medium: string | null;
+  utm_campaign: string | null;
   created_at: string;
 }
 
@@ -207,6 +212,7 @@ export default function AdminConsole() {
                   <th className="px-3 py-2 text-left">Persona</th>
                   <th className="px-3 py-2 text-left">Finca</th>
                   <th className="px-3 py-2 text-left">Intereses</th>
+                  <th className="px-3 py-2 text-left">Origen</th>
                   <th className="px-3 py-2 text-left">Fecha</th>
                 </tr>
               </thead>
@@ -220,6 +226,10 @@ export default function AdminConsole() {
                     </td>
                     <td className="px-3 py-2 text-xs text-slate-300">{lead.municipality}<br />{lead.crop} · {lead.area}</td>
                     <td className="px-3 py-2 text-xs text-slate-300">{lead.interests.join(', ')}</td>
+                    <td className="px-3 py-2 text-xs text-slate-300">
+                      {lead.source}<br />{lead.landing_page}
+                      {lead.utm_campaign && <><br />UTM: {lead.utm_campaign}</>}
+                    </td>
                     <td className="whitespace-nowrap px-3 py-2 text-xs text-slate-400">{new Date(lead.created_at).toLocaleString('es-ES')}</td>
                   </tr>
                 ))}

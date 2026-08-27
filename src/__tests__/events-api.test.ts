@@ -1,12 +1,14 @@
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 
-const { mockInitializeDatabase, mockRecordBusinessEvent } = vi.hoisted(() => ({
+const { mockInitializeDatabase, mockConsumeEventAttempt, mockRecordBusinessEvent } = vi.hoisted(() => ({
   mockInitializeDatabase: vi.fn(),
+  mockConsumeEventAttempt: vi.fn(),
   mockRecordBusinessEvent: vi.fn(),
 }));
 
 vi.mock('@/lib/weatherStore', () => ({
   initializeDatabase: mockInitializeDatabase,
+  consumeEventAttempt: mockConsumeEventAttempt,
   recordBusinessEvent: mockRecordBusinessEvent,
 }));
 
@@ -24,6 +26,7 @@ describe('POST /api/events', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockInitializeDatabase.mockResolvedValue(undefined);
+    mockConsumeEventAttempt.mockResolvedValue(true);
     mockRecordBusinessEvent.mockResolvedValue(true);
   });
 

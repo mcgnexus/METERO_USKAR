@@ -51,17 +51,7 @@ function renderFieldTab() {
   return container;
 }
 
-function selectedLabel(): HTMLElement {
-  const heading = [...document.querySelectorAll('h2')].find((el) =>
-    el.textContent?.includes(' / ') || ['Olivo', 'Almendro', 'Pistacho', 'Tomate', 'Vid', 'Huerto'].some((crop) =>
-      el.textContent?.includes(crop),
-    ),
-  );
-  expect(heading).not.toBeNull();
-  return heading as HTMLElement;
-}
-
-describe('FieldTab crop selectors', () => {
+describe('FieldTab profile selectors', () => {
   beforeEach(() => {
     document.body.innerHTML = '';
     window.localStorage.clear();
@@ -74,33 +64,23 @@ describe('FieldTab crop selectors', () => {
     root = null;
   });
 
-  it('permite seleccionar y deseleccionar cultivos con los botones', () => {
+  it('permite seleccionar el perfil de ganadería', () => {
     renderFieldTab();
 
-    expect(selectedLabel().textContent).toContain('Olivo / Almendro');
-
-    const crops = ['Pistacho', 'Tomate', 'Vid', 'Huerto'];
-    for (const crop of crops) {
-      const button = [...document.querySelectorAll('button')].find(
-        (el) => el.textContent?.trim() === crop,
-      ) as HTMLButtonElement | undefined;
-      expect(button).toBeTruthy();
-
-      act(() => {
-        button!.click();
-      });
-
-      expect(selectedLabel().textContent).toContain(crop);
-    }
-
-    const pistachoButton = [...document.querySelectorAll('button')].find(
-      (el) => el.textContent?.trim() === 'Pistacho',
+    const agricultureButton = [...document.querySelectorAll('button')].find(
+      (el) => el.textContent?.includes('Agricultura'),
+    ) as HTMLButtonElement | undefined;
+    const livestockButton = [...document.querySelectorAll('button')].find(
+      (el) => el.textContent?.includes('Ganadería'),
     ) as HTMLButtonElement | undefined;
 
-    act(() => {
-      pistachoButton!.click();
-    });
+    expect(agricultureButton).toBeTruthy();
+    expect(livestockButton).toBeTruthy();
+    expect(agricultureButton?.className).toContain('bg-sky-700');
 
-    expect(selectedLabel().textContent).not.toContain('Pistacho');
+    act(() => livestockButton?.click());
+
+    expect(livestockButton?.className).toContain('bg-sky-700');
+    expect(agricultureButton?.className).toContain('bg-slate-100');
   });
 });

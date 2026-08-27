@@ -1,6 +1,6 @@
 import crypto from 'node:crypto';
 import { NextRequest, NextResponse } from 'next/server';
-import { initializeDatabase, recordBusinessEvent } from '@/lib/weatherStore';
+import { consumeEventAttempt, initializeDatabase, recordBusinessEvent } from '@/lib/weatherStore';
 
 function text(value: unknown, maxLength: number): string {
   return typeof value === 'string' ? value.trim().slice(0, maxLength) : '';
@@ -29,6 +29,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       : undefined;
 
     await initializeDatabase();
+    if (!(await consumeEventAttempt(clientKey(request)))) {
+      return NextResponse.json({ error: 'Demasiados eventos. Inténtalo más tarde.' }, { status: 429 });
+    }
     const saved = await recordBusinessEvent({
       event,
       page: page || undefined,

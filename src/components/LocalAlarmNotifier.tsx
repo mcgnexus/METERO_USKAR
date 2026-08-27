@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import type { PulseAlarm } from '@/components/llano/alarms-logic';
 
 const LS_KEY = 'meteo_shown_notifications';
@@ -30,9 +30,6 @@ function markNotificationShown(key: string) {
 }
 
 export function LocalAlarmNotifier({ alarms }: { alarms: PulseAlarm[] }) {
-  const alarmsRef = useRef(alarms);
-  alarmsRef.current = alarms;
-
   useEffect(() => {
     if (typeof window === 'undefined') return;
     if (!('Notification' in window) || Notification.permission !== 'granted') return;
@@ -40,7 +37,7 @@ export function LocalAlarmNotifier({ alarms }: { alarms: PulseAlarm[] }) {
 
     const shown = getShownNotifications();
 
-    for (const alarm of alarmsRef.current) {
+    for (const alarm of alarms) {
       if (alarm.level !== 'critico') continue;
 
       const key = `${alarm.level}:${alarm.title}`;
