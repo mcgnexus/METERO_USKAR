@@ -1,6 +1,7 @@
 import WebSocket from "ws";
 import { haversineKm, bearing, HUESCAR_COORDS } from "@/lib/geo";
 import { cacheGet, cacheSet } from "@/lib/inMemoryCache";
+import { getPersistedLightningData, initializeDatabase } from "@/lib/weatherStore";
 import type { LightningData, LightningStrike } from "@/types/weather";
 
 const CACHE_KEY = "lightning_data";
@@ -248,6 +249,32 @@ export async function fetchLightningData(
   const cacheKey = `${CACHE_KEY}:${lat.toFixed(4)}:${lon.toFixed(4)}:${effectiveRadius}`;
   const cached = cacheGet<LightningData>(cacheKey);
   if (cached) return cached;
+
+  // The VPS collector keeps the WebSocket alive and persists strikes for this API.
+  await initializeDatabase();
+  const persisted = await getPersistedLightningData(lat, lon, effectiveRadius);
+  const collectorAge = persisted.collectorLastSeenAt
+    ? Date.now() - new Date(persisted.collectorLastSeenAt).getTime()
+    : Infinity;
+  if (collectorAge < 3 * 60_000) {
+    const nearestStrikeKm = persisted.strikes.length > 0
+      ? Math.min(...persisted.strikes.map((strike) => strike.distanceKm))
+      : null;
+    const result: LightningData = {
+      active: persisted.strikes.length > 0,
+      level: nearestStrikeKm === null ? "info" : getLevel(nearestStrikeKm),
+      nearestStrikeKm,
+      strikeCount: persisted.strikes.length,
+      strikes: persisted.strikes,
+      lastCheckedAt: new Date().toISOString(),
+      source: "blitzortung",
+      message: persisted.strikes.length > 0
+        ? `${persisted.strikes.length} rayos detectados, el más cercano a ${nearestStrikeKm} km`
+        : "No se detectaron rayos en el área",
+    };
+    cacheSet(cacheKey, result, CACHE_TTL_MS);
+    return result;
+  }
 
   const blitzortungStrikes = await fetchBlitzortung(lat, lon, effectiveRadius);
 

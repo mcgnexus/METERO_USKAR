@@ -1,4 +1,5 @@
 import { Pool } from '@neondatabase/serverless';
+import type { LightningStrike } from '@/types/weather';
 
 type QueryParam = string | number | boolean | null;
 type QueryRow = Record<string, unknown>;
@@ -235,6 +236,22 @@ CREATE TABLE IF NOT EXISTS business_events (
 );
 CREATE INDEX IF NOT EXISTS business_events_created_at_idx ON business_events (created_at DESC);
 CREATE INDEX IF NOT EXISTS business_events_event_name_idx ON business_events (event_name);
+CREATE TABLE IF NOT EXISTS lightning_strikes (
+  id BIGSERIAL PRIMARY KEY,
+  strike_time TIMESTAMPTZ NOT NULL,
+  latitude DOUBLE PRECISION NOT NULL,
+  longitude DOUBLE PRECISION NOT NULL,
+  distance_km DOUBLE PRECISION NOT NULL,
+  bearing DOUBLE PRECISION,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE (strike_time, latitude, longitude)
+);
+CREATE INDEX IF NOT EXISTS lightning_strikes_time_idx ON lightning_strikes (strike_time DESC);
+CREATE TABLE IF NOT EXISTS lightning_collector_status (
+  collector_name TEXT PRIMARY KEY,
+  last_seen_at TIMESTAMPTZ NOT NULL,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
 ALTER TABLE agricultural_leads ADD COLUMN IF NOT EXISTS source TEXT DEFAULT 'direct';
 ALTER TABLE agricultural_leads ADD COLUMN IF NOT EXISTS landing_page TEXT DEFAULT '/';
 ALTER TABLE agricultural_leads ADD COLUMN IF NOT EXISTS utm_source TEXT;
@@ -444,6 +461,80 @@ export async function recordBusinessEvent(input: {
   } catch {
     return false;
   }
+}
+
+export async function saveLightningStrike(input: {
+  strikeTime: string;
+  latitude: number;
+  longitude: number;
+  distanceKm: number;
+  bearing: number;
+}): Promise<boolean> {
+  try {
+    await getPool().query(
+      `INSERT INTO lightning_strikes
+        (strike_time, latitude, longitude, distance_km, bearing)
+       VALUES ($1, $2, $3, $4, $5)
+       ON CONFLICT (strike_time, latitude, longitude) DO NOTHING`,
+      [input.strikeTime, input.latitude, input.longitude, input.distanceKm, input.bearing],
+    );
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export async function touchLightningCollector(collectorName = 'blitzortung'): Promise<boolean> {
+  try {
+    await getPool().query(
+      `INSERT INTO lightning_collector_status (collector_name, last_seen_at, updated_at)
+       VALUES ($1, NOW(), NOW())
+       ON CONFLICT (collector_name) DO UPDATE SET last_seen_at = NOW(), updated_at = NOW()`,
+      [collectorName],
+    );
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export async function getPersistedLightningData(
+  lat: number,
+  lon: number,
+  radiusKm: number,
+  recentMinutes = 60,
+): Promise<{ strikes: LightningStrike[]; collectorLastSeenAt: string | null }> {
+  const rows = await safeQuery<{
+    strike_time: string;
+    latitude: number;
+    longitude: number;
+    distance_km: number;
+    bearing: number | null;
+  }>(
+    `SELECT strike_time, latitude, longitude, distance_km, bearing
+       FROM lightning_strikes
+      WHERE strike_time >= NOW() - ($1 * INTERVAL '1 minute')
+        AND distance_km <= $2
+      ORDER BY strike_time DESC
+      LIMIT 500`,
+    [recentMinutes, radiusKm],
+  );
+  const collector = await safeQuery<{ last_seen_at: string }>(
+    `SELECT last_seen_at
+       FROM lightning_collector_status
+      WHERE collector_name = 'blitzortung'
+      LIMIT 1`,
+  );
+  return {
+    strikes: rows.map((row) => ({
+      time: new Date(row.strike_time).toISOString(),
+      lat: Number(row.latitude),
+      lon: Number(row.longitude),
+      distanceKm: Number(row.distance_km),
+      bearing: String(row.bearing ?? 0),
+    })),
+    collectorLastSeenAt: collector[0]?.last_seen_at ? new Date(collector[0].last_seen_at).toISOString() : null,
+  };
 }
 
 export async function saveConsensusSnapshot(
