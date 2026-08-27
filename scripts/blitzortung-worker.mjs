@@ -115,6 +115,7 @@ async function pruneStrikes() {
 let serverIndex = 0;
 let socket;
 let heartbeatTimer;
+let pingTimer;
 let reconnectTimer;
 
 function scheduleReconnect() {
@@ -125,11 +126,19 @@ function scheduleReconnect() {
 function connect() {
   const url = SERVERS[serverIndex++ % SERVERS.length];
   console.log(`[blitzortung] connecting ${url}`);
-  socket = new WebSocket(url);
+  socket = new WebSocket(url, {
+    headers: {
+      Origin: "https://maps.blitzortung.org",
+      "User-Agent": "MeteoHuescar-BlitzortungCollector/1.0",
+    },
+  });
 
   socket.once("open", async () => {
     console.log(`[blitzortung] connected ${url}`);
     socket.send(JSON.stringify({ a: 111 }));
+    pingTimer = setInterval(() => {
+      if (socket?.readyState === WebSocket.OPEN) socket.ping();
+    }, 20_000);
     await touchHeartbeat().catch((error) => console.error("[db] heartbeat", error.message));
     heartbeatTimer = setInterval(() => touchHeartbeat().catch((error) => console.error("[db] heartbeat", error.message)), 30_000);
   });
@@ -142,6 +151,7 @@ function connect() {
   socket.once("error", (error) => console.error(`[blitzortung] ${url}`, error.message));
   socket.once("close", (code, reason) => {
     clearInterval(heartbeatTimer);
+    clearInterval(pingTimer);
     console.log(`[blitzortung] disconnected ${url} code=${code} reason=${reason.toString() || "none"}`);
     scheduleReconnect();
   });
@@ -158,6 +168,7 @@ connect();
 
 async function shutdown() {
   clearInterval(heartbeatTimer);
+  clearInterval(pingTimer);
   clearTimeout(reconnectTimer);
   socket?.close();
   await pool.end();
