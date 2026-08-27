@@ -11,7 +11,6 @@ import { OfflineBanner } from '@/components/OfflineBanner';
 import { NotificationPermission } from '@/components/NotificationPermission';
 import { AgriculturalLeadForm } from '@/components/AgriculturalLeadForm';
 import { LocalAlarmNotifier } from '@/components/LocalAlarmNotifier';
-import { LightningPanel } from '@/components/llano/lightning-panel';
 import PwaRegister from '@/components/PwaRegister';
 import type { ClimateCalibrationPayload } from '@/types/climate';
 import type { WeatherPayload } from '@/types/weather';
@@ -101,12 +100,6 @@ export default function LlanoPulseDashboard({
               isStale
               cachedAt={climate.cachedAt ?? weather.cachedAt}
             />
-          </div>
-        )}
-
-        {wd?.lightning && activeTab === 'hoy' && (
-          <div className="mb-3">
-            <LightningPanel lightning={wd.lightning} />
           </div>
         )}
 

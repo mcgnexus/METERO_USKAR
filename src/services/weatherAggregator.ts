@@ -13,7 +13,6 @@ import type {
   DailyWeather,
   WeatherPayload,
   WeatherAlert,
-  LightningData,
 } from "@/types/weather";
 
 const OBSERVATION_TIMEOUT_MS = parseInt(process.env.OBSERVATION_TIMEOUT_MS || "5000", 10);
@@ -158,17 +157,6 @@ export async function aggregateWeather(): Promise<WeatherPayload> {
   const livestock = computeLivestockData(tempC, humPct);
   const alerts = generateAlerts(tempC, gustsKmh, humPct, et0);
 
-  const lightning: LightningData = {
-    active: false,
-    level: "info",
-    nearestStrikeKm: null,
-    strikeCount: 0,
-    strikes: [],
-    lastCheckedAt: new Date().toISOString(),
-    source: "unavailable",
-    message: "Lightning data not available",
-  };
-
   const sourceLevel: "FUSED" | "OPEN_METEO" | "AEMET" | "LOCAL_STATIONS" | "ERROR" =
     layerResult.sources.length >= 2
       ? "FUSED"
@@ -193,7 +181,6 @@ export async function aggregateWeather(): Promise<WeatherPayload> {
     comparisonHourly: layerResult.comparisonHourly,
     daily: layerResult.daily,
     alerts,
-    lightning,
     agricultural,
     livestock,
     orographic: layerResult.orographic,

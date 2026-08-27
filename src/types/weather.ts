@@ -58,7 +58,6 @@ export type WeatherPayload = {
   comparisonHourly: ComparisonHourlyWeather;
   daily: DailyWeather;
   alerts: WeatherAlert[];
-  lightning?: LightningData;
   agricultural?: AgriculturalData;
   livestock?: LivestockData;
   radar?: RadarData;
@@ -111,25 +110,6 @@ export type DailyWeather = {
   windGustKmh: number[];
   et0Mm: number[];
   weatherCode: number[];
-};
-
-export type LightningStrike = {
-  time: string;
-  lat: number;
-  lon: number;
-  distanceKm: number;
-  bearing: string;
-};
-
-export type LightningData = {
-  active: boolean;
-  level: "info" | "precaucion" | "alerta" | "peligro";
-  nearestStrikeKm: number | null;
-  strikeCount: number;
-  strikes: LightningStrike[];
-  lastCheckedAt: string;
-  source: "blitzortung" | "openmeteo_fallback" | "unavailable";
-  message: string;
 };
 
 export type AgriculturalData = {
@@ -272,9 +252,6 @@ export type NowcastData = {
   minutesToEndRain: number | null;
   trajectory: "increasing" | "decreasing" | "stable" | "none";
   rainApproachingFrom: string | null;
-  stormDetected: boolean;
-  stormDistanceKm: number | null;
-  stormBearing: string | null;
   level: "ninguno" | "aviso" | "alerta" | "peligro";
   message: string;
   lastUpdated: string;

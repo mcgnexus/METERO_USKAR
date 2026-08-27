@@ -1,5 +1,4 @@
 import { cacheGet, cacheSet } from "@/lib/inMemoryCache";
-import type { LightningData } from "@/types/weather";
 
 export interface NowcastInterval {
   time: string;
@@ -14,9 +13,6 @@ export interface NowcastData {
   minutesToEndRain: number | null;
   trajectory: "increasing" | "decreasing" | "stable" | "none";
   rainApproachingFrom: string | null;
-  stormDetected: boolean;
-  stormDistanceKm: number | null;
-  stormBearing: string | null;
   level: "ninguno" | "aviso" | "alerta" | "peligro";
   message: string;
   lastUpdated: string;
@@ -25,8 +21,7 @@ export interface NowcastData {
 const CACHE_KEY = "nowcast_precip";
 const CACHE_TTL_MS = 8 * 60 * 1000;
 
-function getLevel(maxIntensity: number, storm: boolean): NowcastData["level"] {
-  if (storm && maxIntensity > 2.0) return "peligro";
+function getLevel(maxIntensity: number): NowcastData["level"] {
   if (maxIntensity > 4.0) return "peligro";
   if (maxIntensity > 1.5) return "alerta";
   if (maxIntensity > 0.1) return "aviso";
@@ -63,7 +58,6 @@ export async function fetchNowcast(
   lat: number,
   lon: number,
   windDirDeg: number | undefined,
-  lightning: LightningData | null
 ): Promise<NowcastData> {
   const cached = cacheGet<NowcastData>(CACHE_KEY);
   if (cached) return cached;
@@ -73,9 +67,6 @@ export async function fetchNowcast(
   let maxIntensity = 0;
   let minutesToRain: number | null = null;
   let minutesToEndRain: number | null = null;
-  let stormDetected = false;
-  let stormDistanceKm: number | null = null;
-  let stormBearing: string | null = null;
   let fetchSucceeded = false;
 
   try {
@@ -120,41 +111,22 @@ export async function fetchNowcast(
   } catch {
   }
 
-  if (lightning && lightning.active && lightning.nearestStrikeKm !== null && lightning.strikes.length > 0) {
-    if (lightning.nearestStrikeKm < 30) {
-      stormDetected = true;
-      stormDistanceKm = lightning.nearestStrikeKm;
-      const nearest = lightning.strikes.reduce((min, s) =>
-        s.distanceKm < min.distanceKm ? s : min
-      );
-      stormBearing = nearest.bearing;
-    }
-  }
-
   const trajectory = getTrajectory(intervals);
   const rainApproachingFrom = totalPrecip > 0.1
     ? inferApproachDirection(lat, lon, windDirDeg)
     : null;
 
-  const level = getLevel(maxIntensity, stormDetected);
+  const level = getLevel(maxIntensity);
 
   let message: string;
   if (level === "peligro") {
-    if (stormDetected) {
-      message = `Tormenta con rayos a ${stormDistanceKm} km (${stormBearing}). Lluvia intensa estimada en ${minutesToRain ?? "?"} min.`;
-    } else {
-      message = `Lluvia intensa estimada en ${minutesToRain} min (${maxIntensity.toFixed(1)} mm/15min).`;
-    }
+    message = `Lluvia intensa estimada en ${minutesToRain} min (${maxIntensity.toFixed(1)} mm/15min).`;
   } else if (level === "alerta") {
-    message = stormDetected
-      ? `Tormenta próxima (${stormDistanceKm} km). Precipitación moderada en ${minutesToRain ?? "?"} min.`
-      : `Precipitaciones moderadas en ${minutesToRain} min.`;
+    message = `Precipitaciones moderadas en ${minutesToRain} min.`;
   } else if (level === "aviso") {
     message = `Posibilidad de lluvia débil en ${minutesToRain} min.`;
   } else {
-    message = stormDetected
-      ? `Rayos detectados a ${stormDistanceKm} km (${stormBearing}), sin precipitación inminente.`
-      : "Sin precipitación esperada en las próximas 2 horas.";
+    message = "Sin precipitación esperada en las próximas 2 horas.";
   }
 
   const result: NowcastData = {
@@ -165,9 +137,6 @@ export async function fetchNowcast(
     minutesToEndRain,
     trajectory,
     rainApproachingFrom,
-    stormDetected,
-    stormDistanceKm,
-    stormBearing,
     level,
     message,
     lastUpdated: new Date().toISOString(),

@@ -2,7 +2,6 @@ import { HUESCAR_COORDS } from "@/lib/geo";
 import { cacheGet, cacheSet } from "@/lib/inMemoryCache";
 import { getCachedOrRefresh } from "@/lib/persistentCache";
 import type { WeatherAlert, WeatherPayload } from "@/types/weather";
-import { fetchLightningData } from "@/services/lightningService";
 import { fetchNowcast } from "@/services/nowcastService";
 import { fetchRadarPrecipitation } from "@/services/radarService";
 import { fetchAEMETWarnings } from "@/services/aemetWarningsService";
@@ -29,7 +28,6 @@ export async function getCurrentWeatherPayload(): Promise<WeatherPayload> {
     ttlMs: CURRENT_WEATHER_CACHE_TTL_MS,
     staleMs: CURRENT_WEATHER_STALE_MS,
     load: async () => {
-      const lightningPromise = fetchLightningData(HUESCAR_COORDS.lat, HUESCAR_COORDS.lon, 30).catch(() => null);
       const aemetAlertsPromise = fetchAEMETWarnings().catch(() => [] as WeatherAlert[]);
 
       const weather = await aggregateWeather();
@@ -39,21 +37,18 @@ export async function getCurrentWeatherPayload(): Promise<WeatherPayload> {
         );
       }
 
-      const lightning = await lightningPromise;
       const [radar, nowcast, aemetAlerts] = await Promise.all([
         fetchRadarPrecipitation(HUESCAR_COORDS.lat, HUESCAR_COORDS.lon).catch(() => null),
         fetchNowcast(
           HUESCAR_COORDS.lat,
           HUESCAR_COORDS.lon,
           weather.current.windDirectionDeg ?? undefined,
-          lightning
         ).catch(() => null),
         aemetAlertsPromise,
       ]);
 
       const payload: WeatherPayload = {
         ...weather,
-        lightning: lightning ?? undefined,
         radar: radar ?? undefined,
         nowcast: nowcast ?? undefined,
         alerts: [...weather.alerts, ...aemetAlerts],

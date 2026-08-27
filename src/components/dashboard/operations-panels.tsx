@@ -2,34 +2,7 @@
 
 import { OverviewMetric } from '@/components/dashboard/atoms';
 import { frostRiskLabel } from '@/lib/display';
-import type { AgriculturalData, LightningData, LivestockData } from '@/types/weather';
-
-function LightningPanel({ lightning }: { lightning: LightningData }) {
-  const levelColors: Record<string, string> = {
-    info: 'text-emerald-700 bg-emerald-50 border-emerald-200',
-    precaucion: 'text-yellow-700 bg-yellow-50 border-yellow-200',
-    alerta: 'text-orange-700 bg-orange-50 border-orange-200',
-    peligro: 'text-red-700 bg-red-50 border-red-200',
-  };
-  return (
-    <div className={`rounded-[22px] border p-4 ${levelColors[lightning.level] ?? 'bg-slate-50'}`}>
-      <h3 className="text-base font-bold">Actividad electrica</h3>
-      <p className="mt-2 text-sm">{lightning.message}</p>
-      <div className="mt-4 grid gap-3 sm:grid-cols-2">
-        <div className="rounded-2xl bg-white/70 p-3">
-          <p className="text-xs uppercase tracking-[0.18em]">Rayos detectados</p>
-          <p className="mt-1 text-xl font-bold">{lightning.strikeCount}</p>
-        </div>
-        {lightning.nearestStrikeKm !== null && (
-          <div className="rounded-2xl bg-white/70 p-3">
-            <p className="text-xs uppercase tracking-[0.18em]">Rayo mas cercano</p>
-            <p className="mt-1 text-xl font-bold">{lightning.nearestStrikeKm.toFixed(1)} km</p>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
+import type { AgriculturalData, LivestockData } from '@/types/weather';
 
 function AgriculturalSection({ agri }: { agri: AgriculturalData }) {
   const pestRiskColors = {
@@ -133,4 +106,4 @@ function LivestockSection({ livestock }: { livestock: LivestockData }) {
   );
 }
 
-export { LightningPanel, AgriculturalSection, LivestockSection };
+export { AgriculturalSection, LivestockSection };

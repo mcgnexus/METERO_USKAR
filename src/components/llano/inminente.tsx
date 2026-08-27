@@ -116,21 +116,19 @@ export function InminenteSection({ weather }: { weather: WeatherPayload | null }
   const nowcast = weather.nowcast;
   const radar = weather.radar;
   const aemetAlerts = weather.alerts ?? [];
-  const lightning = weather.lightning;
 
-  const hasNowcast = nowcast && (nowcast.level !== 'ninguno' || nowcast.stormDetected);
+  const hasNowcast = nowcast && nowcast.level !== 'ninguno';
   const hasRadar = radar && radar.level !== 'ninguno';
-  const hasLightning = lightning && lightning.active;
   const hasAemet = aemetAlerts.length > 0;
 
-  if (!hasNowcast && !hasRadar && !hasLightning && !hasAemet) {
+  if (!hasNowcast && !hasRadar && !hasAemet) {
     return (
       <section className="surface-card-strong rounded-[28px] p-5 sm:p-6">
         <div className="flex items-center justify-between">
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-700">Inminente</p>
             <h2 className="mt-1 text-2xl font-black text-slate-950">Sin avisos a corto plazo</h2>
-            <p className="mt-1 text-sm text-slate-600">No hay lluvia inminente, rayos ni avisos AEMET activos.</p>
+            <p className="mt-1 text-sm text-slate-600">No hay lluvia inminente ni avisos AEMET activos.</p>
           </div>
           <span className="text-3xl">✓</span>
         </div>
@@ -163,12 +161,6 @@ export function InminenteSection({ weather }: { weather: WeatherPayload | null }
                   <p className="text-xs uppercase tracking-[0.12em] opacity-70">Total 2h</p>
                   <p className="mt-1 text-xl font-black">{nowcast!.totalPrecipNext2h.toFixed(1)} mm</p>
                 </div>
-                {nowcast!.stormDetected && nowcast!.stormDistanceKm !== null && (
-                  <div className="rounded-2xl bg-white/60 p-3">
-                    <p className="text-xs uppercase tracking-[0.12em] opacity-70">Tormenta</p>
-                    <p className="mt-1 text-xl font-black">{nowcast!.stormDistanceKm.toFixed(0)} km</p>
-                  </div>
-                )}
               </div>
             </article>
           )}
@@ -192,32 +184,6 @@ export function InminenteSection({ weather }: { weather: WeatherPayload | null }
             </article>
           )}
         </div>
-      )}
-
-      {hasLightning && (
-        <article className={`rounded-[24px] border p-5 ${levelTone(lightning!.level)}`}>
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.18em]">Actividad eléctrica</p>
-              <h3 className="mt-1 text-xl font-black">{lightning!.message}</h3>
-            </div>
-            <span className={`rounded-full px-2.5 py-1 text-[11px] font-bold uppercase ${levelBadgeTone(lightning!.level)}`}>
-              {lightning!.level}
-            </span>
-          </div>
-          <div className="mt-3 grid gap-3 sm:grid-cols-2">
-            <div className="rounded-2xl bg-white/60 p-3 text-sm">
-              <p className="text-xs uppercase tracking-[0.12em] opacity-70">Rayos detectados</p>
-              <p className="mt-1 text-xl font-black">{lightning!.strikeCount}</p>
-            </div>
-            {lightning!.nearestStrikeKm !== null && (
-              <div className="rounded-2xl bg-white/60 p-3 text-sm">
-                <p className="text-xs uppercase tracking-[0.12em] opacity-70">Rayo más cercano</p>
-                <p className="mt-1 text-xl font-black">{lightning!.nearestStrikeKm.toFixed(1)} km</p>
-              </div>
-            )}
-          </div>
-        </article>
       )}
 
       {hasAemet && (

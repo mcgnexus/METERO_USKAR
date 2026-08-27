@@ -85,18 +85,6 @@ export default function NowcastPanel({ nowcast }: Props) {
         </div>
       </div>
 
-      {nowcast.stormDetected && (
-        <div className="flex items-center gap-2 rounded-lg bg-red-100 border border-red-300 px-3 py-2">
-          <span className="text-lg">⚡</span>
-          <div className="text-xs">
-            <span className="font-bold text-red-700">Tormenta detectada</span>
-            {nowcast.stormDistanceKm !== null && (
-              <span className="text-red-600"> · {nowcast.stormDistanceKm} km · {nowcast.stormBearing}</span>
-            )}
-          </div>
-        </div>
-      )}
-
       {nowcast.rainApproachingFrom && (
         <p className="text-[11px] text-slate-500">
           Precipitación aproximándose desde: <span className="font-medium">{nowcast.rainApproachingFrom}</span>

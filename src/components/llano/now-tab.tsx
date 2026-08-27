@@ -186,7 +186,7 @@ export function NowTab({ climate, weather, alarms }: {
                 <Item icon="☔" label={r.label} tone={r.tone} />
                 {hr.tone !== 'success' && <Item icon="🔥" label={hr.label} tone={hr.tone} />}
                 {nowcast && nowcast.level !== 'ninguno' && (
-                  <Item icon="⛈️" label={nowcast.stormDetected ? 'Tormenta detectada' : 'Lluvia inminente'} tone={nowcast.level === 'peligro' ? 'danger' : 'warning'} />
+                  <Item icon="🌧️" label="Lluvia inminente" tone={nowcast.level === 'peligro' ? 'danger' : 'warning'} />
                 )}
               </div>
             </section>
@@ -402,9 +402,7 @@ function buildActionItems({
   if (nowcast && nowcast.level !== 'ninguno') {
     items.push({
       label: 'Evita',
-      text: nowcast.stormDetected
-        ? 'Trabajos al aire libre: hay tormenta detectada.'
-        : 'Labores sensibles: hay lluvia inminente.',
+      text: 'Labores sensibles: hay lluvia inminente.',
       tone: nowcast.level === 'peligro' ? 'danger' : 'warning',
     });
   }

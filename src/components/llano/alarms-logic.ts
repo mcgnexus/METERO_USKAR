@@ -123,19 +123,6 @@ export function buildAlarms(
     });
   }
 
-  // 9) Rayos (lightning.active)
-  if (weather?.lightning?.active) {
-    const level: AlarmLevel = weather.lightning.level === 'peligro' ? 'critico'
-      : weather.lightning.level === 'alerta' ? 'precaucion' : 'aviso';
-    alarms.push({
-      level,
-      audience: 'Poblacion',
-      title: 'Actividad eléctrica detectada',
-      message: `${weather.lightning.strikeCount} rayos en el área${weather.lightning.nearestStrikeKm !== null ? ` (más cercano a ${weather.lightning.nearestStrikeKm.toFixed(0)} km)` : ''}. ${weather.lightning.message}`,
-      source: 'aemet',
-    });
-  }
-
   // 10) THI ganadero (umbrales para ovino Segureña: estrés ≥80, severo ≥85)
   if (humidity !== null) {
     const thi = computeThi(temp, humidity);

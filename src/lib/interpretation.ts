@@ -445,27 +445,6 @@ export function interpretETo(etoMm: number | null | undefined, period: 'hora' | 
   return { label: 'Sin dato', detail: '', action: '', tone: 'neutral' };
 }
 
-export function interpretLightning(active: boolean | null | undefined, count: number | null | undefined, nearestKm: number | null | undefined): Interpretation {
-  if (!active) {
-    return { label: 'Sin actividad electrica', detail: 'No se detectan rayos en el area.', action: 'Sin riesgo electrico. Actividades al aire libre seguras.', tone: 'success' };
-  }
-  const distText = nearestKm != null ? 'a ' + nearestKm.toFixed(1) + ' km' : 'en el area';
-  if (count != null && count > 10) {
-    return {
-      label: 'Tormenta activa',
-      detail: count + ' rayos detectados ' + distText + '. Actividad electrica intensa.',
-      action: 'Busca refugio inmediato. No permanezcas al aire libre.',
-      tone: 'danger',
-    };
-  }
-  return {
-    label: 'Rayos cercanos',
-    detail: count + ' rayos detectados ' + distText + '. Actividad electrica presente.',
-    action: 'Alejate de zonas abiertas, maquinaria metalica y cursos de agua.',
-    tone: 'warning',
-  };
-}
-
 export function interpretCloudCover(pct: number | null | undefined): Interpretation & { emoji: string } {
   if (pct === null || pct === undefined) {
     return { label: 'Sin dato', detail: '', action: '', tone: 'neutral', emoji: '?' };

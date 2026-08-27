@@ -5,7 +5,7 @@ import dynamic from 'next/dynamic';
 import { useWeatherData } from '@/hooks/useWeatherData';
 import { HeroPanel } from '@/components/dashboard/hero-panel';
 import { DailyCards, HourlyForecastDetails } from '@/components/dashboard/forecast-tables';
-import { AgriculturalSection, LightningPanel, LivestockSection } from '@/components/dashboard/operations-panels';
+import { AgriculturalSection, LivestockSection } from '@/components/dashboard/operations-panels';
 import { FrostPanel, ChillPanel, WaterBalancePanel } from '@/components/dashboard/agro-climatology-panels';
 import { ClimateNormalsPanel } from '@/components/dashboard/climate-normals-panel';
 import { RegionalPanel } from '@/components/dashboard/regional-panel';
@@ -50,7 +50,7 @@ export default function WeatherDashboard({ initialData = null }: { initialData?:
   if (error) return <ErrorState message={error.message} />;
   if (!data) return null;
 
-  const showNowcast = data.nowcast && (data.nowcast.level !== 'ninguno' || data.nowcast.stormDetected);
+  const showNowcast = data.nowcast && data.nowcast.level !== 'ninguno';
 
   const forecastPanel = (
     <div
@@ -89,7 +89,6 @@ export default function WeatherDashboard({ initialData = null }: { initialData?:
       {data.agricultural && <AgriculturalSection agri={data.agricultural} />}
       {data.livestock && <LivestockSection livestock={data.livestock} />}
       <RaifPanel weather={data} />
-      {data.lightning && data.lightning.active && <LightningPanel lightning={data.lightning} />}
     </div>
   );
 

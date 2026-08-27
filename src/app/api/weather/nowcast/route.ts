@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { fetchNowcast } from "@/services/nowcastService";
-import { fetchLightningData } from "@/services/lightningService";
 import { HUESCAR_COORDS } from "@/lib/geo";
 import { parseCoord } from "@/lib/coords";
 
@@ -14,8 +13,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     : undefined;
 
   try {
-    const lightning = await fetchLightningData(lat, lon).catch(() => null);
-    const nowcast = await fetchNowcast(lat, lon, windDirDeg, lightning);
+    const nowcast = await fetchNowcast(lat, lon, windDirDeg);
 
     return NextResponse.json(nowcast);
   } catch (e) {

@@ -7,7 +7,6 @@ import { NavBottom } from '@/components/NavBottom';
 import { NotificationPermission } from '@/components/NotificationPermission';
 import { AgriculturalLeadForm } from '@/components/AgriculturalLeadForm';
 import { LocalAlarmNotifier } from '@/components/LocalAlarmNotifier';
-import { LightningPanel } from '@/components/llano/lightning-panel';
 import { TodaySummaryCard } from '@/components/weather/TodaySummaryCard';
 import { HourlyForecastStrip } from '@/components/weather/HourlyForecastStrip';
 import { QuickDecisionGrid } from '@/components/weather/QuickDecisionGrid';
@@ -126,12 +125,6 @@ export function HoyPageClient({
             </a>
           </p>
         </div>
-
-        {wd?.lightning && (
-          <div className="mb-3">
-            <LightningPanel lightning={wd.lightning} />
-          </div>
-        )}
 
         <PwaRegister />
 
