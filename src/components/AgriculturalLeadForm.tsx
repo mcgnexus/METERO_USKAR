@@ -41,7 +41,14 @@ export function AgriculturalLeadForm() {
       website: String(form.get('website') ?? ''),
       source: 'meteo-huescar',
       landingPage: window.location.pathname,
-      ...captureUtms(),
+      ...(() => {
+        const utms = captureUtms();
+        return {
+          utmSource: utms.utm_source,
+          utmMedium: utms.utm_medium,
+          utmCampaign: utms.utm_campaign,
+        };
+      })(),
     };
 
     try {

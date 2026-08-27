@@ -19,43 +19,75 @@ const INTEREST_OPTIONS = [
 
 type Step = 'form' | 'segment' | 'whatsapp';
 
+type LeadDetails = {
+  name: string;
+  phone: string;
+  municipality: string;
+  crop: string;
+  area: string;
+  meteorologicalConsent: boolean;
+  commercialConsent: boolean;
+  website: string;
+};
+
 export function ContactoFunnel() {
   const [step, setStep] = useState<Step>('form');
   const [error, setError] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
   const [started, setStarted] = useState(false);
   const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
-  const [formName, setFormName] = useState('');
   const [formMunicipality, setFormMunicipality] = useState('');
+  const [leadDetails, setLeadDetails] = useState<LeadDetails | null>(null);
   const track = useTrackEvent();
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  function handleDetailsSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
-    setSending(true);
 
     const form = new FormData(event.currentTarget);
-    const interests = INTEREST_OPTIONS
-      .filter((opt) => form.getAll('interests').includes(opt.id))
-      .map((opt) => opt.label);
+    if (!event.currentTarget.checkValidity()) {
+      event.currentTarget.reportValidity();
+      return;
+    }
 
-    const payload = {
+    const details: LeadDetails = {
       name: String(form.get('name') ?? ''),
       phone: String(form.get('phone') ?? ''),
       municipality: String(form.get('municipality') ?? ''),
       crop: String(form.get('crop') ?? ''),
       area: String(form.get('area') ?? ''),
-      interests,
       meteorologicalConsent: form.get('meteorologicalConsent') === 'on',
       commercialConsent: form.get('commercialConsent') === 'on',
       website: String(form.get('website') ?? ''),
-      source: 'meteo-huescar-contacto',
-      landingPage: '/huescar/contacto',
-      ...captureUtms(),
     };
 
-    setFormName(payload.name);
-    setFormMunicipality(payload.municipality);
+    setLeadDetails(details);
+    setFormMunicipality(details.municipality);
+    setStep('segment');
+  }
+
+  async function submitLead() {
+    if (!leadDetails) return;
+    setError(null);
+
+    const interests = INTEREST_OPTIONS
+      .filter((opt) => selectedInterests.includes(opt.id))
+      .map((opt) => opt.label);
+    if (interests.length === 0) {
+      setError('Selecciona al menos un tipo de ayuda para continuar.');
+      return;
+    }
+    setSending(true);
+    const utms = captureUtms();
+    const payload = {
+      ...leadDetails,
+      interests,
+      source: 'meteo-huescar-contacto',
+      landingPage: '/huescar/contacto',
+      utmSource: utms.utm_source,
+      utmMedium: utms.utm_medium,
+      utmCampaign: utms.utm_campaign,
+    };
 
     try {
       const response = await fetch('/api/leads/agricultural', {
@@ -66,8 +98,7 @@ export function ContactoFunnel() {
       const result = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(result.error ?? 'No se pudo enviar la solicitud.');
       track('lead_form_submitted', { crop: payload.crop, municipality: payload.municipality, page: 'contacto' });
-      setStep('segment');
-      event.currentTarget.reset();
+      setStep('whatsapp');
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : 'No se pudo enviar la solicitud.');
     } finally {
@@ -118,7 +149,7 @@ export function ContactoFunnel() {
 
         {/* Step 1: Form */}
         {step === 'form' && (
-          <form onSubmit={handleSubmit} onChange={() => { if (!started) { setStarted(true); track('lead_form_opened', { page: 'contacto' }); } }} className="space-y-4" noValidate>
+          <form onSubmit={handleDetailsSubmit} onChange={() => { if (!started) { setStarted(true); track('lead_form_started', { page: 'contacto' }); } }} className="space-y-4" noValidate>
             <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm space-y-3">
               <p className="text-sm font-bold text-slate-900">Datos de tu finca</p>
               <div className="grid gap-3 sm:grid-cols-2">
@@ -199,14 +230,13 @@ export function ContactoFunnel() {
             </div>
             <button
               type="button"
-              onClick={() => {
-                track('whatsapp_clicked', { context: 'contacto-funnel', interests: selectedInterests });
-                setStep('whatsapp');
-              }}
-              className="w-full rounded-full bg-sky-700 px-4 py-3 text-sm font-bold text-white shadow-sm hover:bg-sky-800"
+              onClick={submitLead}
+              disabled={sending}
+              className="w-full rounded-full bg-sky-700 px-4 py-3 text-sm font-bold text-white shadow-sm hover:bg-sky-800 disabled:opacity-50"
             >
-              Continuar
+              {sending ? 'Enviando...' : 'Continuar'}
             </button>
+            {error && <p className="text-xs font-semibold text-rose-700">{error}</p>}
           </div>
         )}
 
