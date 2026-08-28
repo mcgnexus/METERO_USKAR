@@ -1,6 +1,6 @@
 import { getClimateCalibrationPayload } from "@/services/climateCalibrationPayloadService";
 import { getCurrentWeatherPayload } from "@/services/currentWeatherService";
-import { fireRiskLevel, formatDateLong, windDirLabel, weatherDesc, weatherIcon } from "@/lib/card-utils";
+import { fireRiskLevel, formatDateLong, windDirLabel, weatherDesc } from "@/lib/card-utils";
 import type { WeatherPayload } from "@/types/weather";
 import type { ClimateCalibrationPayload } from "@/types/climate";
 
@@ -94,8 +94,8 @@ function esc(s: string): string {
 function buildSvg(d: CardData): string {
   const W = 1080, H = 1080, PAD = 48;
   const CW = W - PAD * 2;
-  const F = "Segoe UI, sans-serif";
-  const E = "Segoe UI Emoji, Segoe UI, sans-serif";
+  // DejaVu Sans is available in Vercel's Linux runtime and covers Spanish accents.
+  const F = "DejaVu Sans, sans-serif";
 
   const parts: string[] = [];
   parts.push(`<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}">`);
@@ -106,7 +106,7 @@ function buildSvg(d: CardData): string {
   let y = PAD + 42;
 
   // Header
-  parts.push(`<text x="${PAD}" y="${y}" font-family="${E}" font-size="38" font-weight="800" fill="#f8fafc">${esc(weatherIcon(d.weatherCode))} Meteo Huescar</text>`);
+  parts.push(`<text x="${PAD}" y="${y}" font-family="${F}" font-size="38" font-weight="800" fill="#f8fafc">Meteo Huéscar</text>`);
   y += 36;
   parts.push(`<text x="${PAD}" y="${y}" font-family="${F}" font-size="26" fill="#94a3b8">${esc(d.dateLabel)}</text>`);
   y += 40;
@@ -121,7 +121,7 @@ function buildSvg(d: CardData): string {
   parts.push(`<text x="${PAD + 28}" y="${mY + 38}" font-family="${F}" font-size="52" font-weight="800" fill="#ef4444">${Math.round(d.tempMax)}</text>`);
   parts.push(`<text x="${PAD + 200}" y="${mY}" font-family="${F}" font-size="22" fill="#94a3b8">Min</text>`);
   parts.push(`<text x="${PAD + 200}" y="${mY + 38}" font-family="${F}" font-size="52" font-weight="800" fill="#3b82f6">${Math.round(d.tempMin)}</text>`);
-  parts.push(`<text x="${PAD + 370}" y="${mY}" font-family="${F}" font-size="22" fill="#94a3b8">Sensacion</text>`);
+  parts.push(`<text x="${PAD + 370}" y="${mY}" font-family="${F}" font-size="22" fill="#94a3b8">Sensación</text>`);
   parts.push(`<text x="${PAD + 370}" y="${mY + 38}" font-family="${F}" font-size="44" font-weight="700" fill="#f8fafc">${Math.round(d.feelsLike)}</text>`);
   parts.push(`<text x="${PAD + CW - 28}" y="${mY + 20}" font-family="${F}" font-size="28" fill="#f8fafc" text-anchor="end">${esc(weatherDesc(d.weatherCode))}</text>`);
   y += tH + 20;
@@ -146,7 +146,7 @@ function buildSvg(d: CardData): string {
   const advLines = d.advice.length;
   const advH = 50 + advLines * 38;
   parts.push(`<rect x="${PAD}" y="${y}" width="${CW}" height="${advH}" rx="20" fill="#1e293b" stroke="#334155" stroke-width="2"/>`);
-  parts.push(`<text x="${PAD + 24}" y="${y + 34}" font-family="${F}" font-size="22" font-weight="700" fill="#22c55e" letter-spacing="2">CONSEJOS DEL DIA</text>`);
+  parts.push(`<text x="${PAD + 24}" y="${y + 34}" font-family="${F}" font-size="22" font-weight="700" fill="#22c55e" letter-spacing="2">CONSEJOS DEL DÍA</text>`);
   for (let i = 0; i < d.advice.length; i++) {
     const ay = y + 70 + i * 38;
     parts.push(`<circle cx="${PAD + 36}" cy="${ay - 6}" r="8" fill="#22c55e"/>`);
@@ -171,7 +171,7 @@ function buildSvg(d: CardData): string {
   // Footer
   parts.push(`<line x1="${PAD}" y1="${H - 70}" x2="${W - PAD}" y2="${H - 70}" stroke="#334155" stroke-width="1"/>`);
   parts.push(`<text x="${PAD}" y="${H - 38}" font-family="${F}" font-size="22" font-weight="700" fill="#94a3b8">meteo.tecrural.es</text>`);
-  parts.push(`<text x="${W - PAD}" y="${H - 38}" font-family="${F}" font-size="18" fill="#475569" text-anchor="end">Datos hiperlocales para Huescar</text>`);
+  parts.push(`<text x="${W - PAD}" y="${H - 38}" font-family="${F}" font-size="18" fill="#475569" text-anchor="end">Datos hiperlocales para Huéscar</text>`);
 
   parts.push(`</svg>`);
   return parts.join("");

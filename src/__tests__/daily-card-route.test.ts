@@ -99,8 +99,10 @@ describe("GET /api/daily-card", () => {
     expect(sharpInput).toBeInstanceOf(Buffer);
     const svg = sharpInput.toString("utf-8");
     expect(svg).toContain("<svg");
-    expect(svg).toContain("Meteo Huescar");
+    expect(svg).toContain("Meteo Huéscar");
     expect(svg).toContain("meteo.tecrural.es");
+    expect(svg).toContain("Sensación");
+    expect(svg).toContain("DÍA");
   });
 
   it("includes temperature data in generated SVG", async () => {
