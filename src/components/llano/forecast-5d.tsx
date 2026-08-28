@@ -250,14 +250,12 @@ export function Forecast5d({ forecast, daily }: { forecast: ForecastPayload | nu
         })}
       </div>
 
-      <div className="mt-5 rounded-[24px] border border-slate-100 bg-white/65 p-3.5 sm:p-4">
-        <div className="mb-3 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">Ajustes del periodo</p>
-            <p className="text-sm font-bold text-slate-700">Correcciones usadas para afinar el pronóstico local</p>
-          </div>
-          <p className="text-xs font-bold text-slate-500">Toca cualquier métrica para ver el detalle</p>
-        </div>
+      <details className="mt-5 rounded-[24px] border border-slate-100 bg-white/65 p-3.5 sm:p-4">
+        <summary className="cursor-pointer list-none">
+          <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">Ajustes del periodo</p>
+          <p className="mt-1 text-sm font-bold text-slate-700">Ver correcciones del pronóstico local</p>
+        </summary>
+        <div className="mt-3">
         <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
         <ForecastClickable
           onOpen={setExpandedDetail}
@@ -328,7 +326,8 @@ export function Forecast5d({ forecast, daily }: { forecast: ForecastPayload | nu
           <ForecastMetricCard label="Sesgo viento" value={formatSigned(bias.wind, 1)} unit="km/h" caption="Corrección aplicada a viento" />
         </ForecastClickable>
         </div>
-      </div>
+        </div>
+      </details>
 
       {expandedDetail && <ForecastModal detail={expandedDetail} onClose={() => setExpandedDetail(null)} />}
     </section>

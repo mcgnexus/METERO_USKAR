@@ -119,15 +119,6 @@ export function HoyPageClient({
           <NotificationPermission />
         </div>
 
-        <div className="mb-3">
-          <AgriculturalLeadForm />
-          <p className="mt-2 text-center">
-            <a href="/huescar/contacto" className="text-[10px] font-bold uppercase tracking-wider text-sky-700 hover:text-sky-900">
-              ¿Necesitas ayuda personalizada? → Contacto
-            </a>
-          </p>
-        </div>
-
         <PwaRegister />
 
         <main className="space-y-5">
@@ -180,9 +171,18 @@ export function HoyPageClient({
             </section>
           )}
 
-          <section className="border border-slate-200 rounded-2xl bg-white p-4 shadow-sm">
-            <SectionTitle>📊 Datos técnicos</SectionTitle>
-            <div className="grid grid-cols-2 gap-2 text-xs">
+          <div className="mb-1">
+            <AgriculturalLeadForm />
+            <p className="mt-2 text-center">
+              <a href="/huescar/contacto" className="text-[10px] font-bold uppercase tracking-wider text-sky-700 hover:text-sky-900">
+                ¿Necesitas ayuda personalizada? → Contacto
+              </a>
+            </p>
+          </div>
+
+          <details className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+            <summary className="cursor-pointer list-none text-sm font-black text-slate-800">📊 Ver datos técnicos</summary>
+            <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
               <DataRow label="Viento medio" value={`${windSpeed.toFixed(0)} km/h`} />
               <DataRow label="Ráfagas" value={wd?.current?.windGustKmh != null ? `${wd.current.windGustKmh.toFixed(0)} km/h` : '—'} />
               <DataRow label="Humedad" value={humidity != null ? `${humidity.toFixed(0)}%` : '—'} />
@@ -190,7 +190,7 @@ export function HoyPageClient({
               <DataRow label="Radiación" value={cd.eto.inputs.solarRadiationWm2 != null ? `${cd.eto.inputs.solarRadiationWm2.toFixed(0)} W/m²` : '—'} />
               <DataRow label="ET0" value={cd.eto.etoHourlyMm != null ? `${cd.eto.etoHourlyMm.toFixed(1)} mm` : '—'} />
             </div>
-          </section>
+          </details>
 
           <div className="text-center pb-4">
             <a href="/huescar/fuentes" className="text-[10px] font-bold uppercase tracking-wider text-slate-600 hover:text-slate-800">
