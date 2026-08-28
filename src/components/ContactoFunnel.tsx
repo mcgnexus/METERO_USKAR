@@ -123,7 +123,7 @@ export function ContactoFunnel() {
 
   return (
     <div className="min-h-screen bg-[#f4f7fb]">
-      <div className="mx-auto max-w-lg px-4 pt-4 pb-24">
+      <div className="mx-auto max-w-6xl px-4 pt-4 pb-24 lg:pt-20">
         <header className="mb-6">
           <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-sky-700">🏔️ Meteo Huéscar</p>
           <h1 className="mt-1 text-xl font-black text-slate-900">Contacto</h1>

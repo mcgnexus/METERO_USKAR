@@ -19,7 +19,7 @@ export function HorasPageClient({
 }) {
   return (
     <div className="min-h-screen bg-[#f4f7fb]">
-      <div className="mx-auto max-w-lg px-4 pt-4" style={{ paddingBottom: 'calc(72px + env(safe-area-inset-bottom) + 16px)' }}>
+      <div className="mx-auto max-w-6xl px-4 pt-4 lg:pt-20" style={{ paddingBottom: 'calc(72px + env(safe-area-inset-bottom) + 16px)' }}>
         <header className="mb-4">
           <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-sky-700">🏔️ Meteo Huéscar</p>
           <h1 className="mt-0.5 text-xl font-black text-slate-900">Pronóstico por horas</h1>

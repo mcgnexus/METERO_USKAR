@@ -17,8 +17,8 @@ export function NavBottom({ alertCount }: { alertCount?: number }) {
   const pathname = usePathname();
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-slate-200 bg-white/95 backdrop-blur-lg shadow-[0_-4px_20px_rgba(0,0,0,0.06)]">
-      <div className="mx-auto flex max-w-lg items-center justify-around px-1 pb-safe-bottom">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-slate-200 bg-white/95 backdrop-blur-lg shadow-[0_-4px_20px_rgba(0,0,0,0.06)] lg:top-0 lg:bottom-auto lg:border-t-0 lg:border-b lg:shadow-[0_4px_20px_rgba(0,0,0,0.06)]">
+      <div className="mx-auto flex max-w-lg items-center justify-around px-1 pb-safe-bottom lg:max-w-6xl lg:justify-start lg:gap-2 lg:py-2">
         {TABS.map((tab) => {
           const isActive = tab.id === 'hoy'
             ? pathname === '/huescar'
@@ -29,7 +29,7 @@ export function NavBottom({ alertCount }: { alertCount?: number }) {
               key={tab.id}
               href={tab.href}
               aria-label={tab.label}
-              className={`relative flex flex-col items-center gap-0.5 py-2.5 px-3 min-w-0 min-h-[52px] transition-colors
+              className={`relative flex min-w-0 min-h-[52px] flex-col items-center gap-0.5 px-3 py-2.5 transition-colors lg:min-h-0 lg:flex-row lg:gap-2 lg:rounded-full lg:py-2
                 ${isActive ? 'text-sky-800' : 'text-slate-600 hover:text-slate-800'}`}
             >
               <span className="relative text-xl leading-none">
