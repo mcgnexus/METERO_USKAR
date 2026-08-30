@@ -1,8 +1,10 @@
 import { getCurrentWeatherPayload } from '@/services/currentWeatherService';
 import { getClimateCalibrationPayload } from '@/services/climateCalibrationPayloadService';
 import { FuentesPageClient } from '@/components/FuentesPageClient';
+import type { Metadata } from 'next';
 
 export const dynamic = 'force-dynamic';
+export const metadata: Metadata = { alternates: { canonical: '/huescar/fuentes' } };
 
 export default async function HuescarFuentesPage() {
   const [weatherResult, climateResult] = await Promise.allSettled([

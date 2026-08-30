@@ -6,8 +6,10 @@ import { getForecastPayload } from '@/services/forecastPayloadService';
 import { getLatestSourceObservation } from '@/lib/weatherStore';
 import { fetchZoneWeather } from '@/services/zoneService';
 import type { SourceObservation } from '@/types/weather';
+import type { Metadata } from 'next';
 
 export const dynamic = 'force-dynamic';
+export const metadata: Metadata = { alternates: { canonical: '/huescar/visualizacion' } };
 
 export default async function VisualizacionPage() {
   const [currentResult, forecastResult, climateResult, aemetResult] = await Promise.allSettled([

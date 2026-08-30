@@ -20,6 +20,11 @@ vi.mock("sharp", () => ({ default: mockSharp }));
 
 import { GET } from "@/app/api/daily-card/route";
 
+function sharpInput(): Buffer {
+  const calls = mockSharp.mock.calls as unknown as Array<[Buffer]>;
+  return calls[0]![0];
+}
+
 function mockClimateData(overrides: Record<string, any> = {}) {
   return {
     location: { id: "huescar", name: "Huéscar", lat: 37.81, lon: -2.54, elevation: 953 },
@@ -95,9 +100,9 @@ describe("GET /api/daily-card", () => {
   it("calls sharp with valid SVG", async () => {
     mockSharp.mockClear();
     await GET();
-    const sharpInput = mockSharp.mock.calls[0]?.[0];
-    expect(sharpInput).toBeInstanceOf(Buffer);
-    const svg = sharpInput.toString("utf-8");
+    const input = sharpInput();
+    expect(input).toBeInstanceOf(Buffer);
+    const svg = input.toString("utf-8");
     expect(svg).toContain("<svg");
     expect(svg).toContain("Meteo Huéscar");
     expect(svg).toContain("meteo.tecrural.es");
@@ -107,7 +112,7 @@ describe("GET /api/daily-card", () => {
 
   it("includes temperature data in generated SVG", async () => {
     await GET();
-    const svg = mockSharp.mock.calls[0][0].toString("utf-8");
+    const svg = sharpInput().toString("utf-8");
     expect(svg).toContain("32");
     expect(svg).toContain("16");
   });
@@ -118,7 +123,7 @@ describe("GET /api/daily-card", () => {
     }));
     mockSharp.mockClear();
     await GET();
-    const svg = mockSharp.mock.calls[0][0].toString("utf-8");
+    const svg = sharpInput().toString("utf-8");
     expect(svg).toContain("Alerta AEMET");
     expect(svg).toContain("Lluvias intensas");
   });

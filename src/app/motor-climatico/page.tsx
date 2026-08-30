@@ -2,8 +2,10 @@ import Link from 'next/link';
 import ClimateEngineDashboard from '@/components/ClimateEngineDashboard';
 import { getClimateCalibrationPayload } from '@/services/climateCalibrationPayloadService';
 import { getCurrentWeatherPayload } from '@/services/currentWeatherService';
+import type { Metadata } from 'next';
 
 export const dynamic = 'force-dynamic';
+export const metadata: Metadata = { alternates: { canonical: '/motor-climatico' } };
 
 export default async function MotorClimaticoPage() {
   const [climateResult, weatherResult] = await Promise.allSettled([

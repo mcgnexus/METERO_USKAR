@@ -5,8 +5,10 @@ import { getForecastPayload } from '@/services/forecastPayloadService';
 import { HoyPageClient } from '@/components/HoyPageClient';
 import type { ForecastPayload } from '@/types/forecast';
 import type { WeatherPayload } from '@/types/weather';
+import type { Metadata } from 'next';
 
 export const dynamic = 'force-dynamic';
+export const metadata: Metadata = { alternates: { canonical: '/huescar' } };
 
 const getCachedHomeData = unstable_cache(
   async () => Promise.allSettled([

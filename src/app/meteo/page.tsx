@@ -1,8 +1,10 @@
 import Link from 'next/link';
 import WeatherDashboard from '@/components/WeatherDashboard';
 import { getCurrentWeatherPayload } from '@/services/currentWeatherService';
+import type { Metadata } from 'next';
 
 export const dynamic = 'force-dynamic';
+export const metadata: Metadata = { alternates: { canonical: '/meteo' } };
 
 export default async function MeteoPage() {
   const weatherResult = await Promise.allSettled([getCurrentWeatherPayload()]);

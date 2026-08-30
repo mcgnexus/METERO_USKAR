@@ -1,8 +1,10 @@
 import { getClimateCalibrationPayload } from '@/services/climateCalibrationPayloadService';
 import { getCurrentWeatherPayload } from '@/services/currentWeatherService';
 import { CampoPageClient } from '@/components/CampoPageClient';
+import type { Metadata } from 'next';
 
 export const dynamic = 'force-dynamic';
+export const metadata: Metadata = { alternates: { canonical: '/huescar/campo' } };
 
 export default async function HuescarCampoPage() {
   const [climateResult, weatherResult] = await Promise.allSettled([

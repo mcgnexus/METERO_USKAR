@@ -31,7 +31,6 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Meteo Huéscar",
     description: "Previsión local, lluvia, viento, frío, calor, alertas y consejos útiles para vecinos, campo y actividades al aire libre.",
-    url: "https://meteo.tecrural.es",
     siteName: "Meteo Huéscar",
     images: [
       {
@@ -43,9 +42,6 @@ export const metadata: Metadata = {
     ],
     locale: "es_ES",
     type: "website",
-  },
-  alternates: {
-    canonical: "https://meteo.tecrural.es",
   },
 };
 

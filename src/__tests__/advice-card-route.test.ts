@@ -32,6 +32,11 @@ vi.mock("sharp", () => ({ default: mockSharp }));
 
 import { GET } from "@/app/api/cards/advice/route";
 
+function sharpInput(): Buffer {
+  const calls = mockSharp.mock.calls as unknown as Array<[Buffer]>;
+  return calls[0]![0];
+}
+
 function mockClimateData(overrides: Record<string, any> = {}) {
   return {
     location: { id: "huescar", name: "Huéscar", lat: 37.81, lon: -2.54, elevation: 953 },
@@ -106,7 +111,7 @@ describe("GET /api/cards/advice", () => {
     mockSharp.mockClear();
     const req = new Request("http://localhost:3000/api/cards/advice?platform=ig");
     await GET(req);
-    const svg = mockSharp.mock.calls[0][0].toString("utf-8");
+    const svg = sharpInput().toString("utf-8");
     expect(svg).toContain("Meteo Huescar");
     expect(svg).toContain("CONSEJOS DEL DIA");
     expect(svg).toContain("Dia agradable");
@@ -116,7 +121,7 @@ describe("GET /api/cards/advice", () => {
     mockSharp.mockClear();
     const req = new Request("http://localhost:3000/api/cards/advice?platform=ig");
     await GET(req);
-    const svg = mockSharp.mock.calls[0][0].toString("utf-8");
+    const svg = sharpInput().toString("utf-8");
     expect(svg).toContain("Riesgo incendio");
     expect(svg).toContain("ET0");
     expect(svg).toContain("mm");
@@ -130,7 +135,7 @@ describe("GET /api/cards/advice", () => {
     mockSharp.mockClear();
     const req = new Request("http://localhost:3000/api/cards/advice?platform=ig");
     await GET(req);
-    const svg = mockSharp.mock.calls[0][0].toString("utf-8");
+    const svg = sharpInput().toString("utf-8");
     expect(svg).toContain("Helada");
     expect(svg).toContain("Alto");
   });
@@ -147,7 +152,7 @@ describe("GET /api/cards/advice", () => {
     mockSharp.mockClear();
     const req = new Request("http://localhost:3000/api/cards/advice?platform=story");
     await GET(req);
-    const svg = mockSharp.mock.calls[0][0].toString("utf-8");
+    const svg = sharpInput().toString("utf-8");
     expect(svg).toContain("width=\"1080\"");
     expect(svg).toContain("height=\"1920\"");
   });
@@ -156,7 +161,7 @@ describe("GET /api/cards/advice", () => {
     mockSharp.mockClear();
     const req = new Request("http://localhost:3000/api/cards/advice?platform=og");
     await GET(req);
-    const svg = mockSharp.mock.calls[0][0].toString("utf-8");
+    const svg = sharpInput().toString("utf-8");
     expect(svg).toContain("width=\"1200\"");
     expect(svg).toContain("height=\"630\"");
   });
