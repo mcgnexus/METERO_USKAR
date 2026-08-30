@@ -1,7 +1,7 @@
 import { ContactoFunnel } from '@/components/ContactoFunnel';
 import type { Metadata } from 'next';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 60;
 
 export const metadata: Metadata = {
   title: 'Contacto — Meteo Huéscar',

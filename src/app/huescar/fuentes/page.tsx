@@ -3,7 +3,7 @@ import { getClimateCalibrationPayload } from '@/services/climateCalibrationPaylo
 import { FuentesPageClient } from '@/components/FuentesPageClient';
 import type { Metadata } from 'next';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 60;
 export const metadata: Metadata = { alternates: { canonical: '/huescar/fuentes' } };
 
 export default async function HuescarFuentesPage() {

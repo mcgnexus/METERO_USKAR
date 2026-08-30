@@ -7,7 +7,7 @@ import type { ForecastPayload } from '@/types/forecast';
 import type { WeatherPayload } from '@/types/weather';
 import type { Metadata } from 'next';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 60;
 export const metadata: Metadata = { alternates: { canonical: '/huescar' } };
 
 const getCachedHomeData = unstable_cache(
