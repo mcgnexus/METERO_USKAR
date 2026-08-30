@@ -6,6 +6,7 @@ const RIA_PROVINCE_CODE = process.env.RIA_PROVINCE_CODE || "18";
 const RIA_PRIMARY_STATION_CODE = process.env.RIA_PRIMARY_STATION_CODE || "1";
 const RIA_FALLBACK_STATION_CODE = process.env.RIA_FALLBACK_STATION_CODE || "2";
 const RIA_CACHE_TTL_MS = 6 * 60 * 60 * 1000;
+const RIA_BUDGET_MS = 8_000;
 
 export interface RiaDailyData {
   source: "RIA";
@@ -52,7 +53,11 @@ async function fetchStationDaily(stationCode: string, stationName: string): Prom
   const cached = cacheGet<RiaDailyData>(cacheKey);
   if (cached) return cached;
 
+  // P5 — Presupuesto de tiempo: si RIA no responde, no bloquear la página
+  // durante ~110 s (11 intentos × 10 s de timeout).
+  const deadline = Date.now() + RIA_BUDGET_MS;
   for (let daysAgo = 0; daysAgo <= 10; daysAgo++) {
+    if (Date.now() > deadline) break;
     const date = isoDateDaysAgo(daysAgo);
     const url = `${RIA_API_BASE_URL}/datosdiarios/${RIA_PROVINCE_CODE}/${stationCode}/${date}/true`;
     const json = await fetchJson(url).catch(() => null);

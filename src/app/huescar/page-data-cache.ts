@@ -9,7 +9,7 @@ type CachedPageData = {
   forecast: ForecastPayload | null;
 };
 
-const PAGE_DATA_TTL_MS = 60_000;
+const PAGE_DATA_TTL_MS = 5 * 60_000;
 const PAGE_DATA_STALE_MS = 15 * 60_000;
 
 async function loadWeatherAndForecast(): Promise<CachedPageData> {

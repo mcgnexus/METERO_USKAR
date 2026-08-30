@@ -36,7 +36,7 @@ export async function fetchOpenMeteoForecast(
   let data: Record<string, unknown>;
 
   try {
-    const response = await fetch(url);
+    const response = await fetch(url, { signal: AbortSignal.timeout(10_000) });
     if (!response.ok) {
       throw new Error(`Open-Meteo API error: ${response.status}`);
     }

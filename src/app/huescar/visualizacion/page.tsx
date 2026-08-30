@@ -8,7 +8,7 @@ import { fetchZoneWeather } from '@/services/zoneService';
 import type { SourceObservation } from '@/types/weather';
 import type { Metadata } from 'next';
 
-export const revalidate = 60;
+export const revalidate = 300;
 export const metadata: Metadata = { alternates: { canonical: '/huescar/visualizacion' } };
 
 export default async function VisualizacionPage() {

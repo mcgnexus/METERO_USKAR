@@ -8,7 +8,7 @@ import { fetchAEMETWarnings } from "@/services/aemetWarningsService";
 import { aggregateWeather } from "@/services/weatherAggregator";
 
 const CURRENT_WEATHER_CACHE_KEY = "weather:current-payload:v1";
-const CURRENT_WEATHER_CACHE_TTL_MS = 60_000;
+const CURRENT_WEATHER_CACHE_TTL_MS = 5 * 60_000;
 const CURRENT_WEATHER_STALE_MS = 15 * 60_000;
 
 export class WeatherUnavailableError extends Error {

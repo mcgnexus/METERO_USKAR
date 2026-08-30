@@ -14,6 +14,7 @@ import {
 import { fetchAEMETObservations } from "@/services/aemetClient";
 import { getModelParam } from "@/services/modelParameterService";
 import { fetchCurrentCloudCover } from "@/services/openMeteoForecastService";
+import { memoizeInflight } from "@/lib/inflight";
 import type { ZoneType } from "@/lib/geo";
 
 const AEMET_API_KEY = process.env.AEMET_API_KEY || "";
@@ -191,7 +192,7 @@ async function fetchWithTimeout(url: string, timeoutMs: number): Promise<Respons
   }
 }
 
-async function fetchAemetStation(station: typeof REFERENCE_NODES.sanClemente): Promise<ClimateNodeReading> {
+async function fetchAemetStationImpl(station: typeof REFERENCE_NODES.sanClemente): Promise<ClimateNodeReading> {
   const cacheKey = `climate:aemet:${station.id}`;
   const cached = cacheGet<ClimateNodeReading>(cacheKey);
   if (cached) return cached;
@@ -259,6 +260,10 @@ async function fetchAemetStation(station: typeof REFERENCE_NODES.sanClemente): P
     return missing;
   }
 }
+
+// P5 — Deduplicar peticiones en vuelo a la misma estación AEMET
+// (Baza se consulta desde el fan-out principal y desde fetchRadiationWind).
+const fetchAemetStation = memoizeInflight(fetchAemetStationImpl);
 
 async function fetchOpenMeteoCurrent(lat: number, lon: number, elevation: number): Promise<{ time: string; temperatureC: number; humidityPct: number; pressureHPa: number; solarRadiationWm2: number; windSpeed10mKmh: number; }> {
   const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&elevation=${elevation}&current=temperature_2m,relative_humidity_2m,surface_pressure,shortwave_radiation,wind_speed_10m&timezone=auto&forecast_days=1`;
@@ -591,10 +596,15 @@ function computeRadiationWeights(
 }
 
 async function fetchRadiationWind(): Promise<RadiationWindReading> {
-  const bazaAemet = await fetchAemetStation(REFERENCE_NODES.baza).catch(() => null);
+  // P5 — Ejecutar en paralelo: AEMET Baza, datos RIA y nubosidad Open-Meteo
+  // no dependen entre sí y reducen el tiempo de respuesta inicial.
+  const [bazaAemet, ria, cloudCoverPct] = await Promise.all([
+    fetchAemetStation(REFERENCE_NODES.baza).catch(() => null),
+    fetchAllRiaDailyData().catch(() => ({ baza: null, puebla: null })),
+    fetchCurrentCloudCover(LLANO.lat, LLANO.lon).catch(() => null),
+  ]);
   const bazaPressureHPa = bazaAemet?.pressureHPa ?? null;
-  const { baza: riaBaza, puebla: riaPuebla } = await fetchAllRiaDailyData().catch(() => ({ baza: null, puebla: null }));
-  const cloudCoverPct = await fetchCurrentCloudCover(LLANO.lat, LLANO.lon).catch(() => null);
+  const { baza: riaBaza, puebla: riaPuebla } = ria;
   const bazaRs = riaBaza?.radiationMJm2Day ?? null;
   const pueblaRs = riaPuebla?.radiationMJm2Day ?? null;
   const bazaWind = riaBaza?.windSpeed2mMs ?? null;

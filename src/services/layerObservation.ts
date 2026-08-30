@@ -14,6 +14,7 @@ import { getModelParam } from "@/services/modelParameterService";
 import type { CurrentWeather, SourceObservation, SourceHealth, HourlyWeather, ComparisonHourlyWeather, DailyWeather } from "@/types/weather";
 import { madridHourNow } from "@/lib/timezone";
 import { buildDataQualitySummary } from "@/lib/dataQuality";
+import { memoizeInflight } from "@/lib/inflight";
 
 const OBSERVATION_LAYER_TIMEOUT_MS = 30000;
 
@@ -181,7 +182,7 @@ function anchorDailyToCurrent(daily: DailyWeather, current: CurrentWeather, omOb
   };
 }
 
-export async function fetchObservationLayer(): Promise<{
+async function fetchObservationLayerImpl(): Promise<{
   current: CurrentWeather;
   sources: SourceObservation[];
   sourceHealth: SourceHealth[];
@@ -627,3 +628,8 @@ export async function fetchObservationLayer(): Promise<{
     orographic,
   };
 }
+
+// P5 — Compartir la misma consulta de capa de observación entre peticiones
+// concurrentes (weather + forecast) para no duplicar llamadas a AEMET,
+// Open-Meteo y Neon durante un mismo render de página.
+export const fetchObservationLayer = memoizeInflight(fetchObservationLayerImpl);

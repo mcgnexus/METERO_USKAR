@@ -1,5 +1,8 @@
 const TABLE_CANDIDATES = ["stations", "estaciones", "mini_stations", "weather_stations", "sensores"];
 
+import { cacheGet, cacheSet } from "@/lib/inMemoryCache";
+import { memoizeInflight } from "@/lib/inflight";
+
 interface StationRawPayload {
   lat?: unknown;
   latitude?: unknown;
@@ -79,7 +82,10 @@ function normalizeRows<T>(result: unknown): T[] {
   return [];
 }
 
-export async function fetchLocalStations(): Promise<LocalStationRecord[]> {
+const LOCAL_STATIONS_CACHE_KEY = "local-stations:query";
+const LOCAL_STATIONS_CACHE_TTL_MS = 60_000;
+
+async function fetchLocalStationsImpl(): Promise<LocalStationRecord[]> {
   const dbUrl = process.env.STATIONS_DATABASE_URL;
   if (!dbUrl) return [];
 
@@ -153,3 +159,13 @@ export async function fetchLocalStations(): Promise<LocalStationRecord[]> {
     return [];
   }
 }
+
+// P5 — Las lecturas de las miniestaciones no cambian a cada segundo:
+// caché en memoria de 60 s + deduplicación de peticiones en vuelo.
+export const fetchLocalStations = memoizeInflight(async (): Promise<LocalStationRecord[]> => {
+  const cached = cacheGet<LocalStationRecord[]>(LOCAL_STATIONS_CACHE_KEY);
+  if (cached) return cached;
+  const result = await fetchLocalStationsImpl();
+  cacheSet(LOCAL_STATIONS_CACHE_KEY, result, LOCAL_STATIONS_CACHE_TTL_MS);
+  return result;
+});

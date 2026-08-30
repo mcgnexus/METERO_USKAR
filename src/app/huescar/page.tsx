@@ -7,7 +7,7 @@ import type { ForecastPayload } from '@/types/forecast';
 import type { WeatherPayload } from '@/types/weather';
 import type { Metadata } from 'next';
 
-export const revalidate = 60;
+export const revalidate = 300;
 export const metadata: Metadata = { alternates: { canonical: '/huescar' } };
 
 const getCachedHomeData = unstable_cache(
@@ -17,7 +17,7 @@ const getCachedHomeData = unstable_cache(
     getForecastPayload(5),
   ]),
   ['huescar-home-data-v1'],
-  { revalidate: 60 },
+  { revalidate: 300 },
 );
 
 function slimForecast(payload: ForecastPayload): ForecastPayload {

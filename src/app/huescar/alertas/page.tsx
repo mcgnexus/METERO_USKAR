@@ -3,7 +3,7 @@ import { getCurrentWeatherPayload } from '@/services/currentWeatherService';
 import { AlertasPageClient } from '@/components/AlertasPageClient';
 import type { Metadata } from 'next';
 
-export const revalidate = 60;
+export const revalidate = 300;
 export const metadata: Metadata = { alternates: { canonical: '/huescar/alertas' } };
 
 export default async function HuescarAlertasPage() {

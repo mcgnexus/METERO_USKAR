@@ -4,7 +4,7 @@ import { computeClimateCalibration } from "@/services/climateCalibrationService"
 import type { ClimateCalibrationPayload } from "@/types/climate";
 
 const CLIMATE_CALIBRATION_CACHE_KEY = "weather:climate-calibration:v1";
-const CLIMATE_CALIBRATION_CACHE_TTL_MS = 60_000;
+const CLIMATE_CALIBRATION_CACHE_TTL_MS = 5 * 60_000;
 const CLIMATE_CALIBRATION_STALE_MS = 15 * 60_000;
 
 export async function getClimateCalibrationPayload(): Promise<ClimateCalibrationPayload> {
