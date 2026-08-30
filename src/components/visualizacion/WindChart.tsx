@@ -3,13 +3,9 @@
 import { Line, Bar } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement, Tooltip, Legend, Filler } from 'chart.js';
 import type { ForecastPayload } from '@/types/forecast';
+import { fmtHourMadrid } from '@/lib/timezone';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Tooltip, Legend, Filler);
-
-function fmtHour(iso: string): string {
-  const date = new Date(iso);
-  return date.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric' }) + ' ' + date.toLocaleTimeString('es-ES', { hour: '2-digit' }) + 'h';
-}
 
 function ChartBox({ height, children }: { height: number; children: React.ReactNode }) {
   return <div className="relative overflow-hidden" style={{ height }}>{children}</div>;
@@ -19,7 +15,7 @@ export default function WindChart({ forecastData }: { forecastData: ForecastPayl
   const forecastDays = forecastData?.forecastDays ?? [];
   const allHours = forecastDays.flatMap((day) => day.hours ?? []);
   const visibleHours = allHours.slice(0, 72);
-  const times = visibleHours.map((hour) => fmtHour(hour.time));
+  const times = visibleHours.map((hour) => fmtHourMadrid(hour.time));
   const wind10m = visibleHours.map((hour) => hour.windSpeed10mKmh);
   const wind2m = visibleHours.map((hour) => hour.windSpeed2mKmh);
 

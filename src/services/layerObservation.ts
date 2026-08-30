@@ -12,6 +12,8 @@ import { getStationBiases, applyStationBias, recordStationComparison } from "@/s
 import { dewPoint, relativeHumidity } from "@/lib/dewPoint";
 import { getModelParam } from "@/services/modelParameterService";
 import type { CurrentWeather, SourceObservation, SourceHealth, HourlyWeather, ComparisonHourlyWeather, DailyWeather } from "@/types/weather";
+import { madridHourNow } from "@/lib/timezone";
+import { buildDataQualitySummary } from "@/lib/dataQuality";
 
 const OBSERVATION_LAYER_TIMEOUT_MS = 30000;
 
@@ -119,26 +121,9 @@ function fetchWithTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
   ]);
 }
 
-// I1 — Convertir un timestamp UTC de Open-Meteo a la zona horaria Europe/Madrid.
-// La versión anterior hardcodeaba +120 min (CEST), lo que era incorrecto en invierno (CET = +60).
-// Ahora se usa Intl.DateTimeFormat, que aplica automáticamente el cambio de hora.
-function alignToEuropeMadrid(utcTime: string): string {
-  if (!utcTime) return utcTime;
-  const d = new Date(utcTime);
-  if (isNaN(d.getTime())) return utcTime;
-  // sv-SE produce formato ISO-like: "YYYY-MM-DD HH:mm:ss"
-  const formatter = new Intl.DateTimeFormat("sv-SE", {
-    timeZone: "Europe/Madrid",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-    hour12: false,
-  });
-  return formatter.format(d).replace(" ", "T") + ".000Z";
-}
+// I1 — Los tiempos de Open-Meteo se mantienen en UTC.
+// La conversión a Europe/Madrid se realiza en los componentes de display
+// usando Intl.DateTimeFormat (ver src/lib/timezone.ts).
 
 function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value));
@@ -205,6 +190,7 @@ export async function fetchObservationLayer(): Promise<{
   daily: DailyWeather;
   confidencePct: number;
   confidenceExplanation: string;
+  dataQuality: import("@/lib/dataQuality").DataQualitySummary;
   orographic?: {
     factor: number;
     classification: "barlovento" | "sotavento" | "neutro";
@@ -328,15 +314,9 @@ export async function fetchObservationLayer(): Promise<{
     const om = omResult.value;
     const obs = om.observations;
     if (obs.length > 0) {
-      const aligned = { ...obs[0], time: alignToEuropeMadrid(obs[0].time) };
-      omObs = aligned;
+      omObs = obs[0];
     }
-    omHourly = om.hourly
-      ? {
-          ...om.hourly,
-          time: om.hourly.time.map(alignToEuropeMadrid),
-        }
-      : null;
+    omHourly = om.hourly ?? null;
     omDaily = om.daily ?? null;
     omHealth = {
       source: "OPEN_METEO",
@@ -478,11 +458,7 @@ export async function fetchObservationLayer(): Promise<{
     sources.push(localObs);
   }
 
-  const now = new Date();
-  const hourMadrid = parseInt(
-    new Intl.DateTimeFormat("es-ES", { timeZone: "Europe/Madrid", hour: "numeric", hour12: false }).format(now),
-    10
-  );
+  const hourMadrid = madridHourNow();
   const isNight = hourMadrid < 7 || hourMadrid >= 21;
 
   for (const source of sources) {
@@ -634,17 +610,20 @@ export async function fetchObservationLayer(): Promise<{
 
   const daily = anchorDailyToCurrent(rawDaily, current, omObs);
 
+  const sourceHealthList: SourceHealth[] = [aemetHealth, omHealth, localHealth];
   const { confidencePct, explanation } = calculateConsensusConfidence(sources, tolerances);
+  const dataQuality = buildDataQualitySummary(sourceHealthList, sources);
 
   return {
     current,
     sources,
-    sourceHealth: [aemetHealth, omHealth, localHealth],
+    sourceHealth: sourceHealthList,
     hourly,
     comparisonHourly,
     daily,
     confidencePct,
     confidenceExplanation: explanation,
+    dataQuality,
     orographic,
   };
 }

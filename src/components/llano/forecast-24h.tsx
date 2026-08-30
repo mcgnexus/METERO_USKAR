@@ -2,11 +2,8 @@
 
 import { useState } from 'react';
 import { weatherCodeDescription, weatherEmoji } from '@/lib/display';
+import { fmtHourMadrid, fmtDayLabelMadrid } from '@/lib/timezone';
 import type { HourlyWeather } from '@/types/weather';
-
-function fmtHour(iso: string): string {
-  return iso.slice(11, 16);
-}
 
 export function Forecast24h({ hourly, count = 8 }: { hourly?: HourlyWeather; count?: number }) {
   const [now] = useState(() => Date.now());
@@ -30,22 +27,31 @@ export function Forecast24h({ hourly, count = 8 }: { hourly?: HourlyWeather; cou
         </div>
       </div>
       <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-8">
-        {upcoming.map((hour) => {
+        {upcoming.map((hour, idx) => {
           const temp = hourly.temperatureC[hour.index];
           const weatherCode = hourly.weatherCode[hour.index] ?? 0;
           const rain = hourly.precipitationProbabilityPct[hour.index] ?? 0;
           const wind = hourly.windSpeedKmh[hour.index] ?? 0;
           const humidity = hourly.humidityPct[hour.index] ?? 0;
+          const prevTime = idx > 0 ? upcoming[idx - 1].time : null;
+          const showDayLabel = !prevTime || new Date(hour.time).toISOString().slice(0, 10) !== new Date(prevTime).toISOString().slice(0, 10);
           return (
-            <article key={hour.time} className="rounded-[18px] border border-slate-100 bg-slate-50 p-3 text-center">
-              <p className="text-xs font-bold text-slate-700">{fmtHour(hour.time)}</p>
-              <p className="mt-2 text-3xl">{weatherEmoji(weatherCode)}</p>
-              <p className="mt-1 text-[10px] leading-3 text-slate-500">{weatherCodeDescription(weatherCode)}</p>
-              <p className="mt-2 text-xl font-black text-slate-950">{(temp ?? 0).toFixed(1)}°</p>
-              <p className="mt-1 text-[11px] text-sky-700">💧 {rain.toFixed(0)}%</p>
-              <p className="text-[11px] text-sky-800">💦 {humidity.toFixed(0)}% HR</p>
-              <p className="text-[11px] text-slate-500">💨 {wind.toFixed(0)} km/h</p>
-            </article>
+            <div key={hour.time}>
+              {showDayLabel && (
+                <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                  {fmtDayLabelMadrid(hour.time)}
+                </p>
+              )}
+              <article className="rounded-[18px] border border-slate-100 bg-slate-50 p-3 text-center">
+                <p className="text-xs font-bold text-slate-700">{fmtHourMadrid(hour.time)}</p>
+                <p className="mt-2 text-3xl">{weatherEmoji(weatherCode)}</p>
+                <p className="mt-1 text-[10px] leading-3 text-slate-500">{weatherCodeDescription(weatherCode)}</p>
+                <p className="mt-2 text-xl font-black text-slate-950">{(temp ?? 0).toFixed(1)}°</p>
+                <p className="mt-1 text-[11px] text-sky-700">💧 {rain.toFixed(0)}%</p>
+                <p className="text-[11px] text-sky-800">💦 {humidity.toFixed(0)}% HR</p>
+                <p className="text-[11px] text-slate-500">💨 {wind.toFixed(0)} km/h</p>
+              </article>
+            </div>
           );
         })}
       </div>

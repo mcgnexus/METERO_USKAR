@@ -13,6 +13,7 @@ import {
 } from 'chart.js';
 import { Line } from 'react-chartjs-2';
 import { dayLabel } from '@/lib/display';
+import { fmtHourMadrid } from '@/lib/timezone';
 import { getUpcomingHourlyRows } from '@/components/dashboard/forecast-tables';
 import type { DailyWeather, HourlyWeather } from '@/types/weather';
 
@@ -20,7 +21,7 @@ ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, T
 
 export function TemperatureChart({ hourly, daily }: { hourly: HourlyWeather; daily: DailyWeather }) {
   const upcomingRows = getUpcomingHourlyRows(hourly, 18);
-  const hourlyLabels = upcomingRows.map((row) => new Date(row.time).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }));
+  const hourlyLabels = upcomingRows.map((row) => fmtHourMadrid(row.time));
   const hourlyTemps = upcomingRows.map((row) => row.temp);
   const dailyLabels = daily.time.slice(0, 5).map((day) => dayLabel(day));
   const dailyMax = daily.temperatureMaxC.slice(0, 5);

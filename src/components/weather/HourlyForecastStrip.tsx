@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { fmt, weatherEmoji } from '@/lib/display';
+import { fmtHourMadrid, fmtDayLabelMadrid } from '@/lib/timezone';
 
 type HourBlock = {
   time: string;
@@ -23,7 +24,7 @@ export function HourlyForecastStrip({ hours }: { hours: HourBlock[] }) {
         {display.map((h, i) => (
           <div key={i} className="flex flex-col items-center gap-1 min-w-[56px]">
             <span className="text-[10px] font-semibold text-slate-500 uppercase">
-              {h.time.slice(11, 16)}
+              {fmtHourMadrid(h.time)}
             </span>
             <span className="text-xl">{weatherEmoji(h.weatherCode ?? 0)}</span>
             <span className="text-sm font-bold text-slate-800">{fmt(h.temp, 1)}°</span>

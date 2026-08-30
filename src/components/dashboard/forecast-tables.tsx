@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { dayLabel, temperatureColor, weatherCodeDescription, weatherEmoji } from '@/lib/display';
+import { fmtHourMadrid } from '@/lib/timezone';
 import type { DailyWeather, HourlyWeather } from '@/types/weather';
 
 function isNumber(value: unknown): value is number {
@@ -56,7 +57,7 @@ export function HourlyTable({ hourly, compact }: { hourly: HourlyWeather; compac
             <div className="flex items-center justify-between gap-3">
               <div>
                 <p className="text-sm font-bold text-slate-900">
-                  {new Date(row.time).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
+                  {fmtHourMadrid(row.time)}
                 </p>
                 <p className="mt-1 text-xs text-slate-500">{weatherCodeDescription(row.wcode)}</p>
               </div>
@@ -90,7 +91,7 @@ export function HourlyTable({ hourly, compact }: { hourly: HourlyWeather; compac
           <tbody>
             {display.map((row, index) => (
               <tr key={`${row.time}-${index}`} className="border-t border-slate-100">
-                <td className="px-3 py-2">{new Date(row.time).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</td>
+                <td className="px-3 py-2">{fmtHourMadrid(row.time)}</td>
                 <td className="px-3 py-2 text-right font-semibold" style={{ color: temperatureColor(row.temp) }}>
                   {row.temp.toFixed(1)}°C
                 </td>

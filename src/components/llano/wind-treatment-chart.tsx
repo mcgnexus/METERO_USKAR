@@ -3,12 +3,9 @@
 import { Bar } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Tooltip, Legend } from 'chart.js';
 import type { HourlyWeather } from '@/types/weather';
+import { fmtHourMadrid } from '@/lib/timezone';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, Legend);
-
-function fmtHour(iso: string): string {
-  return new Date(iso).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
-}
 
 function windStatus(speed: number): { label: string; color: string } {
   if (speed <= 10) return { label: 'Apto', color: '#16a34a' };
@@ -45,7 +42,7 @@ function bestWindow(hours: { time: string; wind: number }[]): string {
     bestEnd = currentEnd;
   }
 
-  return `Mejor ventana para tratar: de ${fmtHour(bestStart.time)} a ${fmtHour(bestEnd.time)}, si se mantiene el viento previsto.`;
+  return `Mejor ventana para tratar: de ${fmtHourMadrid(bestStart.time)} a ${fmtHourMadrid(bestEnd.time)}, si se mantiene el viento previsto.`;
 }
 
 export function WindTreatmentChart({ hourly }: { hourly?: HourlyWeather }) {
@@ -66,7 +63,7 @@ export function WindTreatmentChart({ hourly }: { hourly?: HourlyWeather }) {
       <div className="relative mt-4 h-64">
         <Bar
           data={{
-            labels: points.map((p) => fmtHour(p.time)),
+            labels: points.map((p) => fmtHourMadrid(p.time)),
             datasets: [{
               label: 'Viento km/h',
               data: points.map((p) => p.wind),

@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import type { WeatherPayload, SourceObservation } from '@/types/weather';
-import { confidenceExplanation, confidenceHeadline } from '@/components/motor/quality-language';
+import { qualityLabel } from '@/lib/dataQuality';
 
 interface Props {
   data: WeatherPayload;
@@ -28,7 +28,6 @@ export default function ModelTransparencyPanel({ data, variant = 'neutral', onDa
   const isAyto = variant === 'ayto';
   const accent = onDark ? 'text-slate-100' : isAyto ? 'text-[#1B3668]' : 'text-slate-700';
   const subText = onDark ? 'text-slate-300' : 'text-slate-500';
-  const hasLocalSensor = data.sources.some((source) => source.source === 'LOCAL_STATIONS' && source.status === 'OK');
 
   const hasOro = data.orographic && data.orographic.factor !== 1.0;
   const hasReservoir = data.sources.some(
@@ -44,7 +43,7 @@ export default function ModelTransparencyPanel({ data, variant = 'neutral', onDa
         <span>{expanded ? '▼' : '▶'}</span>
         <span>Transparencia del modelo</span>
         <span className={`text-[10px] ${subText}`}>
-          ({data.sources.length} fuentes · {confidenceHeadline(data.confidencePct).toLowerCase()} · {data.confidencePct.toFixed(0)}%)
+          ({data.sources.length} fuentes · calidad {qualityLabel(data.dataQuality?.quality ?? 'baja').toLowerCase()})
         </span>
       </button>
 
@@ -52,7 +51,7 @@ export default function ModelTransparencyPanel({ data, variant = 'neutral', onDa
         <div className="space-y-3 rounded-lg border border-slate-200 bg-white/95 p-3 text-xs text-slate-700 shadow-sm">
           <div className="rounded-lg border border-slate-100 bg-slate-50 p-3 text-xs leading-5 text-slate-600">
             <p className="font-bold text-slate-800">Lectura rápida</p>
-            <p className="mt-1">{confidenceHeadline(data.confidencePct)}. {confidenceExplanation(data.confidencePct, hasLocalSensor)}</p>
+            <p className="mt-1">Calidad de los datos: {qualityLabel(data.dataQuality?.quality ?? 'baja')}. {data.dataQuality?.explanation}</p>
           </div>
           {data.sources.map((source) => {
             const qd = qualityDot(source.qualityScore);
@@ -128,15 +127,15 @@ export default function ModelTransparencyPanel({ data, variant = 'neutral', onDa
             </div>
           )}
 
-          {data.confidenceExplanation && (
+          {data.dataQuality && (
             <div className="flex items-start gap-2 pt-1 border-t border-slate-100">
               <span className="text-slate-400">📊</span>
               <div>
-                <span className="text-slate-600">Confianza: </span>
-                <span className="font-semibold" style={{ color: data.confidencePct >= 70 ? '#16a34a' : data.confidencePct >= 50 ? '#ca8a04' : '#dc2626' }}>
-                  {data.confidencePct.toFixed(0)}%
+                <span className="text-slate-600">Calidad de los datos: </span>
+                <span className="font-semibold" style={{ color: data.dataQuality.quality === 'buena' ? '#16a34a' : data.dataQuality.quality === 'media' ? '#ca8a04' : '#dc2626' }}>
+                  {qualityLabel(data.dataQuality.quality)}
                 </span>
-                <span className="text-slate-500"> — {data.confidenceExplanation}</span>
+                <span className="text-slate-500"> — {data.dataQuality.explanation}</span>
               </div>
             </div>
           )}

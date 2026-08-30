@@ -1,6 +1,8 @@
 'use client';
 
 import { temperatureColor, weatherCodeDescription, weatherEmoji, windDirection } from '@/lib/display';
+import { fmtHourMadrid } from '@/lib/timezone';
+import { primarySourceLabel, qualityLabel } from '@/lib/dataQuality';
 import { OverviewMetric } from '@/components/dashboard/atoms';
 import { AlertDropdown, SourceHealthRow } from '@/components/dashboard/health-and-alerts';
 import type { NowcastData, RadarData, WeatherPayload } from '@/types/weather';
@@ -23,7 +25,7 @@ export function HeroPanel({ data }: { data: WeatherPayload }) {
     ? `${todayRainProbability.toFixed(0)}%`
     : '—';
   const alertSummary = data.alerts.length > 0 ? `${data.alerts.length} activas` : 'Sin alertas';
-  const confidenceTone = data.confidencePct >= 70 ? 'accent' : data.confidencePct >= 50 ? 'default' : 'warning';
+  const qualityTone = data.dataQuality.quality === 'buena' ? 'accent' : data.dataQuality.quality === 'media' ? 'default' : 'warning';
 
   return (
     <div className="rounded-[24px] bg-[linear-gradient(135deg,rgba(17,37,63,0.98),rgba(28,66,108,0.95),rgba(45,127,249,0.88))] px-4 py-5 text-white sm:rounded-[28px] sm:px-7 sm:py-8">
@@ -54,7 +56,7 @@ export function HeroPanel({ data }: { data: WeatherPayload }) {
         <div className="flex flex-col items-start gap-3">
           <AlertDropdown alerts={data.alerts} variant="neutral" />
           <div className="rounded-full bg-white/12 px-4 py-2 text-sm font-semibold text-slate-50">
-            Actualizado {new Date(data.fetchedAt).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
+            Actualizado {fmtHourMadrid(data.fetchedAt)}
           </div>
         </div>
       </div>
@@ -68,10 +70,10 @@ export function HeroPanel({ data }: { data: WeatherPayload }) {
         />
         <CompactRainCard nowcast={data.nowcast} radar={data.radar} />
         <OverviewMetric
-          label="Confianza"
-          value={`${data.confidencePct.toFixed(0)}%`}
-          caption={alertSummary}
-          tone={confidenceTone}
+          label="Calidad"
+          value={qualityLabel(data.dataQuality.quality)}
+          caption={`${primarySourceLabel(data.dataQuality.primarySource)} · ${alertSummary}`}
+          tone={qualityTone}
         />
       </div>
 
@@ -100,7 +102,7 @@ export function HeroPanel({ data }: { data: WeatherPayload }) {
 
         <div className="metric-panel p-4 sm:p-5">
           <p className="text-xs font-bold uppercase tracking-[0.18em] text-sky-700">Modelo meteorologico</p>
-          <h3 className="mt-1 text-lg font-bold text-slate-900 sm:text-xl">Confianza del dato</h3>
+          <h3 className="mt-1 text-lg font-bold text-slate-900 sm:text-xl">Calidad del dato</h3>
           <div className="mt-3 space-y-3 text-sm text-slate-600 sm:mt-4">
             <div className="rounded-[20px] bg-slate-50 p-4">
               <p className="font-semibold text-slate-900">Fusion activa</p>

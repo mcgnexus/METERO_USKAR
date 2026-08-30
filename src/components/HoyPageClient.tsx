@@ -6,6 +6,7 @@ import { buildAlarms } from '@/components/llano/alarms-logic';
 import { NavBottom } from '@/components/NavBottom';
 import { NotificationPermission } from '@/components/NotificationPermission';
 import { AgriculturalLeadForm } from '@/components/AgriculturalLeadForm';
+import { TecRuralCtaBanner } from '@/components/TecRuralCtaBanner';
 import { LocalAlarmNotifier } from '@/components/LocalAlarmNotifier';
 import { TodaySummaryCard } from '@/components/weather/TodaySummaryCard';
 import { HourlyForecastStrip } from '@/components/weather/HourlyForecastStrip';
@@ -18,6 +19,7 @@ import type { ClimateCalibrationPayload } from '@/types/climate';
 import type { WeatherPayload } from '@/types/weather';
 import type { ForecastPayload } from '@/types/forecast';
 import type { AdviceContext } from '@/lib/weather-advice/types';
+import { madridHourFromUTC, madridMonthFromUTC, seasonFromMonth } from '@/lib/timezone';
 
 const WeekTrend = dynamic(() => import('@/components/llano/week-tab').then((m) => ({ default: m.WeekTab })), {
   ssr: false,
@@ -56,11 +58,8 @@ export function HoyPageClient({
       ? wd.current.windGustKmh * cd.microclimate.windGustReductionFactor
       : null;
     const iso = cd.generatedAt;
-    const utcHour = parseInt(iso.slice(11, 13), 10);
-    const utcMonth = parseInt(iso.slice(5, 7), 10) - 1;
-    const madridOffset = utcMonth >= 2 && utcMonth <= 9 ? 2 : 1;
-    const madridHour = (utcHour + madridOffset) % 24;
-    const month = utcMonth;
+    const madridHour = madridHourFromUTC(iso);
+    const month = madridMonthFromUTC(iso);
     return {
       tempC: temp,
       feelsLikeC: wd?.current?.apparentTemperatureC ?? temp,
@@ -73,7 +72,7 @@ export function HoyPageClient({
       weatherCode: wd?.current?.weatherCode ?? 0,
       isDaytime: madridHour >= 7 && madridHour < 20,
       month,
-      season: month >= 3 && month <= 5 ? 'spring' : month >= 6 && month <= 8 ? 'summer' : month >= 9 && month <= 11 ? 'autumn' : 'winter',
+      season: seasonFromMonth(month),
     };
   }, [cd, wd]);
 
@@ -170,6 +169,8 @@ export function HoyPageClient({
               <AdviceGrid ctx={adviceCtx} />
             </section>
           )}
+
+          <TecRuralCtaBanner context="home" />
 
           <div className="mb-1">
             <AgriculturalLeadForm />

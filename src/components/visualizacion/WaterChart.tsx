@@ -3,6 +3,7 @@
 import { Bar, Line } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, PointElement, LineElement, Tooltip, Legend, Filler } from 'chart.js';
 import type { WeatherPayload } from '@/types/weather';
+import { fmtHourMadrid } from '@/lib/timezone';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, PointElement, LineElement, Tooltip, Legend, Filler);
 
@@ -22,8 +23,7 @@ export default function WaterChart({ currentData }: { currentData: WeatherPayloa
   const precip = daily?.precipitationSumMm ?? [];
   const prob = daily?.precipitationProbabilityPct ?? [];
 
-  const hourLabels = hourly?.time.slice(0, 72).map((time) =>
-    new Date(time).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })) ?? [];
+  const hourLabels = hourly?.time.slice(0, 72).map((time) => fmtHourMadrid(time)) ?? [];
   const humidities = hourly?.humidityPct.slice(0, 72) ?? [];
 
   const hasPrecip = labels.length > 0 && precip.length > 0;

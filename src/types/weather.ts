@@ -1,3 +1,5 @@
+import type { DataQualitySummary } from "@/lib/dataQuality";
+
 export type CurrentWeather = {
   time: string;
   temperatureC: number;
@@ -51,6 +53,7 @@ export type WeatherPayload = {
   fetchedAt: string;
   confidencePct: number;
   confidenceExplanation: string;
+  dataQuality: DataQualitySummary;
   current: CurrentWeather;
   sources: SourceObservation[];
   sourceHealth: SourceHealth[];

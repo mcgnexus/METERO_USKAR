@@ -3,6 +3,7 @@
 import { useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import { NavBottom } from '@/components/NavBottom';
+import { TecRuralCtaBanner } from '@/components/TecRuralCtaBanner';
 import { buildAlarms } from '@/components/llano/alarms-logic';
 import type { ClimateCalibrationPayload } from '@/types/climate';
 import type { WeatherPayload } from '@/types/weather';
@@ -36,6 +37,9 @@ export function AlertasPageClient({
           <h1 className="mt-0.5 text-xl font-black text-slate-900">Alertas</h1>
         </header>
         <AlertsTab alarms={alarms} />
+        <div className="mt-5">
+          <TecRuralCtaBanner context="alertas" />
+        </div>
       </div>
       <NavBottom alertCount={alarms.length} />
     </div>

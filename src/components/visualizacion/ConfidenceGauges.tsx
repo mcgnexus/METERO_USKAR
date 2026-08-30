@@ -4,6 +4,7 @@ import { Doughnut } from 'react-chartjs-2';
 import { Chart as ChartJS, ArcElement, Tooltip } from 'chart.js';
 import type { ClimateCalibrationPayload } from '@/types/climate';
 import type { WeatherAlert, WeatherPayload } from '@/types/weather';
+import { aemetStatusLabel, localStationsStatusLabel, primarySourceLabel, qualityLabel } from '@/lib/dataQuality';
 
 ChartJS.register(ArcElement, Tooltip);
 
@@ -32,10 +33,12 @@ export default function ConfidenceGauges({
   currentData: WeatherPayload | null | undefined;
   calibrationData: ClimateCalibrationPayload | null | undefined;
 }) {
-  const conf = currentData?.confidencePct ?? 0;
+  const quality = currentData?.dataQuality;
   const warnings = calibrationData?.quality.warnings.length ?? 0;
   const frost: FrostRisk = calibrationData?.dewPoint.frostRisk ?? 'unknown';
   const alerts: WeatherAlert[] = currentData?.alerts ?? [];
+
+  const qualityColor = quality?.quality === 'buena' ? '#10b981' : quality?.quality === 'media' ? '#f59e0b' : '#ef4444';
 
   return (
     <section className="surface-card-strong rounded-[28px] p-5 sm:p-6">
@@ -43,27 +46,22 @@ export default function ConfidenceGauges({
         <div>
           <p className="text-xs font-bold uppercase tracking-[0.18em] text-sky-700">Calidad</p>
           <h2 className="mt-1 text-2xl font-black text-slate-950">Fiabilidad y riesgos</h2>
-          <p className="mt-1 text-sm text-slate-600">Confianza del modelo y alertas activas.</p>
+          <p className="mt-1 text-sm text-slate-600">Calidad del dato y alertas activas.</p>
         </div>
       </div>
 
       <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
         <div className="flex flex-col items-center rounded-2xl border border-slate-100 bg-white p-5">
-          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">Confianza</p>
-          <div className="relative mt-2 h-24 w-24">
-            <Doughnut
-              data={{
-                datasets: [{
-                  data: [conf, 100 - conf],
-                  backgroundColor: [conf > 70 ? '#10b981' : conf > 40 ? '#f59e0b' : '#ef4444', '#f1f5f9'],
-                  borderWidth: 0,
-                }],
-              }}
-              options={{ responsive: true, maintainAspectRatio: true, cutout: '72%', plugins: { tooltip: { enabled: false } } }}
-            />
-            <div className="absolute inset-0 flex items-center justify-center">
-              <span className="text-xl font-black text-slate-950">{conf.toFixed(0)}%</span>
-            </div>
+          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">Calidad de los datos</p>
+          <p className="mt-2 text-3xl font-black" style={{ color: qualityColor }}>
+            {quality ? qualityLabel(quality.quality) : '—'}
+          </p>
+          <p className="mt-1 text-center text-[11px] leading-4 text-slate-500">
+            {quality ? primarySourceLabel(quality.primarySource) : 'Sin fuente'} · {quality ? quality.activeSourceCount : 0} fuente(s)
+          </p>
+          <div className="mt-3 w-full space-y-1 text-left">
+            <p className="text-[10px] text-slate-500">AEMET: <span className="font-semibold text-slate-700">{quality ? aemetStatusLabel(quality.aemet) : '—'}</span></p>
+            <p className="text-[10px] text-slate-500">Locales: <span className="font-semibold text-slate-700">{quality ? localStationsStatusLabel(quality.localStations) : '—'}</span></p>
           </div>
         </div>
 

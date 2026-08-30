@@ -11,15 +11,8 @@ import {
   weatherEmoji,
   windDirection,
 } from '@/lib/display';
+import { fmtHourMadrid } from '@/lib/timezone';
 import type { DailyWeather, HourlyWeather, WeatherAlert, WeatherPayload } from '@/types/weather';
-
-function formatHour(iso: string) {
-  return new Date(iso).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
-}
-
-function formatUpdatedAt(iso: string) {
-  return new Date(iso).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
-}
 
 function comfortLabel(apparentTemperatureC: number) {
   if (apparentTemperatureC <= -2) return 'Frio intenso';
@@ -86,7 +79,7 @@ function FreeHourlyStrip({ hourly, referenceTimeIso }: { hourly: HourlyWeather; 
         {hours.map(({ time, index }) => (
           <article key={time} className="rounded-[22px] border border-slate-100 bg-slate-50 p-4">
             <div className="flex items-center justify-between gap-3">
-              <p className="text-sm font-bold text-slate-900">{formatHour(time)}</p>
+              <p className="text-sm font-bold text-slate-900">{fmtHourMadrid(time)}</p>
               <span className="text-2xl">{weatherEmoji(hourly.weatherCode[index] ?? 0)}</span>
             </div>
             <p className="mt-3 text-2xl font-bold text-slate-950">{(hourly.temperatureC[index] ?? 0).toFixed(1)}°C</p>
@@ -251,7 +244,7 @@ export default function WeatherFreeDashboard() {
                 </div>
               </div>
               <p className="mt-5 rounded-2xl bg-white/10 p-4 text-sm leading-6 text-slate-100">{freeSummary}</p>
-              <p className="mt-4 text-xs text-slate-300">Actualizado {formatUpdatedAt(data.fetchedAt)}</p>
+              <p className="mt-4 text-xs text-slate-300">Actualizado {fmtHourMadrid(data.fetchedAt)}</p>
             </div>
           </div>
         </div>

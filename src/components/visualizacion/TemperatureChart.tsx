@@ -4,12 +4,9 @@ import { useState } from 'react';
 import { Line } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Filler, Tooltip, Legend } from 'chart.js';
 import type { WeatherPayload } from '@/types/weather';
+import { fmtHourMadrid } from '@/lib/timezone';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Filler, Tooltip, Legend);
-
-function fmtHour(iso: string): string {
-  return new Date(iso).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
-}
 
 function fmtDay(iso: string): string {
   return new Date(iso).toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric' });
@@ -66,8 +63,8 @@ export default function TemperatureChart({ currentData }: { currentData: Weather
 
       {hasHourly && (
         <div className="mt-4 grid gap-2 text-xs sm:grid-cols-3">
-          <div className="rounded-2xl bg-orange-50 p-3 text-orange-900"><span className="font-bold">Máxima</span><br />{fmtN(maxTemp, 1)}°C · {maxIndex >= 0 ? fmtHour(hourlyTimes[maxIndex]) : '--'}</div>
-          <div className="rounded-2xl bg-sky-50 p-3 text-sky-900"><span className="font-bold">Mínima</span><br />{fmtN(minTemp, 1)}°C · {minIndex >= 0 ? fmtHour(hourlyTimes[minIndex]) : '--'}</div>
+          <div className="rounded-2xl bg-orange-50 p-3 text-orange-900"><span className="font-bold">Máxima</span><br />{fmtN(maxTemp, 1)}°C · {maxIndex >= 0 ? fmtHourMadrid(hourlyTimes[maxIndex]) : '--'}</div>
+          <div className="rounded-2xl bg-sky-50 p-3 text-sky-900"><span className="font-bold">Mínima</span><br />{fmtN(minTemp, 1)}°C · {minIndex >= 0 ? fmtHourMadrid(hourlyTimes[minIndex]) : '--'}</div>
           <div className="rounded-2xl bg-rose-50 p-3 text-rose-900"><span className="font-bold">Calor fuerte</span><br />{criticalHours > 0 ? `${criticalHours} h por encima de 32°C` : 'Sin horas críticas'}</div>
         </div>
       )}
@@ -77,7 +74,7 @@ export default function TemperatureChart({ currentData }: { currentData: Weather
           <ChartBox height={288}>
             <Line
               data={{
-                labels: hourlyTimes.map(fmtHour),
+                labels: hourlyTimes.map(fmtHourMadrid),
                 datasets: [{
                   label: 'Temperatura',
                   data: hourlyTemps,

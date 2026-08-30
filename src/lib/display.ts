@@ -24,12 +24,17 @@ export function windDirection(deg: number): string {
 export function dayLabel(dateStr: string): string {
   const days = ["domingo", "lunes", "martes", "mi\u00E9rcoles", "jueves", "viernes", "s\u00E1bado"];
   const d = new Date(dateStr);
+  const formatter = new Intl.DateTimeFormat("es-ES", { timeZone: "Europe/Madrid", year: "numeric", month: "2-digit", day: "2-digit" });
+  const dateStr2 = formatter.format(d);
   const today = new Date();
+  const todayStr = formatter.format(today);
   const tomorrow = new Date(today);
   tomorrow.setDate(tomorrow.getDate() + 1);
-  if (d.toDateString() === today.toDateString()) return "Hoy";
-  if (d.toDateString() === tomorrow.toDateString()) return "Ma\u00F1ana";
-  return days[d.getDay()];
+  const tomorrowStr = formatter.format(tomorrow);
+  if (dateStr2 === todayStr) return "Hoy";
+  if (dateStr2 === tomorrowStr) return "Ma\u00F1ana";
+  const weekday = new Intl.DateTimeFormat("es-ES", { timeZone: "Europe/Madrid", weekday: "long" }).format(d);
+  return weekday;
 }
 
 export function temperatureColor(temp: number): string {

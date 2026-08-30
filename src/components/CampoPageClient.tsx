@@ -5,6 +5,7 @@ import dynamic from 'next/dynamic';
 import { NavBottom } from '@/components/NavBottom';
 import { buildAlarms } from '@/components/llano/alarms-logic';
 import { SectionTitle } from '@/components/common/SectionTitle';
+import { TecRuralCtaBanner } from '@/components/TecRuralCtaBanner';
 import type { ClimateCalibrationPayload } from '@/types/climate';
 import type { WeatherPayload, AgriculturalData } from '@/types/weather';
 
@@ -97,6 +98,10 @@ export function CampoPageClient({
             <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-slate-500" />
           </div>
         )}
+
+        <div className="mt-5">
+          <TecRuralCtaBanner context="campo" />
+        </div>
       </div>
       <NavBottom alertCount={alarms.length} />
     </div>

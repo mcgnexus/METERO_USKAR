@@ -1,6 +1,8 @@
 'use client';
 
 import { NavBottom } from '@/components/NavBottom';
+import { fmtHourMadrid } from '@/lib/timezone';
+import { aemetStatusLabel, localStationsStatusLabel, primarySourceLabel, qualityLabel } from '@/lib/dataQuality';
 import type { WeatherPayload } from '@/types/weather';
 import type { ClimateCalibrationPayload } from '@/types/climate';
 
@@ -45,7 +47,7 @@ export function FuentesPageClient({
                       <p className="text-xs text-slate-500">{sh.message}</p>
                       {sh.dataAgeMinutes != null && (
                         <p className="text-[10px] text-slate-600 mt-0.5" suppressHydrationWarning>
-                          Datos de hace {sh.dataAgeMinutes} min · {sh.checkedAt ? new Date(sh.checkedAt).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }) : '—'}
+                          Datos de hace {sh.dataAgeMinutes} min · {sh.checkedAt ? fmtHourMadrid(sh.checkedAt) : '—'}
                         </p>
                       )}
                     </div>
@@ -55,20 +57,20 @@ export function FuentesPageClient({
             )}
           </section>
 
-          {wd?.confidencePct != null && (
+          {wd?.dataQuality && (
             <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-              <h2 className="text-xs font-bold uppercase tracking-[0.16em] text-slate-600 mb-3">📊 Confianza global</h2>
-              <div className="flex items-center gap-3">
-                <div className="h-4 flex-1 overflow-hidden rounded-full bg-slate-200">
-                  <div
-                    className="h-full rounded-full bg-gradient-to-r from-amber-400 via-emerald-400 to-emerald-600 transition-all"
-                    style={{ width: `${Math.min(wd.confidencePct, 100)}%` }}
-                  />
-                </div>
-                <span className="text-sm font-black text-slate-800">{wd.confidencePct.toFixed(0)}%</span>
+              <h2 className="text-xs font-bold uppercase tracking-[0.16em] text-slate-600 mb-3">📊 Calidad de los datos</h2>
+              <div className="space-y-2">
+                <QualityRow label="Calidad de los datos" value={qualityLabel(wd.dataQuality.quality)} />
+                <QualityRow label="Fuente principal" value={primarySourceLabel(wd.dataQuality.primarySource)} />
+                <QualityRow label="AEMET" value={aemetStatusLabel(wd.dataQuality.aemet)} />
+                <QualityRow label="Estaciones locales" value={localStationsStatusLabel(wd.dataQuality.localStations)} />
+                <QualityRow label="Fuentes activas" value={String(wd.dataQuality.activeSourceCount)} />
               </div>
-              {wd.confidenceExplanation && (
-                <p className="mt-2 text-xs text-slate-600">{wd.confidenceExplanation}</p>
+              {wd.dataQuality.explanation && (
+                <p className="mt-3 border-t border-slate-100 pt-2 text-xs leading-5 text-slate-600">
+                  {wd.dataQuality.explanation}
+                </p>
               )}
             </section>
           )}
@@ -102,6 +104,15 @@ function Row({ label, value }: { label: string; value: string }) {
     <div className="flex justify-between">
       <span className="text-slate-500">{label}</span>
       <span className="font-semibold text-slate-800">{value}</span>
+    </div>
+  );
+}
+
+function QualityRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2">
+      <span className="text-xs font-semibold text-slate-500">{label}</span>
+      <span className="text-sm font-bold text-slate-800">{value}</span>
     </div>
   );
 }

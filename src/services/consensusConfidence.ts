@@ -91,6 +91,15 @@ export function calculateConsensusConfidence(
     penalties.push(`stale_cache_penalty=+${staleModifier}`);
   }
 
+  // I3 — No inflar la confianza cuando no hay corroboración entre fuentes.
+  // Un único origen (p. ej. solo Open-Meteo) no puede reportar el mismo 92% que
+  // dos fuentes que coinciden. Se penaliza explícitamente la falta de cotejo.
+  const corroborationPenalty = both ? 0 : 15;
+  if (corroborationPenalty > 0) {
+    totalPenalty += corroborationPenalty;
+    penalties.push(`single_source_no_crosscheck=+${corroborationPenalty}`);
+  }
+
   const confidence = Math.max(25, Math.min(92, BASE_CONFIDENCE - totalPenalty - staleModifier));
   const explanation = penalties.length > 0 ? penalties.join("; ") : "no_penalties";
 

@@ -77,6 +77,7 @@ export async function aggregateWeather(): Promise<WeatherPayload> {
     daily: DailyWeather;
     confidencePct: number;
     confidenceExplanation: string;
+    dataQuality: import("@/lib/dataQuality").DataQualitySummary;
     orographic?: {
       factor: number;
       classification: "barlovento" | "sotavento" | "neutro";
@@ -135,6 +136,14 @@ export async function aggregateWeather(): Promise<WeatherPayload> {
       fetchedAt: new Date().toISOString(),
       confidencePct: 0,
       confidenceExplanation: layer1Error ?? "Layer 1 (observation) failed",
+      dataQuality: {
+        quality: "baja",
+        primarySource: "NONE",
+        aemet: "sin_datos",
+        localStations: "no_configuradas",
+        activeSourceCount: 0,
+        explanation: "No hay datos disponibles en este momento.",
+      },
       current: emptyCurrent,
       sources: [],
       sourceHealth: [],
@@ -174,6 +183,7 @@ export async function aggregateWeather(): Promise<WeatherPayload> {
     fetchedAt: new Date().toISOString(),
     confidencePct: layerResult.confidencePct,
     confidenceExplanation: layerResult.confidenceExplanation,
+    dataQuality: layerResult.dataQuality,
     current: layerResult.current,
     sources: layerResult.sources,
     sourceHealth: layerResult.sourceHealth,

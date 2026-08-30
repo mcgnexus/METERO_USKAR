@@ -2,6 +2,7 @@
 
 import dynamic from 'next/dynamic';
 import { NavBottom } from '@/components/NavBottom';
+import { TecRuralCtaBanner } from '@/components/TecRuralCtaBanner';
 import type { WeatherPayload } from '@/types/weather';
 import type { ForecastPayload } from '@/types/forecast';
 
@@ -28,6 +29,9 @@ export function SemanaPageClient({
           daily={initialWeatherData?.daily ?? null}
           forecast={initialForecastData}
         />
+        <div className="mt-5">
+          <TecRuralCtaBanner context="semana" />
+        </div>
       </div>
       <NavBottom />
     </div>
