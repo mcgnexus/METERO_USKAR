@@ -4,7 +4,7 @@ const { mockGetClimateCalibration, mockGetCurrentWeather, mockBuildAlarms, mockS
   mockGetClimateCalibration: vi.fn(),
   mockGetCurrentWeather: vi.fn(),
   mockBuildAlarms: vi.fn(),
-  mockSharp: vi.fn(() => ({
+  mockSharp: vi.fn((_input: Buffer) => ({
     png: vi.fn(() => ({
       toBuffer: vi.fn(() => Promise.resolve(Buffer.from("fake-png-bytes"))),
     })),
@@ -27,11 +27,6 @@ vi.mock("@/components/llano/alarms-logic", () => ({
 vi.mock("sharp", () => ({ default: mockSharp }));
 
 import { GET } from "@/app/api/cards/alert/route";
-
-function sharpInput(): Buffer {
-  const calls = mockSharp.mock.calls as unknown as Array<[Buffer]>;
-  return calls[0]![0];
-}
 
 function mockClimateData(overrides: Record<string, any> = {}) {
   return {
@@ -90,7 +85,7 @@ describe("GET /api/cards/alert", () => {
     mockSharp.mockClear();
     const req = new Request("http://localhost:3000/api/cards/alert?platform=ig");
     await GET(req);
-    const svg = sharpInput().toString("utf-8");
+    const svg = mockSharp.mock.calls[0]![0]!.toString("utf-8");
     expect(svg).toContain("CRITICO");
     expect(svg).toContain("Helada inminente");
     expect(svg).toContain("Temperaturas bajo cero");
@@ -103,7 +98,7 @@ describe("GET /api/cards/alert", () => {
     mockSharp.mockClear();
     const req = new Request("http://localhost:3000/api/cards/alert?platform=ig");
     await GET(req);
-    const svg = sharpInput().toString("utf-8");
+    const svg = mockSharp.mock.calls[0]![0]!.toString("utf-8");
     expect(svg).toContain("Sin alertas activas");
   });
 
@@ -112,7 +107,7 @@ describe("GET /api/cards/alert", () => {
     mockSharp.mockClear();
     const req = new Request("http://localhost:3000/api/cards/alert?platform=ig");
     await GET(req);
-    const svg = sharpInput().toString("utf-8");
+    const svg = mockSharp.mock.calls[0]![0]!.toString("utf-8");
     expect(svg).toContain("Datos no disponibles");
   });
 
@@ -145,7 +140,7 @@ describe("GET /api/cards/alert", () => {
     mockSharp.mockClear();
     const req = new Request("http://localhost:3000/api/cards/alert?platform=ig");
     await GET(req);
-    const svg = sharpInput().toString("utf-8");
+    const svg = mockSharp.mock.calls[0]![0]!.toString("utf-8");
     expect(svg).toContain("Temp");
     expect(svg).toContain("Viento");
     expect(svg).toContain("Humedad");
@@ -160,7 +155,7 @@ describe("GET /api/cards/alert", () => {
     mockSharp.mockClear();
     const req = new Request("http://localhost:3000/api/cards/alert?platform=ig");
     await GET(req);
-    const svg = sharpInput().toString("utf-8");
+    const svg = mockSharp.mock.calls[0]![0]!.toString("utf-8");
     expect(svg).toContain("Helada");
     expect(svg).toContain("Viento fuerte");
   });

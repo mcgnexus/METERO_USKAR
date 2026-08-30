@@ -3,7 +3,7 @@ import { vi, describe, it, expect, beforeAll } from "vitest";
 const { mockGetClimateCalibration, mockGetCurrentWeather, mockSharp } = vi.hoisted(() => ({
   mockGetClimateCalibration: vi.fn(),
   mockGetCurrentWeather: vi.fn(),
-  mockSharp: vi.fn(() => ({
+  mockSharp: vi.fn((_input: Buffer) => ({
     png: vi.fn(() => ({
       toBuffer: vi.fn(() => Promise.resolve(Buffer.from("fake-png-bytes"))),
     })),
@@ -19,11 +19,6 @@ vi.mock("@/services/currentWeatherService", () => ({
 vi.mock("sharp", () => ({ default: mockSharp }));
 
 import { GET } from "@/app/api/daily-card/route";
-
-function sharpInput(): Buffer {
-  const calls = mockSharp.mock.calls as unknown as Array<[Buffer]>;
-  return calls[0]![0];
-}
 
 function mockClimateData(overrides: Record<string, any> = {}) {
   return {
@@ -100,7 +95,7 @@ describe("GET /api/daily-card", () => {
   it("calls sharp with valid SVG", async () => {
     mockSharp.mockClear();
     await GET();
-    const input = sharpInput();
+    const input = mockSharp.mock.calls[0]![0]!;
     expect(input).toBeInstanceOf(Buffer);
     const svg = input.toString("utf-8");
     expect(svg).toContain("<svg");
@@ -112,7 +107,7 @@ describe("GET /api/daily-card", () => {
 
   it("includes temperature data in generated SVG", async () => {
     await GET();
-    const svg = sharpInput().toString("utf-8");
+    const svg = mockSharp.mock.calls[0]![0]!.toString("utf-8");
     expect(svg).toContain("32");
     expect(svg).toContain("16");
   });
@@ -123,7 +118,7 @@ describe("GET /api/daily-card", () => {
     }));
     mockSharp.mockClear();
     await GET();
-    const svg = sharpInput().toString("utf-8");
+    const svg = mockSharp.mock.calls[0]![0]!.toString("utf-8");
     expect(svg).toContain("Alerta AEMET");
     expect(svg).toContain("Lluvias intensas");
   });

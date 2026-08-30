@@ -30,7 +30,12 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       );
     }
 
-    const body = await request.json();
+    let body: { password?: unknown };
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json({ error: "JSON inválido" }, { status: 400 });
+    }
     const password = body?.password;
 
     if (!password || typeof password !== "string" || !verifyAdminPassword(password)) {
@@ -48,9 +53,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     });
     return response;
   } catch (e) {
-    return NextResponse.json(
-      { error: e instanceof Error ? e.message : "Error interno" },
-      { status: 500 }
-    );
+    console.error("[admin/login]", e);
+    return NextResponse.json({ error: "Error interno" }, { status: 500 });
   }
 }
