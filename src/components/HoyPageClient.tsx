@@ -7,6 +7,7 @@ import { NavBottom } from '@/components/NavBottom';
 import { NotificationPermission } from '@/components/NotificationPermission';
 import { AgriculturalLeadForm } from '@/components/AgriculturalLeadForm';
 import { TecRuralCtaBanner } from '@/components/TecRuralCtaBanner';
+import { TecRuralProfileSection } from '@/components/TecRuralProfileSection';
 import { LocalAlarmNotifier } from '@/components/LocalAlarmNotifier';
 import { TodaySummaryCard } from '@/components/weather/TodaySummaryCard';
 import { HourlyForecastStrip } from '@/components/weather/HourlyForecastStrip';
@@ -172,6 +173,8 @@ export function HoyPageClient({
 
           <TecRuralCtaBanner context="home" />
 
+          <TecRuralProfileSection />
+
           <div className="mb-1">
             <AgriculturalLeadForm />
             <p className="mt-2 text-center">
@@ -214,7 +217,7 @@ export function HoyPageClient({
           <section className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5">
             <p className="text-sm font-black text-emerald-950">¿Necesitas ayuda para tu finca?</p>
             <p className="mt-1 text-xs leading-5 text-emerald-900/80">TecRural puede orientarte con riego, heladas, sensores y automatización.</p>
-            <a href="/huescar/contacto" className="mt-3 inline-flex rounded-full bg-emerald-700 px-4 py-2 text-xs font-bold text-white hover:bg-emerald-800">Contactar con TecRural</a>
+            <a href="/huescar/contacto" className="mt-3 inline-flex rounded-full bg-emerald-700 px-4 py-2 text-xs font-bold text-white hover:bg-emerald-800">Quiero avisos para mi finca</a>
           </section>
         </aside>
         </div>

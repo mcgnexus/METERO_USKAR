@@ -23,22 +23,22 @@ export function TecRuralCtaBanner({ context }: { context?: string }) {
           </p>
         </div>
         <div className="flex shrink-0 flex-col gap-2 sm:items-end">
+          <Link
+            href="/huescar/contacto"
+            onClick={() => track('tec_rural_cta_clicked', { context })}
+            className="inline-flex items-center justify-center rounded-full bg-emerald-600 px-5 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-700 active:scale-95"
+          >
+            Quiero avisos para mi finca
+          </Link>
           <a
             href={WHATSAPP_URL}
             target="_blank"
             rel="noreferrer"
             onClick={() => track('whatsapp_clicked', { context, source: 'cta-banner' })}
-            className="inline-flex items-center justify-center rounded-full bg-emerald-600 px-5 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-700 active:scale-95"
-          >
-            💬 Hablar ahora por WhatsApp
-          </a>
-          <Link
-            href="/huescar/contacto"
-            onClick={() => track('tec_rural_cta_clicked', { context })}
             className="inline-flex items-center justify-center rounded-full border border-emerald-300 bg-white px-5 py-2 text-xs font-bold text-emerald-800 transition hover:bg-emerald-50 active:scale-95"
           >
-            O rellena el formulario
-          </Link>
+            Hablar con TecRural
+          </a>
         </div>
       </div>
     </section>

@@ -5,8 +5,8 @@ import { SiteFooter } from "@/components/SiteFooter";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://meteo.tecrural.es"),
-  title: "Meteo Huéscar",
-  description: "Previsión local, lluvia, viento, frío, calor, alertas y consejos útiles para vecinos, campo y actividades al aire libre.",
+  title: "Meteo agrícola Huéscar | Avisos para fincas | TecRural",
+  description: "Previsión meteorológica y agrícola para Huéscar y el Altiplano de Granada. Consulta lluvia, viento, heladas, riego y cultivos. Recibe avisos personalizados de TecRural.",
   keywords: [
     "tiempo Huéscar", "meteorología Huéscar", "alertas Huéscar",
     "tiempo agrícola Huéscar", "riesgo heladas Huéscar", "riego olivo Huéscar",
@@ -29,9 +29,9 @@ export const metadata: Metadata = {
     "apple-mobile-web-app-capable": "yes",
   },
   openGraph: {
-    title: "Meteo Huéscar",
-    description: "Previsión local, lluvia, viento, frío, calor, alertas y consejos útiles para vecinos, campo y actividades al aire libre.",
-    siteName: "Meteo Huéscar",
+    title: "Meteo agrícola Huéscar | Avisos para fincas | TecRural",
+    description: "Previsión meteorológica y agrícola para Huéscar y el Altiplano de Granada. Consulta lluvia, viento, heladas, riego y cultivos. Recibe avisos personalizados de TecRural.",
+    siteName: "Meteo Huéscar · TecRural",
     images: [
       {
         url: "/icons/icon-512.png",

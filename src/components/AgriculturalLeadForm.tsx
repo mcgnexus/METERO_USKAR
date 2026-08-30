@@ -94,7 +94,7 @@ export function AgriculturalLeadForm() {
             onClick={() => track('whatsapp_clicked', { context: 'lead-form-post-submit' })}
             className="flex items-center justify-center gap-2 rounded-full bg-emerald-600 px-4 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-emerald-700"
           >
-            💬 Hablar ahora con TecRural
+             Hablar con TecRural
           </a>
         </div>
       )}

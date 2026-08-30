@@ -1,4 +1,5 @@
 import type { MetadataRoute } from 'next';
+import { MUNICIPALITIES } from '@/config/municipalities';
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const base = 'https://meteo.tecrural.es';
@@ -15,5 +16,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${base}/aviso-legal`, lastModified: new Date(), changeFrequency: 'yearly', priority: 0.2 },
     { url: `${base}/privacidad`, lastModified: new Date(), changeFrequency: 'yearly', priority: 0.2 },
     { url: `${base}/cookies`, lastModified: new Date(), changeFrequency: 'yearly', priority: 0.2 },
+    ...MUNICIPALITIES.map(({ slug }) => ({ url: `${base}/${slug}`, lastModified: new Date(), changeFrequency: 'daily' as const, priority: 0.7 })),
   ];
 }
