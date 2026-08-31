@@ -398,6 +398,17 @@ export async function saveAgriculturalLead(input: {
   }
 }
 
+export async function purgeExpiredAgriculturalLeads(): Promise<void> {
+  try {
+    await getPool().query(
+      `DELETE FROM agricultural_leads
+       WHERE created_at < NOW() - INTERVAL '12 months'`,
+    );
+  } catch {
+    // Retention cleanup must not prevent the weather capture cron from running.
+  }
+}
+
 export async function getRecentAgriculturalLeads(limit = 50): Promise<Array<{
   id: number | string;
   name: string;

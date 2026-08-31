@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "Aviso legal | Meteo Huéscar",
-  description: "Información legal de Meteo Huéscar.",
+  title: "Aviso legal | Meteo Huéscar · TecRural",
+  description: "Datos identificativos y condiciones de uso de Meteo Huéscar, proyecto de TecRural.",
   alternates: { canonical: "/aviso-legal" },
 };
 
@@ -16,8 +16,15 @@ export default function AvisoLegalPage() {
 
       <section className="mt-8 space-y-4 text-sm leading-7">
         <h2 className="text-xl font-bold">1. Titular del sitio</h2>
-        <p>Este sitio web es Meteo Huéscar, disponible en <strong>meteo.tecrural.es</strong>.</p>
-        <p>Titular: <strong>Manuel Carrasco García</strong>. El domicilio y NIF se facilitarán cuando sean legalmente necesarios. Contacto: <strong>mcgtecrural@gmail.com</strong>.</p>
+        <p>Este sitio web es Meteo Huéscar, proyecto desarrollado por <strong>TecRural</strong> y disponible en <strong>meteo.tecrural.es</strong>.</p>
+        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+          <p><strong>Nombre o denominación:</strong> TecRural · Manuel Carrasco García</p>
+          <p><strong>Domicilio:</strong> Barrio Los Reyes 113, 18830 Huéscar (Granada)</p>
+          <p><strong>NIF:</strong> 76143911L</p>
+          <p><strong>Correo electrónico:</strong> <a className="font-semibold text-sky-700 underline" href="mailto:mcgtecrural@gmail.com">mcgtecrural@gmail.com</a></p>
+        </div>
+        <p>Los datos identificativos adicionales que resulten exigibles por la actividad desarrollada se incorporarán y mantendrán actualizados conforme a la normativa aplicable.</p>
+        <p>Esta información se facilita de acuerdo con el artículo 10 de la <a className="font-semibold text-sky-700 underline" href="https://www.boe.es/buscar/act.php?id=BOE-A-2002-13758" target="_blank" rel="noreferrer">Ley 34/2002, de Servicios de la Sociedad de la Información y del Comercio Electrónico (LSSI-CE)</a>.</p>
 
         <h2 className="pt-4 text-xl font-bold">2. Objeto y condiciones de uso</h2>
         <p>Meteo Huéscar ofrece información meteorológica, agrícola y de alertas con finalidad meramente informativa. Los datos pueden contener errores, retrasos o interrupciones y no sustituyen las fuentes oficiales ni las indicaciones de los servicios de emergencia.</p>

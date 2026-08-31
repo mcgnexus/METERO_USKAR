@@ -9,6 +9,11 @@ const INTERESTS = new Set([
   'Recomendaciones de riego',
   'Sensores para mi finca',
   'Diagnóstico agrícola',
+  'Riego',
+  'Heladas',
+  'Sensores',
+  'Diagnóstico de plantas',
+  'Automatización',
   'Información sobre Terracía',
 ]);
 
@@ -40,7 +45,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       ? body.interests.filter((value: unknown): value is string => typeof value === 'string' && INTERESTS.has(value)).slice(0, 5)
       : [];
 
-    if (!name || !municipality || !CROPS.has(crop) || !AREAS.has(area) || interests.length === 0) {
+    if (!municipality || !CROPS.has(crop) || (area && !AREAS.has(area)) || interests.length === 0) {
       return NextResponse.json({ error: 'Completa los datos de la finca y selecciona al menos un interés.' }, { status: 400 });
     }
     if (!/^[+0-9 ()-]{7,30}$/.test(phone)) {

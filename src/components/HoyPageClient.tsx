@@ -82,8 +82,12 @@ export function HoyPageClient({
 
   if (!cd) {
     return (
-      <div className="min-h-screen bg-[#f4f7fb] flex items-center justify-center">
-        <p className="text-slate-500">Cargando...</p>
+      <div className="flex min-h-screen items-center justify-center bg-[#f4f7fb] px-4">
+        <div className="rounded-2xl border border-rose-200 bg-white p-6 text-center shadow-sm">
+          <p className="font-semibold text-rose-700">No se pudo cargar la previsión</p>
+          <p className="mt-2 text-sm text-slate-500">Los datos meteorológicos no están disponibles ahora.</p>
+          <button type="button" onClick={() => window.location.reload()} className="mt-4 rounded-full bg-sky-700 px-5 py-2.5 text-sm font-bold text-white hover:bg-sky-800">Reintentar</button>
+        </div>
       </div>
     );
   }
@@ -106,6 +110,7 @@ export function HoyPageClient({
             <a
               href="/api/daily-card"
               download="ficha-meteo-huescar"
+              onClick={() => track('daily_card_downloaded', { source: 'home' })}
               className="flex items-center gap-1.5 rounded-full bg-slate-900 px-3 py-1.5 text-[11px] font-bold text-white shadow-sm transition hover:bg-slate-700 active:scale-95"
             >
               Descargar ficha diaria
@@ -143,7 +148,7 @@ export function HoyPageClient({
             </section>
           )}
 
-          {wd?.hourly && wd.hourly.time.length > 0 && (
+           {wd?.hourly && wd.hourly.time.length > 0 && (
             <section className="bg-white rounded-2xl p-4 shadow-sm border border-slate-200">
               <SectionTitle>🕐 Próximas horas</SectionTitle>
               <HourlyForecastStrip
@@ -154,10 +159,12 @@ export function HoyPageClient({
                   precipitationProb: wd.hourly.precipitationProbabilityPct[i] ?? null,
                 }))}
               />
-            </section>
-          )}
+             </section>
+           )}
 
-          {fd && fd.forecastDays && fd.forecastDays.length > 0 && (
+           <TecRuralCtaBanner context="home" />
+
+           {fd && fd.forecastDays && fd.forecastDays.length > 0 && (
             <section className="bg-white rounded-2xl p-4 shadow-sm border border-slate-200">
               <SectionTitle>📅 Tendencia semanal</SectionTitle>
               <WeekTrend daily={wd?.daily ?? null} forecast={fd} />
@@ -171,9 +178,7 @@ export function HoyPageClient({
             </section>
           )}
 
-          <TecRuralCtaBanner context="home" />
-
-          <TecRuralProfileSection />
+           <TecRuralProfileSection />
 
           <div className="mb-1">
             <AgriculturalLeadForm />
@@ -209,8 +214,8 @@ export function HoyPageClient({
             <h2 className="mt-1 text-lg font-black text-slate-900">Decide con contexto</h2>
             <p className="mt-2 text-sm leading-6 text-slate-600">Consulta la evolución, el campo y los avisos sin abandonar esta pantalla.</p>
             <div className="mt-4 grid gap-2">
-              <a href="/huescar/campo" className="rounded-xl bg-emerald-50 px-3 py-2.5 text-sm font-bold text-emerald-900 hover:bg-emerald-100">🌱 Resumen agrícola</a>
-              <a href="/huescar/alertas" className="rounded-xl bg-rose-50 px-3 py-2.5 text-sm font-bold text-rose-900 hover:bg-rose-100">⚠️ Ver alertas {alarms.length > 0 ? `(${alarms.length})` : ''}</a>
+            <a href="/huescar/campo" onClick={() => track('field_navigation_clicked', { source: 'home' })} className="rounded-xl bg-emerald-50 px-3 py-2.5 text-sm font-bold text-emerald-900 hover:bg-emerald-100">🌱 Resumen agrícola</a>
+            <a href="/huescar/alertas" onClick={() => track('alerts_navigation_clicked', { source: 'home' })} className="rounded-xl bg-rose-50 px-3 py-2.5 text-sm font-bold text-rose-900 hover:bg-rose-100">⚠️ Ver alertas {alarms.length > 0 ? `(${alarms.length})` : ''}</a>
               <a href="/huescar/fuentes" className="rounded-xl bg-slate-50 px-3 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-100">🔎 Fuentes y fiabilidad</a>
             </div>
           </section>
@@ -224,6 +229,8 @@ export function HoyPageClient({
       </div>
 
       <NavBottom alertCount={alarms.length} />
+      <div className="fixed bottom-[72px] left-3 right-3 z-40 lg:hidden"><a href="/huescar/contacto" onClick={() => track('cta_clicked', { context: 'mobile-fixed', cta: 'Recibir avisos agrícolas' })} className="flex min-h-[52px] items-center justify-center rounded-full bg-emerald-700 px-5 text-sm font-black text-white shadow-xl hover:bg-emerald-800">Recibir avisos agrícolas</a></div>
+      <a href="https://wa.me/34614242716?text=Hola%2C%20he%20consultado%20Meteo%20Hu%C3%A9scar%20y%20quiero%20recibir%20avisos%20para%20mi%20finca." target="_blank" rel="noreferrer" onClick={() => track('whatsapp_clicked', { context: 'mobile-floating', cta: 'Hablar con TecRural' })} aria-label="Hablar con TecRural por WhatsApp" className="fixed bottom-[136px] right-4 z-40 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-600 text-xl text-white shadow-xl hover:bg-emerald-700 lg:hidden"><span aria-hidden="true">💬</span></a>
     </div>
   );
 }

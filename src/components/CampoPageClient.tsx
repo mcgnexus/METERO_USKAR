@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, Suspense } from 'react';
+import { useMemo, useEffect, Suspense } from 'react';
 import dynamic from 'next/dynamic';
 import { NavBottom } from '@/components/NavBottom';
 import { buildAlarms } from '@/components/llano/alarms-logic';
@@ -8,6 +8,7 @@ import { SectionTitle } from '@/components/common/SectionTitle';
 import { TecRuralCtaBanner } from '@/components/TecRuralCtaBanner';
 import type { ClimateCalibrationPayload } from '@/types/climate';
 import type { WeatherPayload, AgriculturalData } from '@/types/weather';
+import { useTrackEvent } from '@/hooks/useTrackEvent';
 
 const FieldTab = dynamic(() => import('@/components/llano/field-tab').then((m) => ({ default: m.FieldTab })), {
   ssr: false,
@@ -33,6 +34,8 @@ export function CampoPageClient({
 }) {
   const cd = initialClimateData;
   const wd = initialWeatherData;
+  const track = useTrackEvent();
+  useEffect(() => { track('field_page_viewed'); }, [track]);
 
   const alarms = useMemo(() => {
     if (!cd) return [];

@@ -76,7 +76,7 @@ export function AgriculturalLeadForm() {
       {!open && !submitted && (
         <button
           type="button"
-          onClick={() => { setOpen(true); track('lead_form_opened'); }}
+           onClick={() => { setOpen(true); track('cta_clicked', { cta: 'Quiero avisos para mi finca', destination: 'inline-lead-form' }); track('lead_form_opened'); }}
           className="mt-3 rounded-full bg-emerald-700 px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-emerald-800"
         >
           Quiero avisos para mi finca
@@ -101,21 +101,21 @@ export function AgriculturalLeadForm() {
       {open && !submitted && (
         <form onSubmit={handleSubmit} onChange={() => { if (!started) { setStarted(true); track('lead_form_started'); } }} className="mt-4 space-y-3" noValidate>
           <div className="grid gap-3 sm:grid-cols-2">
-            <label className="text-xs font-semibold text-slate-700">
-              Nombre
-              <input name="name" required maxLength={80} className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-normal outline-none focus:border-emerald-600" />
+            <label htmlFor="inline-name" className="text-xs font-semibold text-slate-700">
+              Nombre <span className="font-normal text-slate-400">(opcional)</span>
+              <input id="inline-name" name="name" maxLength={80} aria-invalid={Boolean(error)} aria-describedby={error ? 'inline-form-error' : undefined} className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-normal outline-none focus:border-emerald-600 focus-visible:ring-2 focus-visible:ring-emerald-500" />
             </label>
-            <label className="text-xs font-semibold text-slate-700">
+            <label htmlFor="inline-phone" className="text-xs font-semibold text-slate-700">
               Teléfono / WhatsApp
-              <input name="phone" required maxLength={30} inputMode="tel" className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-normal outline-none focus:border-emerald-600" />
+              <input id="inline-phone" name="phone" required maxLength={30} inputMode="tel" aria-invalid={Boolean(error)} aria-describedby={error ? 'inline-form-error' : undefined} className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-normal outline-none focus:border-emerald-600 focus-visible:ring-2 focus-visible:ring-emerald-500" />
             </label>
-            <label className="text-xs font-semibold text-slate-700">
+            <label htmlFor="inline-municipality" className="text-xs font-semibold text-slate-700">
               Municipio
-              <input name="municipality" required maxLength={80} className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-normal outline-none focus:border-emerald-600" />
+              <input id="inline-municipality" name="municipality" required maxLength={80} aria-invalid={Boolean(error)} aria-describedby={error ? 'inline-form-error' : undefined} className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-normal outline-none focus:border-emerald-600 focus-visible:ring-2 focus-visible:ring-emerald-500" />
             </label>
-            <label className="text-xs font-semibold text-slate-700">
-              Superficie aproximada
-              <select name="area" required className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-normal outline-none focus:border-emerald-600">
+            <label htmlFor="inline-area" className="text-xs font-semibold text-slate-700">
+              Superficie aproximada <span className="font-normal text-slate-400">(opcional)</span>
+              <select id="inline-area" name="area" aria-invalid={Boolean(error)} aria-describedby={error ? 'inline-form-error' : undefined} className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-normal outline-none focus:border-emerald-600 focus-visible:ring-2 focus-visible:ring-emerald-500">
                 <option value="">Selecciona</option>
                 <option>Menos de 5 ha</option>
                 <option>5-20 ha</option>
@@ -125,9 +125,9 @@ export function AgriculturalLeadForm() {
               </select>
             </label>
           </div>
-          <label className="block text-xs font-semibold text-slate-700">
+          <label htmlFor="inline-crop" className="block text-xs font-semibold text-slate-700">
             Cultivo
-            <select name="crop" required className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-normal outline-none focus:border-emerald-600">
+            <select id="inline-crop" name="crop" required aria-invalid={Boolean(error)} aria-describedby={error ? 'inline-form-error' : undefined} className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-normal outline-none focus:border-emerald-600 focus-visible:ring-2 focus-visible:ring-emerald-500">
               <option value="">Selecciona</option>
               {crops.map((crop) => <option key={crop}>{crop}</option>)}
             </select>
@@ -155,7 +155,7 @@ export function AgriculturalLeadForm() {
             <p className="leading-5 text-slate-500">Responsable: Manuel Carrasco García. Puedes retirar tu consentimiento escribiendo a <a className="font-semibold text-emerald-800 underline" href="mailto:mcgtecrural@gmail.com">mcgtecrural@gmail.com</a>. Consulta la <Link className="font-semibold text-emerald-800 underline" href="/privacidad">política de privacidad</Link>.</p>
           </div>
           <input name="website" tabIndex={-1} autoComplete="off" className="hidden" aria-hidden="true" />
-          {error && <p className="text-xs font-semibold text-rose-700">{error}</p>}
+          {error && <p id="inline-form-error" role="alert" className="text-xs font-semibold text-rose-700">{error}</p>}
           <div className="flex gap-2">
             <button type="submit" disabled={sending} className="rounded-full bg-emerald-700 px-4 py-2 text-xs font-bold text-white hover:bg-emerald-800 disabled:opacity-50">{sending ? 'Enviando...' : 'Enviar solicitud'}</button>
             <button type="button" onClick={() => setOpen(false)} className="rounded-full px-3 py-2 text-xs font-bold text-slate-600 hover:bg-white">Cancelar</button>

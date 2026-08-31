@@ -27,27 +27,29 @@ const TemperatureChart = dynamic(() => import('@/components/dashboard/temperatur
 
 function LoadingState() {
   return (
-    <div className="surface-card flex items-center justify-center rounded-[28px] p-20">
-      <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-slate-500" />
+    <div className="surface-card rounded-[28px] p-6" aria-busy="true" aria-live="polite">
+      <div className="flex items-center gap-3 text-sm font-semibold text-slate-600"><div className="h-5 w-5 animate-spin rounded-full border-2 border-slate-200 border-t-sky-600" />Cargando previsión…</div>
+      <div className="mt-5 space-y-3"><div className="h-24 animate-pulse rounded-2xl bg-slate-100" /><div className="h-40 animate-pulse rounded-2xl bg-slate-100" /></div>
     </div>
   );
 }
 
-function ErrorState({ message }: { message: string }) {
+function ErrorState({ onRetry }: { onRetry: () => void }) {
   return (
     <div className="surface-card rounded-[28px] p-20 text-center">
-      <p className="font-semibold text-red-500">Error al cargar datos</p>
-      <p className="mt-2 text-sm text-slate-500">{message}</p>
+      <p className="font-semibold text-rose-700">No se pudo cargar la previsión</p>
+      <p className="mt-2 text-sm text-slate-500">Comprueba tu conexión o inténtalo de nuevo.</p>
+      <button type="button" onClick={onRetry} className="mt-4 rounded-full bg-sky-700 px-5 py-2.5 text-sm font-bold text-white hover:bg-sky-800">Reintentar</button>
     </div>
   );
 }
 
 export default function WeatherDashboard({ initialData = null }: { initialData?: WeatherPayload | null }) {
-  const { data, error, loading } = useWeatherData('meteo-dashboard', initialData);
+  const { data, error, loading, isStale, cachedAt, refresh } = useWeatherData('meteo-dashboard', initialData);
   const [activeTab, setActiveTab] = useState<DashboardTab>('forecast');
 
   if (loading) return <LoadingState />;
-  if (error) return <ErrorState message={error.message} />;
+  if (error && !data) return <ErrorState onRetry={refresh} />;
   if (!data) return null;
 
   const showNowcast = data.nowcast && data.nowcast.level !== 'ninguno';
@@ -122,6 +124,8 @@ export default function WeatherDashboard({ initialData = null }: { initialData?:
 
   return (
     <div className="surface-card-strong overflow-hidden rounded-[20px] border border-slate-200 p-3 sm:rounded-[32px] sm:p-6">
+      {(isStale || error) && <div className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-900" role="status"><span>{error ? 'No se han podido actualizar los datos. Mostrando la última información disponible.' : 'Actualizando datos…'}</span><button type="button" onClick={refresh} className="font-bold underline">Reintentar</button></div>}
+      <p className="mb-3 text-right text-[11px] text-slate-500" suppressHydrationWarning>Última actualización: {cachedAt ? new Date(cachedAt).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }) : new Date(data.fetchedAt).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</p>
       <HeroPanel data={data} />
       <TabSystem
         activeTab={activeTab}

@@ -25,7 +25,7 @@ export function TecRuralCtaBanner({ context }: { context?: string }) {
         <div className="flex shrink-0 flex-col gap-2 sm:items-end">
           <Link
             href="/huescar/contacto"
-            onClick={() => track('tec_rural_cta_clicked', { context })}
+            onClick={() => track('cta_clicked', { context, cta: 'Quiero avisos para mi finca', destination: '/huescar/contacto' })}
             className="inline-flex items-center justify-center rounded-full bg-emerald-600 px-5 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-700 active:scale-95"
           >
             Quiero avisos para mi finca
@@ -34,7 +34,7 @@ export function TecRuralCtaBanner({ context }: { context?: string }) {
             href={WHATSAPP_URL}
             target="_blank"
             rel="noreferrer"
-            onClick={() => track('whatsapp_clicked', { context, source: 'cta-banner' })}
+            onClick={() => track('whatsapp_clicked', { context, source: 'cta-banner', cta: 'Hablar con TecRural' })}
             className="inline-flex items-center justify-center rounded-full border border-emerald-300 bg-white px-5 py-2 text-xs font-bold text-emerald-800 transition hover:bg-emerald-50 active:scale-95"
           >
             Hablar con TecRural

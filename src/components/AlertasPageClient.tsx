@@ -1,12 +1,13 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import { NavBottom } from '@/components/NavBottom';
 import { TecRuralCtaBanner } from '@/components/TecRuralCtaBanner';
 import { buildAlarms } from '@/components/llano/alarms-logic';
 import type { ClimateCalibrationPayload } from '@/types/climate';
 import type { WeatherPayload } from '@/types/weather';
+import { useTrackEvent } from '@/hooks/useTrackEvent';
 
 const AlertsTab = dynamic(() => import('@/components/llano/alerts-tab').then((m) => ({ default: m.AlertsTab })), {
   ssr: false,
@@ -28,6 +29,8 @@ export function AlertasPageClient({
       agricultural: initialWeatherData?.agricultural,
     });
   }, [initialClimateData, initialWeatherData]);
+  const track = useTrackEvent();
+  useEffect(() => { track('alerts_page_viewed'); }, [track]);
 
   return (
     <div className="min-h-screen bg-[#f4f7fb]">

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { aggregateWeather } from "@/services/weatherAggregator";
-import { saveConsensusSnapshot, saveSourceMeasurement, upsertLatestSourceObservation, initializeDatabase } from "@/lib/weatherStore";
+import { saveConsensusSnapshot, saveSourceMeasurement, upsertLatestSourceObservation, initializeDatabase, purgeExpiredAgriculturalLeads } from "@/lib/weatherStore";
 import { loadCalibratedTolerances } from "@/services/calibrationService";
 import { fetchComarcaLayer } from "@/services/layerComarca";
 import { saveComarcaEstimations } from "@/lib/weatherStore";
@@ -58,6 +58,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   }
 
   await initializeDatabase();
+  await purgeExpiredAgriculturalLeads();
 
   await saveConsensusSnapshot(
     weather.fetchedAt,
