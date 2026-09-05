@@ -213,10 +213,6 @@ export function ContactoFunnel() {
                 <input type="checkbox" name="meteorologicalConsent" required className="mt-0.5 accent-sky-700" />
                 <span>Acepto recibir avisos meteorológicos para mi finca por WhatsApp y/o notificaciones.</span>
               </label>
-              <label className="flex items-start gap-2 text-xs text-slate-700">
-                <input type="checkbox" name="commercialConsent" className="mt-0.5 accent-sky-700" />
-                <span>Acepto recibir información comercial de TecRural sobre servicios, sensores, diagnóstico agrícola y Terracía.</span>
-              </label>
               <p className="leading-5 text-slate-500">Responsable: Manuel Carrasco García. Puedes retirar tu consentimiento escribiendo a <a className="font-semibold text-sky-800 underline" href="mailto:mcgtecrural@gmail.com">mcgtecrural@gmail.com</a>. Consulta la <Link className="font-semibold text-sky-800 underline" href="/privacidad">política de privacidad</Link>.</p>
             </div>
 
@@ -299,6 +295,11 @@ export function ContactoFunnel() {
             >
               💬 Escribir ahora por WhatsApp
             </a>
+
+            <label className="flex items-start gap-2 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm text-xs text-slate-700">
+              <input type="checkbox" className="mt-0.5 accent-sky-700" />
+              <span>Además, quiero recibir información comercial de TecRural sobre servicios, sensores y diagnóstico agrícola.</span>
+            </label>
 
             <Link
               href="/huescar"
