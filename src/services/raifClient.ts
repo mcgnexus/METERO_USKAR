@@ -25,8 +25,8 @@ async function callMcpMethod<T>(method: string, params: Record<string, unknown> 
 
   const body = JSON.stringify({
     jsonrpc: "2.0",
-    method,
-    params,
+    method: "tools/call",
+    params: { name: method, arguments: params },
     id: 1,
   });
 
