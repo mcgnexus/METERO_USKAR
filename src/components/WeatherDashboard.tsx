@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import dynamic from 'next/dynamic';
 import { useWeatherData } from '@/hooks/useWeatherData';
+import { fmtHourMadrid } from '@/lib/timezone';
 import { HeroPanel } from '@/components/dashboard/hero-panel';
 import { DailyCards, HourlyForecastDetails } from '@/components/dashboard/forecast-tables';
 import { AgriculturalSection, LivestockSection } from '@/components/dashboard/operations-panels';
@@ -72,8 +73,8 @@ export default function WeatherDashboard({ initialData = null }: { initialData?:
         </div>
         <TemperatureChart hourly={data.hourly} daily={data.daily} />
       </div>
-      <DailyCards daily={data.daily} />
-      <HourlyForecastDetails hourly={data.hourly} />
+      <DailyCards daily={data.daily} referenceTime={data.fetchedAt} />
+      <HourlyForecastDetails hourly={data.hourly} referenceTime={data.fetchedAt} />
     </div>
   );
 
@@ -85,7 +86,7 @@ export default function WeatherDashboard({ initialData = null }: { initialData?:
       aria-labelledby="dashboard-tab-operations"
     >
       <WeatherStationPanel />
-      <FrostPanel daily={data.daily} />
+      <FrostPanel daily={data.daily} referenceTime={data.fetchedAt} />
       <ChillPanel />
       <WaterBalancePanel />
       {data.agricultural && <AgriculturalSection agri={data.agricultural} />}
@@ -125,7 +126,7 @@ export default function WeatherDashboard({ initialData = null }: { initialData?:
   return (
     <div className="surface-card-strong overflow-hidden rounded-[20px] border border-slate-200 p-3 sm:rounded-[32px] sm:p-6">
       {(isStale || error) && <div className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-900" role="status"><span>{error ? 'No se han podido actualizar los datos. Mostrando la última información disponible.' : 'Actualizando datos…'}</span><button type="button" onClick={refresh} className="font-bold underline">Reintentar</button></div>}
-      <p className="mb-3 text-right text-[11px] text-slate-500" suppressHydrationWarning>Última actualización: {cachedAt ? new Date(cachedAt).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }) : new Date(data.fetchedAt).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</p>
+      <p className="mb-3 text-right text-[11px] text-slate-500" suppressHydrationWarning>Última actualización: {fmtHourMadrid(cachedAt ? new Date(cachedAt).toISOString() : data.fetchedAt)}</p>
       <HeroPanel data={data} />
       <TabSystem
         activeTab={activeTab}

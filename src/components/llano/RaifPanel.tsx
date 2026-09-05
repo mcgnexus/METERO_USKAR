@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useApiData } from '@/hooks/useApiData';
 import { evaluateRaifAlert } from '@/services/raifCrossService';
+import { fmtDateHourMadrid } from '@/lib/timezone';
 import type { RaifAlertsPayload, RaifAlert, RaifSeverity, RaifCrossEvaluation } from '@/types/raif';
 import type { WeatherPayload } from '@/types/weather';
 
@@ -264,7 +265,7 @@ export function RaifPanel({ weather }: { weather: WeatherPayload | null }) {
 
       <p className="mt-4 text-[11px] text-slate-400">
         Fuente: Red de Alerta e Información Fitosanitaria (RAIF) — Consejería de Agricultura, Pesca, Agua y Desarrollo Rural de Andalucía.
-        Actualizado: {data.fetchedAt ? new Date(data.fetchedAt).toLocaleString('es-ES') : '—'}
+        Actualizado: {data.fetchedAt ? fmtDateHourMadrid(data.fetchedAt) : '—'}
       </p>
     </section>
   );

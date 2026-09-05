@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { fmtDateHourMadrid } from '@/lib/timezone';
 
 interface StationLikeRecord {
   id?: unknown;
@@ -220,8 +221,8 @@ export default function WeatherStationPanel({
                 )}
               </div>
               {isAdmin && station.updatedAt && (
-                <p className="mt-1 text-[10px] text-slate-600">
-                  {new Date(station.updatedAt).toLocaleString('es-ES')}
+                <p className="mt-1 text-[10px] text-slate-600" suppressHydrationWarning>
+                  {fmtDateHourMadrid(station.updatedAt)}
                 </p>
               )}
             </div>

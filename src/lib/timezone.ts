@@ -1,5 +1,28 @@
 export const MADRID_TZ = 'Europe/Madrid';
 
+/** Compute age in minutes from a UTC ISO string to now. Always ≥ 0. */
+export function ageMinutes(iso: string): number {
+  return Math.max(0, (Date.now() - new Date(iso).getTime()) / 60_000);
+}
+
+/** Human-readable age in Spanish: "menos de 1 min", "3 min", "1h 23min" */
+export function ageDisplay(min: number): string {
+  const m = Math.max(0, Math.round(min));
+  if (m === 0) return 'menos de 1 min';
+  if (m < 60) return `${m} min`;
+  const h = Math.floor(m / 60);
+  const rm = m % 60;
+  return rm > 0 ? `${h}h ${rm}min` : `${h}h`;
+}
+
+/** "Actualizado hace X" with staleness warning */
+export function updatedLabel(iso: string, staleMinutes = 120): { text: string; isStale: boolean } {
+  const min = ageMinutes(iso);
+  const isStale = min > staleMinutes;
+  const suffix = isStale ? ' — datos desactualizados' : '';
+  return { text: `Actualizado hace ${ageDisplay(min)}${suffix}`, isStale };
+}
+
 /** UTC ISO string → Madrid "HH:MM" */
 export function fmtHourMadrid(iso: string): string {
   return new Date(iso).toLocaleTimeString('es-ES', {
@@ -9,7 +32,7 @@ export function fmtHourMadrid(iso: string): string {
   });
 }
 
-/** UTC ISO string → "DD/MM HH:MM" */
+/** UTC ISO string → "DD/MM HH:MM" (Europe/Madrid) */
 export function fmtDateHourMadrid(iso: string): string {
   return new Date(iso).toLocaleString('es-ES', {
     timeZone: MADRID_TZ,
@@ -17,6 +40,16 @@ export function fmtDateHourMadrid(iso: string): string {
     month: '2-digit',
     hour: '2-digit',
     minute: '2-digit',
+  });
+}
+
+/** UTC ISO string → Madrid long date: "lunes, 3 de enero" */
+export function fmtDayMonthMadrid(iso: string): string {
+  return new Date(iso).toLocaleDateString('es-ES', {
+    timeZone: MADRID_TZ,
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
   });
 }
 

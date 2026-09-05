@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { dayLabel, temperatureColor, weatherCodeDescription, weatherEmoji } from '@/lib/display';
 import { fmtHourMadrid } from '@/lib/timezone';
+import { useClientNow } from '@/hooks/useClientNow';
 import type { DailyWeather, HourlyWeather } from '@/types/weather';
 
 function isNumber(value: unknown): value is number {
@@ -13,9 +14,9 @@ function fmtNumber(value: number | undefined, digits = 0): string {
   return isNumber(value) ? value.toFixed(digits) : '—';
 }
 
-export function getUpcomingHourlyRows(hourly: HourlyWeather, hours = 24) {
+export function getUpcomingHourlyRows(hourly: HourlyWeather, nowMs: number, hours = 24) {
   const rows: { time: string; temp: number; hum: number; precip: number; wind: number; wcode: number }[] = [];
-  const now = new Date();
+  const now = new Date(nowMs);
 
   for (let index = 0; index < hourly.time.length; index++) {
     const time = new Date(hourly.time[index]);
@@ -40,8 +41,8 @@ export function getUpcomingHourlyRows(hourly: HourlyWeather, hours = 24) {
   return rows.slice(0, hours);
 }
 
-export function HourlyTable({ hourly, compact }: { hourly: HourlyWeather; compact?: boolean }) {
-  const display = getUpcomingHourlyRows(hourly, 24);
+export function HourlyTable({ hourly, compact, nowMs }: { hourly: HourlyWeather; compact?: boolean; nowMs: number }) {
+  const display = getUpcomingHourlyRows(hourly, nowMs, 24);
 
   return (
     <div className={compact ? '' : 'overflow-hidden rounded-[24px] border border-slate-200 bg-white'}>
@@ -111,9 +112,10 @@ export function HourlyTable({ hourly, compact }: { hourly: HourlyWeather; compac
   );
 }
 
-export function HourlyForecastDetails({ hourly }: { hourly: HourlyWeather }) {
+export function HourlyForecastDetails({ hourly, referenceTime }: { hourly: HourlyWeather; referenceTime?: string }) {
   const [open, setOpen] = useState(false);
-  const rows = getUpcomingHourlyRows(hourly, 24);
+  const now = useClientNow(referenceTime) ?? 0;
+  const rows = getUpcomingHourlyRows(hourly, now, 24);
   const totalRain = rows.reduce((sum, row) => sum + row.precip, 0);
   const maxWind = rows.length > 0 ? Math.max(...rows.map((row) => row.wind)) : 0;
   const maxTemp = rows.length > 0 ? Math.max(...rows.map((row) => row.temp)) : 0;
@@ -139,14 +141,15 @@ export function HourlyForecastDetails({ hourly }: { hourly: HourlyWeather }) {
         </div>
       </summary>
       <div className="mt-4 border-t border-slate-100 pt-4">
-        <HourlyTable hourly={hourly} compact />
+        <HourlyTable hourly={hourly} compact nowMs={now} />
       </div>
     </details>
   );
 }
 
-export function DailyCards({ daily }: { daily: DailyWeather }) {
+export function DailyCards({ daily, referenceTime }: { daily: DailyWeather; referenceTime?: string }) {
   const [expanded, setExpanded] = useState(false);
+  const now = useClientNow(referenceTime);
   const visibleCount = expanded ? 14 : 7;
 
   return (
@@ -173,7 +176,7 @@ export function DailyCards({ daily }: { daily: DailyWeather }) {
           const weatherCode = daily.weatherCode[index];
           return (
           <div key={time} className="rounded-[18px] border border-slate-200 bg-white p-3 text-center shadow-sm sm:rounded-[22px] sm:p-4">
-            <p className="text-xs font-semibold text-slate-700 sm:text-sm">{dayLabel(time)}</p>
+            <p className="text-xs font-semibold text-slate-700 sm:text-sm">{dayLabel(time, now ?? undefined)}</p>
             <p className="mt-1.5 text-2xl sm:mt-2 sm:text-3xl">{isNumber(weatherCode) ? weatherEmoji(weatherCode) : '—'}</p>
             <p className="mt-1 text-[10px] text-slate-500 sm:text-xs">{isNumber(weatherCode) ? weatherCodeDescription(weatherCode) : 'Sin dato'}</p>
             <div className="mt-2 flex items-center justify-center gap-2 sm:mt-3 sm:gap-3">

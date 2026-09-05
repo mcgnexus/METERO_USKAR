@@ -98,10 +98,10 @@ function parseAemetStation(raw: Record<string, unknown>): SourceObservation | nu
   // disponible tiene siempre 20-90 min de antigüedad. La penalización por edad
   // empieza a los 60 min (no 30) y el mínimo es 0.5 (no 0.3), porque para un
   // endpoint horario un dato de 60-90 min es perfectamente válido.
-  const ageMinutes = timeStr
+  const computedAgeMinutes = timeStr
     ? Math.max(0, (Date.now() - new Date(timeStr).getTime()) / 60000)
     : 120;
-  const dynamicQualityScore = Math.max(0.5, 1.0 - Math.max(0, ageMinutes - 60) / 240);
+  const dynamicQualityScore = Math.max(0.5, 1.0 - Math.max(0, computedAgeMinutes - 60) / 240);
 
   return {
     source: "AEMET",
@@ -109,7 +109,7 @@ function parseAemetStation(raw: Record<string, unknown>): SourceObservation | nu
     locationName: "Huéscar-Embalse de San Clemente",
     time: timeStr,
     observationPeriod: "current",
-    dataAgeMinutes: 0,
+    dataAgeMinutes: computedAgeMinutes,
     qualityScore: dynamicQualityScore,
     status: "OK",
     elevationM: parseNumber(raw.alt) ?? undefined,
@@ -144,7 +144,7 @@ function buildObservations(rawData: unknown[]): SourceObservation[] {
 function reduceQuality(observations: SourceObservation[]): SourceObservation[] {
   const now = Date.now();
   return observations.map((obs) => {
-    const ageMin = (now - new Date(obs.time).getTime()) / 60000;
+    const ageMin = Math.max(0, (now - new Date(obs.time).getTime()) / 60000);
     const reduction = ageMin > 120 ? 0.4 : 0.2;
     return {
       ...obs,

@@ -21,12 +21,12 @@ export function windDirection(deg: number): string {
   return dirs[index];
 }
 
-export function dayLabel(dateStr: string): string {
+export function dayLabel(dateStr: string, nowMs?: number): string {
   const days = ["domingo", "lunes", "martes", "mi\u00E9rcoles", "jueves", "viernes", "s\u00E1bado"];
   const d = new Date(dateStr);
   const formatter = new Intl.DateTimeFormat("es-ES", { timeZone: "Europe/Madrid", year: "numeric", month: "2-digit", day: "2-digit" });
   const dateStr2 = formatter.format(d);
-  const today = new Date();
+  const today = nowMs ? new Date(nowMs) : new Date();
   const todayStr = formatter.format(today);
   const tomorrow = new Date(today);
   tomorrow.setDate(tomorrow.getDate() + 1);

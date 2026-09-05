@@ -16,7 +16,7 @@ export async function fetchComarcaLayer(
         locationName: "Huéscar-Embalse de San Clemente",
         time: aemetTime.toISOString(),
         observationPeriod: "current",
-        dataAgeMinutes: (Date.now() - aemetTime.getTime()) / 60000,
+        dataAgeMinutes: Math.max(0, (Date.now() - aemetTime.getTime()) / 60000),
         qualityScore: 1.0,
         status: "OK",
         temperatureC: aemetTemp,

@@ -1,4 +1,5 @@
 import type { SourceHealth } from '@/types/weather';
+import { ageDisplay as fmtAge } from '@/lib/timezone';
 
 export function cn(neutral: string, ayto: string, variant: 'neutral' | 'ayto') {
   return variant === 'ayto' ? ayto : neutral;
@@ -68,9 +69,5 @@ export function statusLabel(source: SourceHealth): string {
 
 export function ageDisplay(source: SourceHealth): string {
   if (source.dataAgeMinutes === undefined) return 'sin edad';
-  const min = Math.round(source.dataAgeMinutes);
-  if (min < 60) return `hace ${min} min`;
-  const h = Math.floor(min / 60);
-  const m = min % 60;
-  return m > 0 ? `hace ${h}h ${m}min` : `hace ${h}h`;
+  return fmtAge(source.dataAgeMinutes);
 }

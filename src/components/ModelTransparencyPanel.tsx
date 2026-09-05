@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import type { WeatherPayload, SourceObservation } from '@/types/weather';
 import { qualityLabel } from '@/lib/dataQuality';
+import { ageDisplay } from '@/lib/timezone';
 
 interface Props {
   data: WeatherPayload;
@@ -66,7 +67,7 @@ export default function ModelTransparencyPanel({ data, variant = 'neutral', onDa
                   {ageMin > 0 && (
                     <>
                       <span className="text-slate-400">·</span>
-                      <span className="text-slate-500">hace {Math.round(ageMin)} min</span>
+                      <span className="text-slate-500">hace {ageDisplay(ageMin)}</span>
                     </>
                   )}
                   {source.retrievalStatus && (

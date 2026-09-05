@@ -1,6 +1,7 @@
 'use client';
 
 import { useAgroClimatology } from '@/hooks/useAgroClimatology';
+import { useClientNow } from '@/hooks/useClientNow';
 import { OverviewMetric } from '@/components/dashboard/atoms';
 import type { DailyWeather } from '@/types/weather';
 
@@ -11,9 +12,9 @@ function fmtDate(iso: string | null): string {
   return d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
-function findNextFrost(daily: DailyWeather | null): { date: string | null; daysAway: number | null } {
+function findNextFrost(daily: DailyWeather | null, nowMs: number): { date: string | null; daysAway: number | null } {
   if (!daily || !daily.time?.length) return { date: null, daysAway: null };
-  const now = new Date();
+  const now = new Date(nowMs);
   now.setHours(0, 0, 0, 0);
   for (let i = 0; i < daily.time.length; i++) {
     const tmin = daily.temperatureMinC[i];
@@ -26,10 +27,11 @@ function findNextFrost(daily: DailyWeather | null): { date: string | null; daysA
   return { date: null, daysAway: null };
 }
 
-function FrostPanel({ daily }: { daily?: DailyWeather | null }) {
+function FrostPanel({ daily, referenceTime }: { daily?: DailyWeather | null; referenceTime?: string }) {
   const { data, loading, error } = useAgroClimatology();
+  const now = useClientNow(referenceTime);
 
-  const nextFrost = findNextFrost(daily ?? null);
+  const nextFrost = now !== null ? findNextFrost(daily ?? null, now) : { date: null, daysAway: null };
 
   if (loading) {
     return (
@@ -144,6 +146,7 @@ function ChillPanel() {
 
 function WaterBalancePanel() {
   const { data, loading, error } = useAgroClimatology();
+  const now = useClientNow();
 
   if (loading) {
     return (
@@ -173,7 +176,7 @@ function WaterBalancePanel() {
 
       <div className="mt-4 grid grid-cols-2 gap-2.5 sm:mt-5 sm:gap-3 lg:grid-cols-4">
         <OverviewMetric label="Lluvia mes" value={`${w.precipitationMmThisMonth.toFixed(1)} mm`} caption={w.monthLabel} />
-        <OverviewMetric label="Lluvia anual" value={`${w.precipitationMmThisYear.toFixed(0)} mm`} caption={`${new Date().getFullYear()}`} />
+        <OverviewMetric label="Lluvia anual" value={`${w.precipitationMmThisYear.toFixed(0)} mm`} caption={`${now !== null ? new Date(now).getFullYear() : ''}`} />
         <OverviewMetric label="ET0 mes" value={`${w.et0MmThisMonth.toFixed(1)} mm`} caption="Evapotranspiracion" tone={deficit ? 'warning' : 'default'} />
         <OverviewMetric
           label="Balance mes"

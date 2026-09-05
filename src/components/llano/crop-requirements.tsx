@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { fmtN } from '@/components/llano/atoms';
+import { useClientNow } from '@/hooks/useClientNow';
 import { IndicatorHelp } from '@/components/llano/indicator-help';
 import { IrrigationCard, type IrrigationNeed } from '@/components/llano/irrigation';
 import type { AgriculturalData } from '@/types/weather';
@@ -456,13 +457,14 @@ function assessCrop(
   chillHours: number | null,
   frostRisk: AgriculturalData['frostRisk48h'],
   et0CumulativeMm: number | null,
-  precipitacionSemanal: number | null
+  precipitacionSemanal: number | null,
+  nowMs: number
 ): CropAssessment {
   const reasons: string[] = [];
   const diagnosis: DiagnosisItem[] = [];
   let status: CropStatus = 'safe';
 
-  const now = new Date();
+  const now = new Date(nowMs);
   const currentMonth = now.getMonth() + 1;
   const isIrrigationSeason = crop.irrigationMonths.includes(currentMonth);
 
@@ -1109,11 +1111,13 @@ export function CropRequirements({ agricultural, soilTemp, frostRisk, et0Cumulat
   precipitacionSemanal: number | null;
 }) {
   const [expandedCrop, setExpandedCrop] = useState<string | null>(null);
+  const now = useClientNow();
+  const nowMs = now ?? Date.now();
   const gdd = agricultural?.gddCumulative ?? null;
   const chillHours = agricultural?.chillHours ?? null;
 
   const assessments = CROPS.map((crop) =>
-    assessCrop(crop, soilTemp, gdd, chillHours, frostRisk, et0CumulativeMm, precipitacionSemanal)
+    assessCrop(crop, soilTemp, gdd, chillHours, frostRisk, et0CumulativeMm, precipitacionSemanal, nowMs)
   );
 
   const safeCount = assessments.filter((a) => a.status === 'safe').length;

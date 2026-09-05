@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { dayLabel, weatherCodeDescription, weatherEmoji } from '@/lib/display';
+import { fmtDayMonthMadrid } from '@/lib/timezone';
 import { type ForecastPayload } from '@/hooks/useForecast';
 import { type DailyWeather } from '@/types/weather';
 import { fmtN } from '@/components/llano/atoms';
@@ -177,7 +178,7 @@ export function Forecast5d({ forecast, daily }: { forecast: ForecastPayload | nu
           const precipMm = dd?.precipMm ?? null;
           const detail: ForecastDetail = {
             title: dayLabel(d.date),
-            subtitle: new Date(d.date).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' }),
+            subtitle: fmtDayMonthMadrid(d.date),
             tone: (d.dailySummary.et0TotalMm ?? 0) >= 5 ? 'amber' : 'emerald',
             headline: min !== null && max !== null
               ? `${min.toFixed(0)}°C mínima / ${max.toFixed(0)}°C máxima`

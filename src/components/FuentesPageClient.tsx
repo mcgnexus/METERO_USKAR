@@ -1,7 +1,7 @@
 'use client';
 
 import { NavBottom } from '@/components/NavBottom';
-import { fmtHourMadrid } from '@/lib/timezone';
+import { fmtHourMadrid, ageDisplay, ageMinutes } from '@/lib/timezone';
 import { aemetStatusLabel, localStationsStatusLabel, primarySourceLabel, qualityLabel } from '@/lib/dataQuality';
 import type { WeatherPayload } from '@/types/weather';
 import type { ClimateCalibrationPayload } from '@/types/climate';
@@ -11,6 +11,11 @@ const SOURCE_COLORS: Record<string, string> = {
   DEGRADED: 'bg-amber-400',
   ERROR: 'bg-red-500',
 };
+
+function staleWarning(dataAgeMinutes: number | undefined): string {
+  if (dataAgeMinutes == null) return '';
+  return dataAgeMinutes > 120 ? ' — datos desactualizados' : '';
+}
 
 export function FuentesPageClient({
   initialWeatherData,
@@ -32,6 +37,15 @@ export function FuentesPageClient({
           <h1 className="mt-0.5 text-xl font-black text-slate-900">Fuentes y fiabilidad</h1>
         </header>
 
+        {wd?.dataQuality && (
+          <div className="mb-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+            <p className="text-sm text-slate-700">
+              Datos actualizados a las {fmtHourMadrid(wd.fetchedAt)} · Fuente principal: {primarySourceLabel(wd.dataQuality.primarySource)}
+              <span className="text-xs text-slate-500"> · Hace {ageDisplay(ageMinutes(wd.fetchedAt))}</span>
+            </p>
+          </div>
+        )}
+
         <div className="space-y-4">
           <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
             <h2 className="text-xs font-bold uppercase tracking-[0.16em] text-slate-600 mb-3">🔗 Fuentes de datos</h2>
@@ -47,7 +61,7 @@ export function FuentesPageClient({
                       <p className="text-xs text-slate-500">{sh.message}</p>
                       {sh.dataAgeMinutes != null && (
                         <p className="text-[10px] text-slate-600 mt-0.5" suppressHydrationWarning>
-                          Datos de hace {sh.dataAgeMinutes} min · {sh.checkedAt ? fmtHourMadrid(sh.checkedAt) : '—'}
+                          Hace {ageDisplay(sh.dataAgeMinutes)}{staleWarning(sh.dataAgeMinutes)} · {sh.checkedAt ? fmtHourMadrid(sh.checkedAt) : '—'}
                         </p>
                       )}
                     </div>

@@ -281,7 +281,7 @@ async function fetchObservationLayerImpl(): Promise<{
 
       aemetObs = {
         ...rawObs,
-        dataAgeMinutes: (Date.now() - new Date(rawObs.time).getTime()) / 60000,
+        dataAgeMinutes: Math.max(0, (Date.now() - new Date(rawObs.time).getTime()) / 60000),
         qualityScore: rawObs.qualityScore * distanceFactor,
         elevationM: elevation,
         targetElevationM: HUESCAR_URBAN_CENTER.elevation,
@@ -448,11 +448,11 @@ async function fetchObservationLayerImpl(): Promise<{
 
   const sources: SourceObservation[] = [];
   if (aemetObs) {
-    aemetObs.dataAgeMinutes = (Date.now() - new Date(aemetObs.time).getTime()) / 60000;
+    aemetObs.dataAgeMinutes = Math.max(0, (Date.now() - new Date(aemetObs.time).getTime()) / 60000);
     sources.push(aemetObs);
   }
   if (omObs) {
-    omObs.dataAgeMinutes = (Date.now() - new Date(omObs.time).getTime()) / 60000;
+    omObs.dataAgeMinutes = Math.max(0, (Date.now() - new Date(omObs.time).getTime()) / 60000);
     sources.push(omObs);
   }
   if (localObs) {
