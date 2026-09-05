@@ -56,12 +56,35 @@ async function callMcpMethod<T>(method: string, params: Record<string, unknown> 
       return null;
     }
 
-    const json = (await res.json()) as { result?: T; error?: unknown };
+    const json = (await res.json()) as {
+      result?: {
+        content?: Array<{ type: string; text: string }>;
+      } & Record<string, unknown>;
+      error?: unknown;
+    };
     if (json.error) {
       console.warn("[RAIF] Error JSON-RPC:", json.error);
       return null;
     }
-    return json.result ?? null;
+
+    const rpcResult = json.result;
+    if (!rpcResult) return null;
+
+    if (rpcResult.content && Array.isArray(rpcResult.content)) {
+      const textBlock = rpcResult.content.find(
+        (c) => c.type === "text" && typeof c.text === "string"
+      );
+      if (textBlock) {
+        try {
+          return JSON.parse(textBlock.text) as T;
+        } catch {
+          console.warn("[RAIF] No se pudo parsear contenido MCP:", textBlock.text.slice(0, 120));
+          return null;
+        }
+      }
+    }
+
+    return rpcResult as unknown as T;
   } catch (err) {
     lastFailureAt = Date.now();
     console.warn("[RAIF] Excepción en fetch:", err);
