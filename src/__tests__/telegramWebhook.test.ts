@@ -36,6 +36,7 @@ describe('POST /api/telegram/webhook', () => {
     process.env = { ...originalEnv };
     process.env.TELEGRAM_NOTIFY_BOT_TOKEN = 'test-token-123';
     process.env.TELEGRAM_NOTIFY_CHAT_ID = String(OWNER_CHAT);
+    process.env.TELEGRAM_WEBHOOK_SECRET = 'opencode-webhook-secret';
     mockSendTelegramMessage.mockResolvedValue(true);
     mockGetRecentLeads.mockResolvedValue([]);
   });
@@ -67,7 +68,7 @@ describe('POST /api/telegram/webhook', () => {
     ]);
 
     const res = await POST(
-      mockUpdate({ message: { chat: { id: OWNER_CHAT }, text: '/leads' } }, 'test-token-123'),
+      mockUpdate({ message: { chat: { id: OWNER_CHAT }, text: '/leads' } }, 'opencode-webhook-secret'),
     );
     expect(res.status).toBe(200);
     expect(mockGetRecentLeads).toHaveBeenCalledWith(5);
@@ -81,7 +82,7 @@ describe('POST /api/telegram/webhook', () => {
 
   it('ignores /leads from a chat that is not the owner', async () => {
     const res = await POST(
-      mockUpdate({ message: { chat: { id: 12345 }, text: '/leads' } }, 'test-token-123'),
+      mockUpdate({ message: { chat: { id: 12345 }, text: '/leads' } }, 'opencode-webhook-secret'),
     );
     expect(res.status).toBe(200);
     expect(mockGetRecentLeads).not.toHaveBeenCalled();
@@ -90,7 +91,7 @@ describe('POST /api/telegram/webhook', () => {
 
   it('replies that there are no leads yet when the database is empty', async () => {
     const res = await POST(
-      mockUpdate({ message: { chat: { id: OWNER_CHAT }, text: '/leads' } }, 'test-token-123'),
+      mockUpdate({ message: { chat: { id: OWNER_CHAT }, text: '/leads' } }, 'opencode-webhook-secret'),
     );
     expect(res.status).toBe(200);
     expect(mockSendTelegramMessage).toHaveBeenCalledWith(
@@ -101,14 +102,14 @@ describe('POST /api/telegram/webhook', () => {
   it('supports /leads N with a custom limit capped at 15', async () => {
     mockGetRecentLeads.mockResolvedValue([]);
     await POST(
-      mockUpdate({ message: { chat: { id: OWNER_CHAT }, text: '/leads 42' } }, 'test-token-123'),
+      mockUpdate({ message: { chat: { id: OWNER_CHAT }, text: '/leads 42' } }, 'opencode-webhook-secret'),
     );
     expect(mockGetRecentLeads).toHaveBeenCalledWith(15);
   });
 
   it('responds to /ayuda with the list of commands', async () => {
     await POST(
-      mockUpdate({ message: { chat: { id: OWNER_CHAT }, text: '/ayuda' } }, 'test-token-123'),
+      mockUpdate({ message: { chat: { id: OWNER_CHAT }, text: '/ayuda' } }, 'opencode-webhook-secret'),
     );
     expect(mockSendTelegramMessage).toHaveBeenCalledWith(
       expect.stringContaining('/leads'),
@@ -117,7 +118,7 @@ describe('POST /api/telegram/webhook', () => {
 
   it('acknowledges unknown messages as ok', async () => {
     const res = await POST(
-      mockUpdate({ message: { chat: { id: OWNER_CHAT }, text: 'hola' } }, 'test-token-123'),
+      mockUpdate({ message: { chat: { id: OWNER_CHAT }, text: 'hola' } }, 'opencode-webhook-secret'),
     );
     expect(res.status).toBe(200);
     expect(mockSendTelegramMessage).toHaveBeenCalledWith(

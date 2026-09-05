@@ -60,9 +60,9 @@ async function handleCommand(text: string): Promise<void> {
 }
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
-  const token = process.env.TELEGRAM_NOTIFY_BOT_TOKEN;
+  const expected = process.env.TELEGRAM_WEBHOOK_SECRET;
   const secret = request.headers.get('x-telegram-bot-api-secret-token');
-  if (!token || secret !== token) {
+  if (!expected || secret !== expected) {
     return NextResponse.json({ ok: false }, { status: 403 });
   }
 
