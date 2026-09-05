@@ -22,12 +22,34 @@ export function AgriculturalLeadForm() {
   const [started, setStarted] = useState(false);
   const track = useTrackEvent();
 
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+
+  function validateForm(form: FormData): boolean {
+    const errors: Record<string, string> = {};
+    const phone = String(form.get('phone') ?? '').trim();
+    const municipality = String(form.get('municipality') ?? '').trim();
+    const crop = String(form.get('crop') ?? '');
+    const consent = form.get('meteorologicalConsent') === 'on';
+
+    if (!phone) errors.phone = 'Introduce un teléfono o WhatsApp.';
+    else if (!/^[+0-9 ()-]{7,30}$/.test(phone)) errors.phone = 'Teléfono no válido.';
+    if (!municipality) errors.municipality = 'Introduce el municipio.';
+    if (!crop) errors.crop = 'Selecciona un cultivo.';
+    if (!consent) errors.consent = 'Debes aceptar los avisos meteorológicos.';
+
+    setFieldErrors(errors);
+    return Object.keys(errors).length === 0;
+  }
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
-    setSending(true);
+    setFieldErrors({});
 
     const form = new FormData(event.currentTarget);
+    if (!validateForm(form)) return;
+
+    setSending(true);
     const selectedInterests = interests.filter((interest) => form.getAll('interests').includes(interest));
     const payload = {
       name: String(form.get('name') ?? ''),
@@ -51,22 +73,27 @@ export function AgriculturalLeadForm() {
       })(),
     };
 
-    try {
-      const response = await fetch('/api/leads/agricultural', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-      const result = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(result.error ?? 'No se pudo enviar la solicitud.');
-      setSubmitted(true);
-      track('lead_form_submitted', { crop: payload.crop, municipality: payload.municipality });
-      event.currentTarget.reset();
-    } catch (submitError) {
-      setError(submitError instanceof Error ? submitError.message : 'No se pudo enviar la solicitud.');
-    } finally {
-      setSending(false);
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        const response = await fetch('/api/leads/agricultural', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(result.error ?? 'No se pudo enviar la solicitud.');
+        setSubmitted(true);
+        track('lead_form_submitted', { crop: payload.crop, municipality: payload.municipality });
+        event.currentTarget.reset();
+        setSending(false);
+        return;
+      } catch (submitError) {
+        const msg = submitError instanceof Error ? submitError.message : 'No se pudo enviar la solicitud.';
+        if (attempt === 0) continue;
+        setError(msg);
+      }
     }
+    setSending(false);
   }
 
   return (
@@ -103,19 +130,21 @@ export function AgriculturalLeadForm() {
           <div className="grid gap-3 sm:grid-cols-2">
             <label htmlFor="inline-name" className="text-xs font-semibold text-slate-700">
               Nombre <span className="font-normal text-slate-400">(opcional)</span>
-              <input id="inline-name" name="name" maxLength={80} aria-invalid={Boolean(error)} aria-describedby={error ? 'inline-form-error' : undefined} className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-normal outline-none focus:border-emerald-600 focus-visible:ring-2 focus-visible:ring-emerald-500" />
+              <input id="inline-name" name="name" maxLength={80} className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-normal outline-none focus:border-emerald-600 focus-visible:ring-2 focus-visible:ring-emerald-500" />
             </label>
             <label htmlFor="inline-phone" className="text-xs font-semibold text-slate-700">
               Teléfono / WhatsApp
-              <input id="inline-phone" name="phone" required maxLength={30} inputMode="tel" aria-invalid={Boolean(error)} aria-describedby={error ? 'inline-form-error' : undefined} className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-normal outline-none focus:border-emerald-600 focus-visible:ring-2 focus-visible:ring-emerald-500" />
+              <input id="inline-phone" name="phone" required maxLength={30} inputMode="tel" aria-invalid={Boolean(fieldErrors.phone)} aria-describedby={fieldErrors.phone ? 'inline-err-phone' : undefined} className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-normal outline-none focus:border-emerald-600 focus-visible:ring-2 focus-visible:ring-emerald-500" />
+              {fieldErrors.phone && <p id="inline-err-phone" className="mt-0.5 text-[10px] font-semibold text-rose-600">{fieldErrors.phone}</p>}
             </label>
             <label htmlFor="inline-municipality" className="text-xs font-semibold text-slate-700">
               Municipio
-              <input id="inline-municipality" name="municipality" required maxLength={80} aria-invalid={Boolean(error)} aria-describedby={error ? 'inline-form-error' : undefined} className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-normal outline-none focus:border-emerald-600 focus-visible:ring-2 focus-visible:ring-emerald-500" />
+              <input id="inline-municipality" name="municipality" required maxLength={80} aria-invalid={Boolean(fieldErrors.municipality)} aria-describedby={fieldErrors.municipality ? 'inline-err-municipality' : undefined} className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-normal outline-none focus:border-emerald-600 focus-visible:ring-2 focus-visible:ring-emerald-500" />
+              {fieldErrors.municipality && <p id="inline-err-municipality" className="mt-0.5 text-[10px] font-semibold text-rose-600">{fieldErrors.municipality}</p>}
             </label>
             <label htmlFor="inline-area" className="text-xs font-semibold text-slate-700">
               Superficie aproximada <span className="font-normal text-slate-400">(opcional)</span>
-              <select id="inline-area" name="area" aria-invalid={Boolean(error)} aria-describedby={error ? 'inline-form-error' : undefined} className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-normal outline-none focus:border-emerald-600 focus-visible:ring-2 focus-visible:ring-emerald-500">
+              <select id="inline-area" name="area" className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-normal outline-none focus:border-emerald-600 focus-visible:ring-2 focus-visible:ring-emerald-500">
                 <option value="">Selecciona</option>
                 <option>Menos de 5 ha</option>
                 <option>5-20 ha</option>
@@ -127,10 +156,11 @@ export function AgriculturalLeadForm() {
           </div>
           <label htmlFor="inline-crop" className="block text-xs font-semibold text-slate-700">
             Cultivo
-            <select id="inline-crop" name="crop" required aria-invalid={Boolean(error)} aria-describedby={error ? 'inline-form-error' : undefined} className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-normal outline-none focus:border-emerald-600 focus-visible:ring-2 focus-visible:ring-emerald-500">
+            <select id="inline-crop" name="crop" required aria-invalid={Boolean(fieldErrors.crop)} aria-describedby={fieldErrors.crop ? 'inline-err-crop' : undefined} className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-normal outline-none focus:border-emerald-600 focus-visible:ring-2 focus-visible:ring-emerald-500">
               <option value="">Selecciona</option>
               {crops.map((crop) => <option key={crop}>{crop}</option>)}
             </select>
+            {fieldErrors.crop && <p id="inline-err-crop" className="mt-0.5 text-[10px] font-semibold text-rose-600">{fieldErrors.crop}</p>}
           </label>
           <fieldset>
             <legend className="text-xs font-semibold text-slate-700">¿Qué te interesa?</legend>
@@ -148,6 +178,7 @@ export function AgriculturalLeadForm() {
               <input type="checkbox" name="meteorologicalConsent" required className="mt-0.5 accent-emerald-700" />
               <span>Acepto recibir avisos meteorológicos para mi finca por WhatsApp y/o notificaciones.</span>
             </label>
+            {fieldErrors.consent && <p className="text-[10px] font-semibold text-rose-600">{fieldErrors.consent}</p>}
             <label className="flex items-start gap-2">
               <input type="checkbox" name="commercialConsent" className="mt-0.5 accent-emerald-700" />
               <span>Acepto recibir información comercial de TecRural sobre servicios, sensores, diagnóstico agrícola y Terracía.</span>

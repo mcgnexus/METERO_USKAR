@@ -1,6 +1,7 @@
 import crypto from 'node:crypto';
 import { NextRequest, NextResponse } from 'next/server';
-import { consumeLeadAttempt, initializeDatabase, saveAgriculturalLead } from '@/lib/weatherStore';
+import { consumeLeadAttempt, findRecentLead, initializeDatabase, saveAgriculturalLead } from '@/lib/weatherStore';
+import { notifyNewLead } from '@/services/telegramNotify';
 
 const CROPS = new Set(['Olivar', 'Almendro', 'Pistacho', 'Hortícola', 'Otro']);
 const AREAS = new Set(['Menos de 5 ha', '5-20 ha', '20-50 ha', 'Más de 50 ha', 'Prefiero no decirlo']);
@@ -45,8 +46,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       ? body.interests.filter((value: unknown): value is string => typeof value === 'string' && INTERESTS.has(value)).slice(0, 5)
       : [];
 
-    if (!municipality || !CROPS.has(crop) || (area && !AREAS.has(area)) || interests.length === 0) {
-      return NextResponse.json({ error: 'Completa los datos de la finca y selecciona al menos un interés.' }, { status: 400 });
+    if (!municipality || !CROPS.has(crop) || (area && !AREAS.has(area))) {
+      return NextResponse.json({ error: 'Completa los datos de la finca.' }, { status: 400 });
     }
     if (!/^[+0-9 ()-]{7,30}$/.test(phone)) {
       return NextResponse.json({ error: 'Introduce un teléfono o WhatsApp válido.' }, { status: 400 });
@@ -58,6 +59,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     await initializeDatabase();
     if (!(await consumeLeadAttempt(clientKey(request)))) {
       return NextResponse.json({ error: 'Has alcanzado el límite de solicitudes. Inténtalo más tarde.' }, { status: 429 });
+    }
+
+    if (phone && municipality && await findRecentLead(phone, municipality)) {
+      return NextResponse.json({ ok: true, duplicate: true }, { status: 200 });
     }
 
     const saved = await saveAgriculturalLead({
@@ -78,8 +83,14 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     });
     if (!saved) return NextResponse.json({ error: 'No se pudo guardar la solicitud.' }, { status: 503 });
 
+    void notifyNewLead({ name, phone, municipality, crop, area, interests });
+
     return NextResponse.json({ ok: true }, { status: 201 });
-  } catch {
-    return NextResponse.json({ error: 'No se pudo procesar la solicitud.' }, { status: 400 });
+  } catch (error) {
+    const isClient = error instanceof SyntaxError;
+    return NextResponse.json(
+      { error: isClient ? 'Solicitud no válida.' : 'No se pudo procesar la solicitud.' },
+      { status: isClient ? 400 : 500 },
+    );
   }
 }

@@ -91,22 +91,27 @@ export function ContactoFunnel() {
       utmCampaign: utms.utm_campaign,
     };
 
-    try {
-      const response = await fetch('/api/leads/agricultural', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-      const result = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(result.error ?? 'No se pudo enviar la solicitud.');
-      track('lead_form_submitted', { crop: payload.crop, municipality: payload.municipality, page: 'contacto' });
-      track('lead_qualified', { crop: payload.crop, municipality: payload.municipality, interests });
-      setStep('whatsapp');
-    } catch (submitError) {
-      setError(submitError instanceof Error ? submitError.message : 'No se pudo enviar la solicitud.');
-    } finally {
-      setSending(false);
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        const response = await fetch('/api/leads/agricultural', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(result.error ?? 'No se pudo enviar la solicitud.');
+        track('lead_form_submitted', { crop: payload.crop, municipality: payload.municipality, page: 'contacto' });
+        track('lead_qualified', { crop: payload.crop, municipality: payload.municipality, interests });
+        setStep('whatsapp');
+        setSending(false);
+        return;
+      } catch (submitError) {
+        const msg = submitError instanceof Error ? submitError.message : 'No se pudo enviar la solicitud.';
+        if (attempt === 0) continue;
+        setError(msg);
+      }
     }
+    setSending(false);
   }
 
   function toggleInterest(id: string) {

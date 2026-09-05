@@ -36,62 +36,59 @@ const VALID_LEAD = {
   website: '',
 };
 
-describe('POST /api/leads/agricultural with source fields', () => {
+describe('POST /api/leads/agricultural — lead saved + Telegram notified', () => {
+  const originalEnv = { ...process.env };
+
   beforeEach(() => {
     vi.clearAllMocks();
     mockInitializeDatabase.mockResolvedValue(undefined);
     mockConsumeLeadAttempt.mockResolvedValue(true);
     mockSaveAgriculturalLead.mockResolvedValue(true);
     mockFindRecentLead.mockResolvedValue(false);
+    process.env = { ...originalEnv };
+    process.env.TELEGRAM_NOTIFY_BOT_TOKEN = 'test-token-123';
+    process.env.TELEGRAM_NOTIFY_CHAT_ID = '8039041331';
   });
 
-  it('saves source and landing_page when provided', async () => {
-    const req = mockRequest({ ...VALID_LEAD, source: 'meteo-huescar', landingPage: '/huescar' });
-    const res = await POST(req as any);
-    expect(res.status).toBe(201);
-    expect(mockSaveAgriculturalLead).toHaveBeenCalledWith(
-      expect.objectContaining({ source: 'meteo-huescar', landingPage: '/huescar' }),
-    );
-  });
+  it('returns 201 and sends Telegram notification on successful lead', async () => {
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('{"ok":true}', { status: 200 }));
 
-  it('saves UTM parameters when provided', async () => {
-    const req = mockRequest({
-      ...VALID_LEAD,
-      utmSource: 'google',
-      utmMedium: 'cpc',
-      utmCampaign: 'spring-2026',
-    });
-    const res = await POST(req as any);
-    expect(res.status).toBe(201);
-    expect(mockSaveAgriculturalLead).toHaveBeenCalledWith(
-      expect.objectContaining({ utmSource: 'google', utmMedium: 'cpc', utmCampaign: 'spring-2026' }),
-    );
-  });
-
-  it('defaults source to direct when not provided', async () => {
     const req = mockRequest(VALID_LEAD);
     const res = await POST(req as any);
     expect(res.status).toBe(201);
-    expect(mockSaveAgriculturalLead).toHaveBeenCalledWith(
-      expect.objectContaining({ source: 'direct', landingPage: '/' }),
-    );
+
+    await vi.waitFor(() => {
+      expect(fetchSpy).toHaveBeenCalledTimes(1);
+    });
+
+    const [url, opts] = fetchSpy.mock.calls[0] as [string, RequestInit];
+    expect(url).toBe('https://api.telegram.org/bottest-token-123/sendMessage');
+    const body = JSON.parse(opts.body as string);
+    expect(body.chat_id).toBe('8039041331');
+    expect(body.text).toContain('Juan Pérez');
+    expect(body.text).toContain('Huéscar');
+    expect(body.text).toContain('Olivar');
   });
 
-  it('truncates source to 40 chars', async () => {
-    const req = mockRequest({ ...VALID_LEAD, source: 'a'.repeat(60) });
+  it('lead is saved even when Telegram notification fails', async () => {
+    vi.spyOn(globalThis, 'fetch').mockRejectedValue(new Error('network down'));
+
+    const req = mockRequest(VALID_LEAD);
     const res = await POST(req as any);
+
     expect(res.status).toBe(201);
-    expect(mockSaveAgriculturalLead).toHaveBeenCalledWith(
-      expect.objectContaining({ source: 'a'.repeat(40) }),
-    );
+    expect(mockSaveAgriculturalLead).toHaveBeenCalledTimes(1);
   });
 
-  it('truncates UTM values to 100 chars', async () => {
-    const req = mockRequest({ ...VALID_LEAD, utmSource: 'b'.repeat(150) });
+  it('does not call Telegram when env vars are missing', async () => {
+    delete process.env.TELEGRAM_NOTIFY_BOT_TOKEN;
+    delete process.env.TELEGRAM_NOTIFY_CHAT_ID;
+    const fetchSpy = vi.spyOn(globalThis, 'fetch');
+
+    const req = mockRequest(VALID_LEAD);
     const res = await POST(req as any);
+
     expect(res.status).toBe(201);
-    expect(mockSaveAgriculturalLead).toHaveBeenCalledWith(
-      expect.objectContaining({ utmSource: 'b'.repeat(100) }),
-    );
+    expect(fetchSpy).not.toHaveBeenCalled();
   });
 });

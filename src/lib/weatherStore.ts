@@ -409,6 +409,56 @@ export async function purgeExpiredAgriculturalLeads(): Promise<void> {
   }
 }
 
+export async function findRecentLead(phone: string, municipality: string, withinDays = 7): Promise<boolean> {
+  try {
+    const result = await getPool().query(
+      `SELECT 1 FROM agricultural_leads
+       WHERE phone = $1 AND municipality = $2
+         AND created_at > NOW() - ($3 || ' days')::INTERVAL
+       LIMIT 1`,
+      [phone, municipality, withinDays],
+    );
+    return (result.rowCount ?? 0) > 0;
+  } catch {
+    return false;
+  }
+}
+
+export type RecentLead = {
+  name: string;
+  phone: string;
+  municipality: string;
+  crop: string;
+  area: string;
+  interests: string[];
+  source: string;
+  createdAt: string;
+};
+
+export async function getRecentLeads(limit = 5): Promise<RecentLead[]> {
+  try {
+    const result = await getPool().query(
+      `SELECT name, phone, municipality, crop, area, interests, source, created_at
+       FROM agricultural_leads
+       ORDER BY created_at DESC
+       LIMIT $1`,
+      [limit],
+    );
+    return result.rows.map((row) => ({
+      name: row.name ?? '',
+      phone: row.phone ?? '',
+      municipality: row.municipality ?? '',
+      crop: row.crop ?? '',
+      area: row.area ?? '',
+      interests: Array.isArray(row.interests) ? row.interests : [],
+      source: row.source ?? 'direct',
+      createdAt: row.created_at instanceof Date ? row.created_at.toISOString() : String(row.created_at ?? ''),
+    }));
+  } catch {
+    return [];
+  }
+}
+
 export async function getRecentAgriculturalLeads(limit = 50): Promise<Array<{
   id: number | string;
   name: string;
@@ -461,12 +511,24 @@ export async function getRecentAgriculturalLeads(limit = 50): Promise<Array<{
 const VALID_EVENTS = new Set([
   'weather_view',
   'push_prompt_shown',
+  'push_submitted',
   'push_subscribed',
   'lead_form_opened',
   'lead_form_started',
   'lead_form_submitted',
   'whatsapp_clicked',
   'daily_card_shared',
+  'daily_card_downloaded',
+  'form_step_1_completed',
+  'form_step_2_completed',
+  'lead_qualified',
+  'cta_clicked',
+  'whatsapp_cta_clicked',
+  'whatsapp_contact_clicked',
+  'field_page_viewed',
+  'alerts_page_viewed',
+  'field_navigation_clicked',
+  'alerts_navigation_clicked',
 ]);
 
 export async function recordBusinessEvent(input: {
