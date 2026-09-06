@@ -12,6 +12,8 @@ export type CurrentWeather = {
   windGustKmh: number;
   solarRadiationWm2: number;
   et0Mm: number;
+  /** Punto de rocío en °C. Se estima por Magnus si la fuente no lo publica. */
+  dewPointC?: number;
 };
 
 export type SourceObservation = {
@@ -72,11 +74,24 @@ export type WeatherPayload = {
   };
 };
 
+/**
+ * Origen de una alerta meteorológica ligera.
+ *  - "aemet": aviso oficial AEMET (CAP), nivel según escala oficial.
+ *  - "modelo": señal calculada por el motor local (umbrales del agregador).
+ */
+export type WeatherAlertSource = "aemet" | "modelo";
+
+/**
+ * Alerta ligera dentro del payload meteorológico (feed).
+ * La escala de nivel es la de avisos oficiales. El motor rico de alertas
+ * (PulseAlarm) la traduce a critico/precaucion/aviso solo para origen AEMET.
+ */
 export type WeatherAlert = {
   type: string;
   level: "aviso" | "peligro" | "severo";
   title: string;
   message: string;
+  source: WeatherAlertSource;
 };
 
 export type SourceHealth = {

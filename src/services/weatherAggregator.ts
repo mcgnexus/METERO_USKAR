@@ -3,6 +3,7 @@ import { getCalibratedTolerances } from "@/services/calibrationService";
 import { computeAgriculturalData } from "@/services/agriculturalService";
 import { computeLivestockData } from "@/services/livestockService";
 import { refreshRuntimeParameters } from "@/services/modelParameterService";
+import { dewPoint } from "@/lib/dewPoint";
 import { HUESCAR_COORDS } from "@/lib/geo";
 import type {
   CurrentWeather,
@@ -31,29 +32,30 @@ function generateAlerts(
   et0Mm: number
 ): WeatherAlert[] {
   const alerts: WeatherAlert[] = [];
+  const modelo = { source: "modelo" as const };
 
   if (tempC <= 0) {
-    alerts.push({ type: "frost", level: "peligro", title: "Helada", message: "Temperatura bajo 0°C. Proteger cultivos sensibles." });
+    alerts.push({ ...modelo, type: "frost", level: "peligro", title: "Helada", message: "Temperatura bajo 0°C. Proteger cultivos sensibles." });
   } else if (tempC <= 2) {
-    alerts.push({ type: "frost", level: "aviso", title: "Helada débil", message: "Riesgo de helada. Vigilar cultivos." });
+    alerts.push({ ...modelo, type: "frost", level: "aviso", title: "Helada débil", message: "Riesgo de helada. Vigilar cultivos." });
   }
 
   if (tempC >= 36) {
-    alerts.push({ type: "heat", level: "peligro", title: "Calor extremo", message: "Temperatura superior a 36°C. Riesgo para personas y ganado." });
+    alerts.push({ ...modelo, type: "heat", level: "peligro", title: "Calor extremo", message: "Temperatura superior a 36°C. Riesgo para personas y ganado." });
   } else if (tempC >= 32) {
-    alerts.push({ type: "heat", level: "aviso", title: "Calor intenso", message: "Temperatura superior a 32°C. Tomar precauciones." });
+    alerts.push({ ...modelo, type: "heat", level: "aviso", title: "Calor intenso", message: "Temperatura superior a 32°C. Tomar precauciones." });
   }
 
   if (gustsKmh >= 60) {
-    alerts.push({ type: "wind", level: "peligro", title: "Vientos fuertes", message: "Rachas superiores a 60 km/h. Riesgo de daños." });
+    alerts.push({ ...modelo, type: "wind", level: "peligro", title: "Vientos fuertes", message: "Rachas superiores a 60 km/h. Riesgo de daños." });
   } else if (gustsKmh >= 40) {
-    alerts.push({ type: "wind", level: "aviso", title: "Vientos moderados", message: "Rachas superiores a 40 km/h. Precaución." });
+    alerts.push({ ...modelo, type: "wind", level: "aviso", title: "Vientos moderados", message: "Rachas superiores a 40 km/h. Precaución." });
   }
 
   if (humidityPct <= 20) {
-    alerts.push({ type: "dryness", level: "peligro", title: "Sequedad extrema", message: "Humedad bajo 20%. Riesgo de incendios." });
+    alerts.push({ ...modelo, type: "dryness", level: "peligro", title: "Sequedad extrema", message: "Humedad bajo 20%. Riesgo de incendios." });
   } else if (humidityPct <= 30 && et0Mm >= 0.15) {
-    alerts.push({ type: "dryness", level: "aviso", title: "Sequedad ambiental", message: "Humedad baja y evapotranspiración elevada." });
+    alerts.push({ ...modelo, type: "dryness", level: "aviso", title: "Sequedad ambiental", message: "Humedad baja y evapotranspiración elevada." });
   }
 
   return alerts;
@@ -173,6 +175,13 @@ export async function aggregateWeather(): Promise<WeatherPayload> {
         ? layerResult.sources[0].source
         : "ERROR";
 
+  const current: CurrentWeather = {
+    ...layerResult.current,
+    dewPointC:
+      layerResult.current.dewPointC ??
+      (humPct > 0 ? dewPoint(layerResult.current.temperatureC, humPct) : undefined),
+  };
+
   return {
     location: "Huéscar",
     latitude: HUESCAR_COORDS.lat,
@@ -184,7 +193,7 @@ export async function aggregateWeather(): Promise<WeatherPayload> {
     confidencePct: layerResult.confidencePct,
     confidenceExplanation: layerResult.confidenceExplanation,
     dataQuality: layerResult.dataQuality,
-    current: layerResult.current,
+    current,
     sources: layerResult.sources,
     sourceHealth: layerResult.sourceHealth,
     hourly: layerResult.hourly,

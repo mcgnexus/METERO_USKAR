@@ -1,5 +1,6 @@
 import type { ClimateCalibrationPayload } from '@/types/climate';
 import type { AgriculturalData, DailyWeather, WeatherPayload } from '@/types/weather';
+import { dewPoint } from '@/lib/dewPoint';
 
 export type AlarmLevel = 'critico' | 'precaucion' | 'aviso' | 'info';
 
@@ -27,7 +28,13 @@ export function buildAlarms(
 
   const temp = climate.calibration.realTemperatureC ?? climate.interpolation.estimatedTemperatureC;
   const humidity = climate.nodes.localStation?.humidityPct ?? climate.eto.inputs.humidityPct;
-  const dew = climate.dewPoint.dewPointC;
+  // Punto de rocío: se usa el del motor climático si está disponible; si no,
+  // se estima por Magnus a partir de temperatura + humedad para que la regla
+  // de helada negra (T - Td >= 2) pueda evaluarse siempre.
+  let dew = climate.dewPoint.dewPointC;
+  if (dew === null && humidity !== null && Number.isFinite(temp)) {
+    dew = dewPoint(temp, humidity);
+  }
 
   const todayMin = daily?.temperatureMinC?.[0];
   const todayMax = daily?.temperatureMaxC?.[0];
@@ -123,7 +130,7 @@ export function buildAlarms(
     });
   }
 
-  // 10) THI ganadero (umbrales para ovino Segureña: estrés ≥80, severo ≥85)
+  // 9) THI ganadero (umbrales para ovino Segureña: estrés ≥80, severo ≥85)
   if (humidity !== null) {
     const thi = computeThi(temp, humidity);
     if (thi >= 85) {
@@ -145,7 +152,7 @@ export function buildAlarms(
     }
   }
 
-  // 11) Congelación (T≤-4)
+  // 10) Congelación (T≤-4)
   if (temp <= -4) {
     alarms.push({
       level: 'critico',
@@ -156,17 +163,60 @@ export function buildAlarms(
     });
   }
 
-  // 12) AEMET alerts (alertas oficiales)
+  // 11) Calor extremo / intenso (temperatura actual)
+  const heatTemp = weather?.current?.temperatureC ?? temp;
+  if (Number.isFinite(heatTemp) && heatTemp >= 36) {
+    alarms.push({
+      level: 'critico',
+      audience: 'Poblacion',
+      title: 'Calor extremo',
+      message: `Temperatura de ${heatTemp.toFixed(1)}°C. Evitar exposición en horas centrales y proteger cultivos y ganado.`,
+      source: 'modelo',
+    });
+  } else if (Number.isFinite(heatTemp) && heatTemp >= 32) {
+    alarms.push({
+      level: 'precaucion',
+      audience: 'Poblacion',
+      title: 'Calor intenso',
+      message: `Temperatura de ${heatTemp.toFixed(1)}°C. Tomar precauciones y mantener riego en parcelas sensibles.`,
+      source: 'modelo',
+    });
+  }
+
+  // 12) Sequedad extrema / ambiental (riesgo de incendio)
+  const refHumidity = humidity ?? weather?.current?.humidityPct ?? null;
+  if (refHumidity !== null && refHumidity <= 20) {
+    alarms.push({
+      level: 'precaucion',
+      audience: 'Poblacion',
+      title: 'Sequedad extrema',
+      message: `Humedad del ${refHumidity.toFixed(0)}%. Riesgo de incendio elevado. Evitar quemas y fuentes de ignición.`,
+      source: 'modelo',
+    });
+  } else if (refHumidity !== null && refHumidity <= 30 && (climate.eto.etoHourlyMm ?? 0) >= 0.15) {
+    alarms.push({
+      level: 'aviso',
+      audience: 'Poblacion',
+      title: 'Sequedad ambiental',
+      message: 'Humedad baja y evapotranspiración elevada. Mantener riego y vigilar riesgo de incendio.',
+      source: 'modelo',
+    });
+  }
+
+  // 13) Avisos oficiales AEMET (alertas del feed con origen aemet)
+  // Solo se importan los avisos oficiales. Las señales locales del feed
+  // (source 'modelo') NO se re-mapean aquí: sus umbrales ya se evalúan en las
+  // reglas 1-12, evitando alertas duplicadas del mismo fenómeno.
   if (weather?.alerts) {
     for (const a of weather.alerts) {
-      const level: AlarmLevel = a.level === 'severo' ? 'critico'
-        : a.level === 'peligro' ? 'precaucion' : 'aviso';
+      if (a.source === 'modelo') continue;
       alarms.push({
-        level,
+        level: a.level === 'severo' ? 'critico'
+          : a.level === 'peligro' ? 'precaucion' : 'aviso',
         audience: 'Poblacion',
         title: `AEMET: ${a.title}`,
         message: a.message,
-        source: 'sensor',
+        source: 'aemet',
       });
     }
   }

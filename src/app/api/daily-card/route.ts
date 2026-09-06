@@ -43,9 +43,12 @@ function generateAdvice(w: Pick<WeatherPayload, "current" | "hourly" | "alerts" 
   else if (wind >= 40) tips.push({ emoji: "W", text: "Viento fuerte. Revisar estructuras y tutores." });
   if (humidity <= 30) tips.push({ emoji: "D", text: "Baja humedad. Aumentar riego, vigilar estres hidrico." });
 
-  const hasAemetAlert = w.alerts.some((a) => a.level === "severo" || a.level === "peligro");
+  // Solo avisos oficiales AEMET; las señales locales del modelo se descartan aquí
+  // para no etiquetarlas como aviso oficial.
+  const officialAlerts = w.alerts.filter((a) => a.source !== "modelo");
+  const hasAemetAlert = officialAlerts.some((a) => a.level === "severo" || a.level === "peligro");
   if (hasAemetAlert) {
-    const alert = w.alerts.find((a) => a.level === "severo" || a.level === "peligro");
+    const alert = officialAlerts.find((a) => a.level === "severo" || a.level === "peligro");
     if (alert) tips.push({ emoji: "A", text: `AEMET: ${alert.title}` });
   }
 
@@ -68,7 +71,7 @@ async function buildCardData(): Promise<CardData> {
     const temp = cd.calibration.realTemperatureC ?? cd.interpolation.estimatedTemperatureC ?? 0;
     const max = w.daily?.temperatureMaxC?.[0];
     const min = w.daily?.temperatureMinC?.[0];
-    const alerts = w.alerts.filter((a) => a.level === "severo" || a.level === "peligro").map((a) => a.title);
+    const alerts = w.alerts.filter((a) => a.source !== "modelo" && (a.level === "severo" || a.level === "peligro")).map((a) => a.title);
     return {
       tempMax: max ?? temp, tempMin: min ?? temp,
       feelsLike: w.current.apparentTemperatureC ?? temp,

@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { buildWeeklyNewsletter } from '@/services/weeklyNewsletter';
-import type { WeatherPayload, PulseAlarm } from '@/types/weather';
+import type { PulseAlarm } from '@/components/llano/alarms-logic';
+import type { WeatherPayload } from '@/types/weather';
 import type { AgroClimatologyPayload } from '@/services/agroClimatologyService';
 
 const BASE_WEATHER = {

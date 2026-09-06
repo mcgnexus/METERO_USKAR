@@ -290,11 +290,11 @@ export function FieldTab({ climate, weather, agricultural, livestock, alarms }: 
                   : 'Día frío. Si sales, varias capas de ropa. Precaución con hielo en la calle.'}
               </p>
             </div>
-            {weather?.alerts && weather.alerts.length > 0 && (
+            {weather?.alerts && weather.alerts.filter((a) => a.source !== 'modelo').length > 0 && (
               <div className="rounded-xl bg-rose-100 p-4">
                 <p className="text-xs font-bold uppercase tracking-[0.12em] text-rose-700">Alertas activas</p>
                 <p className="mt-1 text-sm text-rose-900">
-                  {weather.alerts.length} aviso(s) oficial(es) activo(s) en la comarca. Consulta la pestaña Alertas.
+                  {weather.alerts.filter((a) => a.source !== 'modelo').length} aviso(s) oficial(es) activo(s) en la comarca. Consulta la pestaña Alertas.
                 </p>
               </div>
             )}

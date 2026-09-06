@@ -115,7 +115,8 @@ export function InminenteSection({ weather }: { weather: WeatherPayload | null }
 
   const nowcast = weather.nowcast;
   const radar = weather.radar;
-  const aemetAlerts = weather.alerts ?? [];
+  // Solo avisos oficiales AEMET; las señales locales del modelo se muestran en la pestaña Alertas.
+  const aemetAlerts = (weather.alerts ?? []).filter((a) => a.source !== 'modelo');
 
   const hasNowcast = nowcast && nowcast.level !== 'ninguno';
   const hasRadar = radar && radar.level !== 'ninguno';

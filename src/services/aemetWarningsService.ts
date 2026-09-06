@@ -46,7 +46,7 @@ function parseCAPtoAlerts(xmlText: string): WeatherAlert[] {
       const message = [headline, instruction].filter(Boolean).join(" - ");
 
       if (isRelevantWarning(title, message)) {
-        alerts.push({ type: event, level, title, message });
+        alerts.push({ type: event, level, title, message, source: "aemet" });
       }
     }
   }
