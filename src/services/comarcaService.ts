@@ -1,4 +1,5 @@
 import { HUESCAR_COORDS, COMARCA_LOCATIONS, haversineKm } from "@/lib/geo";
+import { madridHourNow } from "@/lib/timezone";
 import { fetchOpenMeteoForecast } from "@/services/openMeteoForecastClient";
 import { getReliefData } from "@/services/reliefService";
 import { applyMicroclimateCorrections } from "@/services/correctionService";
@@ -82,7 +83,7 @@ export async function fetchComarcaWeather(aemetObs: SourceObservation | null): P
       ? (aemetObs.precipitationMm ?? 0) + spatialDeltaPrecip
       : (forecast?.precipitationMm ?? 0);
 
-    const isNight = new Date().getHours() < 7 || new Date().getHours() >= 21;
+    const isNight = madridHourNow() < 7 || madridHourNow() >= 21;
     // Si hay observación AEMET, la temperatura base está anclada a la cota de Huéscar;
     // si no, la fuente es el pronóstico local (ya a la altitud de la localidad).
     const sourceElevation = aemetObs ? HUESCAR_COORDS.elevation : location.elevation;

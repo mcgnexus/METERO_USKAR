@@ -1,5 +1,32 @@
 export const MADRID_TZ = 'Europe/Madrid';
 
+const HAS_TZ_DESIGNATOR = /(?:[Zz]|[+-]\d{2}:?\d{2})$/;
+const DATE_ONLY = /^\d{4}-\d{2}-\d{2}$/;
+
+/**
+ * ISO naive que representa hora local con offset conocido (p. ej. Open-Meteo
+ * con timezone=auto/Europe/Madrid devuelve "2026-09-06T14:00" en hora Madrid)
+ * → instante UTC real en ISO con "Z". Date-only, strings con designador de
+ * zona o inválidos se devuelven tal cual.
+ */
+export function naiveLocalToUtcIso(iso: string, offsetSeconds: number): string {
+  if (!iso || DATE_ONLY.test(iso) || HAS_TZ_DESIGNATOR.test(iso)) return iso;
+  const asUtc = Date.parse(`${iso}Z`);
+  if (Number.isNaN(asUtc)) return iso;
+  return new Date(asUtc - offsetSeconds * 1000).toISOString();
+}
+
+/**
+ * ISO naive que ya representa UTC (p. ej. "fint" de AEMET) → ISO UTC
+ * normalizado con "Z". Acepta sufijo "utc" y designadores de zona existentes.
+ */
+export function naiveUtcToUtcIso(iso: string): string {
+  if (!iso) return iso;
+  const cleaned = iso.replace(/utc$/i, '').trim();
+  const t = Date.parse(HAS_TZ_DESIGNATOR.test(cleaned) ? cleaned : `${cleaned}Z`);
+  return Number.isNaN(t) ? iso : new Date(t).toISOString();
+}
+
 /** Compute age in minutes from a UTC ISO string to now. Always ≥ 0. */
 export function ageMinutes(iso: string): number {
   return Math.max(0, (Date.now() - new Date(iso).getTime()) / 60_000);

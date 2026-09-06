@@ -15,6 +15,7 @@ import { fetchAEMETObservations } from "@/services/aemetClient";
 import { getModelParam } from "@/services/modelParameterService";
 import { fetchCurrentCloudCover } from "@/services/openMeteoForecastService";
 import { memoizeInflight } from "@/lib/inflight";
+import { naiveLocalToUtcIso, naiveUtcToUtcIso } from "@/lib/timezone";
 import type { ZoneType } from "@/lib/geo";
 
 const AEMET_API_KEY = process.env.AEMET_API_KEY || "";
@@ -244,7 +245,7 @@ async function fetchAemetStationImpl(station: typeof REFERENCE_NODES.sanClemente
       source: "AEMET",
       stationId: station.id,
       name: station.name,
-      time: String(latest.fint || new Date().toISOString()),
+      time: latest.fint ? naiveUtcToUtcIso(String(latest.fint)) : new Date().toISOString(),
       temperatureC: parseNumber(latest.ta),
       humidityPct: parseNumber(latest.hr),
       pressureHPa: parseNumber(latest.pres),
@@ -271,8 +272,11 @@ async function fetchOpenMeteoCurrent(lat: number, lon: number, elevation: number
   if (!res.ok) throw new Error(`Open-Meteo HTTP ${res.status}`);
   const json = await res.json();
   const current = json.current ?? {};
+  const utcOffsetSeconds = Number(json.utc_offset_seconds) || 0;
   return {
-    time: String(current.time || new Date().toISOString()),
+    time: current.time
+      ? naiveLocalToUtcIso(String(current.time), utcOffsetSeconds)
+      : new Date().toISOString(),
     temperatureC: parseNumber(current.temperature_2m) ?? 0,
     humidityPct: parseNumber(current.relative_humidity_2m) ?? 50,
     pressureHPa: parseNumber(current.surface_pressure) ?? pressureFromElevation(elevation) * 10,

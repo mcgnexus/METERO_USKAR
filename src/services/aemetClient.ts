@@ -1,4 +1,5 @@
 import type { SourceObservation } from "@/types/weather";
+import { naiveUtcToUtcIso } from "@/lib/timezone";
 import { cacheGet, cacheSet } from "@/lib/inMemoryCache";
 
 const AEMET_API_KEY = process.env.AEMET_API_KEY || "";
@@ -92,7 +93,9 @@ function parseAemetStation(raw: Record<string, unknown>): SourceObservation | nu
 
   if (temperatureC === null) return null;
 
-  const timeStr = String(raw.fint || raw.updated || "");
+  // "fint" de AEMET es naive UTC ("2026-09-06T12:00:00"): normalizamos a ISO
+  // UTC con "Z" para que new Date() no dependa de la TZ del proceso.
+  const timeStr = naiveUtcToUtcIso(String(raw.fint || raw.updated || ""));
 
   // El endpoint de AEMET publica a :00 UTC (horario). El dato más reciente
   // disponible tiene siempre 20-90 min de antigüedad. La penalización por edad

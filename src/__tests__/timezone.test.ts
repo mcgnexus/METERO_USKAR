@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { fmtHourMadrid, fmtDayLabelMadrid, madridHourFromUTC, madridMonthFromUTC, seasonFromMonth } from "@/lib/timezone";
+import { fmtHourMadrid, fmtDayLabelMadrid, madridHourFromUTC, madridMonthFromUTC, seasonFromMonth, naiveLocalToUtcIso, naiveUtcToUtcIso } from "@/lib/timezone";
 
 describe("fmtHourMadrid", () => {
   it("convierte UTC a hora Madrid en horario de verano (CEST)", () => {
@@ -85,16 +85,18 @@ describe("DST transitions", () => {
 });
 
 describe("fmtDayLabelMadrid", () => {
+  // Fecha de HOY según el calendario de Madrid (no UTC), robusta a medianoche
+  const madridDateStr = (d: Date) =>
+    new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Madrid", year: "numeric", month: "2-digit", day: "2-digit" }).format(d);
+
   it("retorna 'Hoy' para la fecha actual", () => {
-    const now = new Date();
-    const todayUTC = now.toISOString().slice(0, 10) + "T12:00:00Z";
+    const todayUTC = madridDateStr(new Date()) + "T12:00:00Z";
     expect(fmtDayLabelMadrid(todayUTC)).toBe("Hoy");
   });
 
   it("retorna 'Mañana' para el día siguiente", () => {
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    const tomorrowUTC = tomorrow.toISOString().slice(0, 10) + "T12:00:00Z";
+    const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    const tomorrowUTC = madridDateStr(tomorrow) + "T12:00:00Z";
     expect(fmtDayLabelMadrid(tomorrowUTC)).toBe("Mañana");
   });
 });
@@ -157,5 +159,54 @@ describe("filtrado de próximas horas en cambio de día", () => {
     expect(upcoming).toHaveLength(3);
     expect(upcoming[0].time).toBe("2026-06-28T22:00:00Z");
     expect(fmtHourMadrid(upcoming[0].time)).toBe("00:00");
+  });
+});
+
+describe("naiveLocalToUtcIso", () => {
+  it("convierte naive hora Madrid verano (+7200s) a UTC real", () => {
+    // 2026-09-06T00:00 Madrid = 2026-09-05T22:00 UTC
+    expect(naiveLocalToUtcIso("2026-09-06T00:00", 7200)).toBe("2026-09-05T22:00:00.000Z");
+  });
+
+  it("convierte naive hora Madrid invierno (+3600s) a UTC real", () => {
+    // 2026-01-15T00:00 Madrid = 2026-01-14T23:00 UTC
+    expect(naiveLocalToUtcIso("2026-01-15T00:00", 3600)).toBe("2026-01-14T23:00:00.000Z");
+  });
+
+  it("es idempotente con strings que ya tienen designador de zona", () => {
+    expect(naiveLocalToUtcIso("2026-09-06T00:00:00Z", 7200)).toBe("2026-09-06T00:00:00Z");
+    expect(naiveLocalToUtcIso("2026-09-06T00:00+02:00", 7200)).toBe("2026-09-06T00:00+02:00");
+  });
+
+  it("pasa por alto strings inválidos y date-only", () => {
+    expect(naiveLocalToUtcIso("no-fecha", 7200)).toBe("no-fecha");
+    expect(naiveLocalToUtcIso("2026-09-06", 7200)).toBe("2026-09-06");
+  });
+
+  it("el resultado formatea de vuelta a la hora Madrid original", () => {
+    const utcIso = naiveLocalToUtcIso("2026-09-06T14:00", 7200);
+    expect(fmtHourMadrid(utcIso)).toBe("14:00");
+  });
+});
+
+describe("naiveUtcToUtcIso", () => {
+  it("normaliza fint AEMET naive a ISO UTC", () => {
+    expect(naiveUtcToUtcIso("2026-09-06T12:00:00")).toBe("2026-09-06T12:00:00.000Z");
+  });
+
+  it("acepta sufijo 'utc' de AEMET", () => {
+    expect(naiveUtcToUtcIso("2026-09-06T12:00:00utc")).toBe("2026-09-06T12:00:00.000Z");
+  });
+
+  it("pasa por alto strings ya normalizados o vacíos", () => {
+    expect(naiveUtcToUtcIso("2026-09-06T12:00:00Z")).toBe("2026-09-06T12:00:00.000Z");
+    expect(naiveUtcToUtcIso("")).toBe("");
+  });
+
+  it("formatToParts no depende de la TZ del proceso", () => {
+    // El instante resultante debe ser inequívoco: mismo epoch sea cual sea la TZ local
+    expect(new Date(naiveUtcToUtcIso("2026-09-06T12:00:00")).getTime()).toBe(
+      new Date("2026-09-06T12:00:00Z").getTime()
+    );
   });
 });

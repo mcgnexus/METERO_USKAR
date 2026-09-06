@@ -1,4 +1,5 @@
 import type { SourceObservation, HourlyWeather, DailyWeather } from "@/types/weather";
+import { naiveLocalToUtcIso } from "@/lib/timezone";
 import { cacheGet, cacheSet } from "@/lib/inMemoryCache";
 
 export interface OpenMeteoForecastResult {
@@ -53,10 +54,17 @@ export async function fetchOpenMeteoForecast(
   const now = new Date();
   const current = data.current as Record<string, unknown> | undefined;
 
+  // Open-Meteo con timezone=auto devuelve ISO sin designador de zona en hora
+  // local (Madrid). Normalizamos a UTC real para que todos los consumidores
+  // (formatters, ageMinutes, filtros) trabajen con instantes inequívocos.
+  const utcOffsetSeconds = Number(data.utc_offset_seconds) || 0;
+  const toUtcIso = (iso: string) => naiveLocalToUtcIso(iso, utcOffsetSeconds);
+
+  const currentTime = current?.time as string | undefined;
   const observation: SourceObservation = {
     source: "OPEN_METEO",
     locationName: "Huescar",
-    time: (current?.time as string | undefined) ?? now.toISOString(),
+    time: currentTime ? toUtcIso(currentTime) : now.toISOString(),
     observationPeriod: "current",
     dataAgeMinutes: 0,
     qualityScore: 0.9,
@@ -76,7 +84,7 @@ export async function fetchOpenMeteoForecast(
 
   const hourlyRaw = data.hourly as Record<string, unknown> | undefined;
   const hourly: HourlyWeather = {
-    time: (hourlyRaw?.time as string[]) ?? [],
+    time: ((hourlyRaw?.time as string[]) ?? []).map(toUtcIso),
     temperatureC: (hourlyRaw?.temperature_2m as number[]) ?? [],
     humidityPct: (hourlyRaw?.relative_humidity_2m as number[]) ?? [],
     precipitationProbabilityPct: (hourlyRaw?.precipitation_probability as number[]) ?? [],

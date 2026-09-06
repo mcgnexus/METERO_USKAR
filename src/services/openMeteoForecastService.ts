@@ -1,3 +1,4 @@
+import { naiveLocalToUtcIso } from "@/lib/timezone";
 import { cacheGet, cacheSet } from "@/lib/inMemoryCache";
 
 const FORECAST_CACHE_TTL_MS = 3 * 60 * 60 * 1000;
@@ -122,6 +123,9 @@ export async function fetchOpenMeteoForecast(
     if (!hourly?.time || !Array.isArray(hourly.time)) return null;
 
     const times: string[] = hourly.time;
+    // Times naive en hora Madrid (timezone=Europe/Madrid) → instante UTC real.
+    // El agrupado por día se hace sobre el string original (día Madrid).
+    const utcOffsetSeconds = Number(json.utc_offset_seconds ?? 7200) || 7200;
     const result: OpenMeteoForecast = {
       source: "open_meteo",
       latitude,
@@ -137,7 +141,7 @@ export async function fetchOpenMeteoForecast(
       const t = times[i];
       const dateStr = t.slice(0, 10);
       const hour: ForecastHour = {
-        time: t,
+        time: naiveLocalToUtcIso(t, utcOffsetSeconds),
         temperatureC: parseNumber(hourly.temperature_2m?.[i]),
         humidityPct: parseNumber(hourly.relative_humidity_2m?.[i]),
         dewPointC: parseNumber(hourly.dew_point_2m?.[i]),
