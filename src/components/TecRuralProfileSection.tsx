@@ -52,6 +52,7 @@ export function TecRuralProfileSection() {
         </a>
         <Link
           href="/huescar/campo"
+          prefetch={false}
           className="rounded-full border border-slate-200 px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50"
         >
           Servicios para agricultores

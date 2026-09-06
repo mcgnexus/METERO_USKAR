@@ -25,6 +25,7 @@ export function TecRuralCtaBanner({ context }: { context?: string }) {
         <div className="flex shrink-0 flex-col gap-2 sm:items-end">
           <Link
             href="/huescar/contacto"
+            prefetch={false}
             onClick={() => track('cta_clicked', { context, cta: 'Quiero avisos para mi finca', destination: '/huescar/contacto' })}
             className="inline-flex items-center justify-center rounded-full bg-emerald-600 px-5 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-700 active:scale-95"
           >

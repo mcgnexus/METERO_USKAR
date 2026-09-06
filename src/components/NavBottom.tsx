@@ -28,6 +28,7 @@ export function NavBottom({ alertCount }: { alertCount?: number }) {
             <Link
               key={tab.id}
               href={tab.href}
+              prefetch={false}
               aria-label={tab.label}
               className={`relative flex min-w-0 min-h-[52px] flex-col items-center gap-0.5 px-3 py-2.5 transition-colors lg:min-h-0 lg:flex-row lg:gap-2 lg:rounded-full lg:py-2
                 ${isActive ? 'text-sky-800' : 'text-slate-600 hover:text-slate-800'}`}

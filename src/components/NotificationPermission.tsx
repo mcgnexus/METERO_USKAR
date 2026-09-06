@@ -21,16 +21,14 @@ const MODE_KEY = 'llano-pulse-mode';
 type PulseMode = 'essential' | 'practical' | 'technical';
 
 export function NotificationPermission() {
-  const [mounted, setMounted] = useState(false);
   const [status, setStatus] = useState<NotificationPermission | 'loading' | 'done'>('loading');
   const [error, setError] = useState<string | null>(null);
-  const [dismissed, setDismissed] = useState(true);
+  const [dismissed, setDismissed] = useState(false);
   const [visits, setVisits] = useState(0);
   const [mode, setMode] = useState<PulseMode>('essential');
   const track = useTrackEvent();
 
   useEffect(() => {
-    setMounted(true);
     const syncMode = () => {
       const rawMode = localStorage.getItem(MODE_KEY);
       if (rawMode === 'technical' || rawMode === 'practical' || rawMode === 'essential') {
@@ -111,8 +109,6 @@ export function NotificationPermission() {
       setError('No se pudieron activar las notificaciones');
     }
   }, []);
-
-  if (!mounted) return null;
 
   if (status === 'granted' || status === 'done') {
     return null;
