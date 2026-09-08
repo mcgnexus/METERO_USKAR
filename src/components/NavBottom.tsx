@@ -13,7 +13,13 @@ const TABS: { id: TabId; icon: string; label: string; href: string }[] = [
   { id: 'alertas', icon: '⚠️', label: 'Alertas', href: '/huescar/alertas' },
 ];
 
-export function NavBottom({ alertCount }: { alertCount?: number }) {
+/**
+ * Badge de la pestaña Alertas: SOLO cuenta alertas meteorológicas
+ * (AEMET + motor climático). Los avisos fitosanitarios (RAIF) y las
+ * recomendaciones agrícolas tienen su propia sección en /huescar/alertas
+ * con contador independiente: nunca se mezclan categorías en un contador.
+ */
+export function NavBottom({ weatherAlertCount }: { weatherAlertCount?: number }) {
   const pathname = usePathname();
 
   return (
@@ -23,13 +29,13 @@ export function NavBottom({ alertCount }: { alertCount?: number }) {
           const isActive = tab.id === 'hoy'
             ? pathname === '/huescar'
             : pathname.startsWith(tab.href);
-          const showBadge = tab.id === 'alertas' && alertCount && alertCount > 0;
+          const showBadge = tab.id === 'alertas' && weatherAlertCount && weatherAlertCount > 0;
           return (
             <Link
               key={tab.id}
               href={tab.href}
               prefetch={false}
-              aria-label={tab.label}
+              aria-label={tab.id === 'alertas' && weatherAlertCount ? `${tab.label}: ${weatherAlertCount} alertas meteorológicas activas` : tab.label}
               className={`relative flex min-w-0 min-h-[52px] flex-col items-center gap-0.5 px-3 py-2.5 transition-colors lg:min-h-0 lg:flex-row lg:gap-2 lg:rounded-full lg:py-2
                 ${isActive ? 'text-sky-800' : 'text-slate-600 hover:text-slate-800'}`}
             >
@@ -37,7 +43,7 @@ export function NavBottom({ alertCount }: { alertCount?: number }) {
                 {tab.icon}
                 {showBadge && (
                   <span className="absolute -right-2 -top-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-bold text-white leading-none">
-                    {alertCount}
+                    {weatherAlertCount}
                   </span>
                 )}
               </span>

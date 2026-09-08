@@ -116,7 +116,7 @@ export default function LlanoPulseDashboard({
         </main>
       </div>
 
-      <NavBottom alertCount={alarms.length} />
+      <NavBottom weatherAlertCount={alarms.length} />
     </div>
   );
 }

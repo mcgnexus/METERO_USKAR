@@ -221,7 +221,7 @@ export function HoyPageClient({ response }: { response: HuescarWeatherResponse }
         </div>
       </div>
 
-      <NavBottom alertCount={alarms.length} />
+      <NavBottom weatherAlertCount={alarms.length} />
       <div className="fixed bottom-[72px] left-3 right-3 z-40 lg:hidden"><a href="/huescar/contacto" onClick={() => track('cta_clicked', { context: 'mobile-fixed', cta: 'Recibir avisos agrícolas' })} className="flex min-h-[52px] items-center justify-center rounded-full bg-emerald-700 px-5 text-sm font-black text-white shadow-xl hover:bg-emerald-800">Recibir avisos agrícolas</a></div>
       <a href="https://wa.me/34614242716?text=Hola%2C%20he%20consultado%20Meteo%20Hu%C3%A9scar%20y%20quiero%20recibir%20avisos%20para%20mi%20finca." target="_blank" rel="noreferrer" onClick={() => track('whatsapp_clicked', { context: 'mobile-floating', cta: 'Hablar con TecRural' })} aria-label="Hablar con TecRural por WhatsApp" className="fixed bottom-[136px] right-4 z-40 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-600 text-xl text-white shadow-xl hover:bg-emerald-700 lg:hidden"><span aria-hidden="true">💬</span></a>
     </div>

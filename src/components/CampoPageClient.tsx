@@ -105,7 +105,7 @@ export function CampoPageClient({ response }: { response: HuescarWeatherResponse
           <TecRuralCtaBanner context="campo" />
         </div>
       </div>
-      <NavBottom alertCount={alarms.length} />
+      <NavBottom weatherAlertCount={alarms.length} />
     </div>
   );
 }
