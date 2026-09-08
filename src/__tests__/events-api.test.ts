@@ -14,6 +14,8 @@ vi.mock('@/lib/weatherStore', () => ({
 
 import { POST } from '@/app/api/events/route';
 
+type Postable = Parameters<typeof POST>[0];
+
 function mockRequest(body: unknown, headers?: Record<string, string>): Request {
   return new Request('http://localhost/api/events', {
     method: 'POST',
@@ -32,20 +34,20 @@ describe('POST /api/events', () => {
 
   it('rejects empty event', async () => {
     const req = mockRequest({ event: '' });
-    const res = await POST(req as any);
+    const res = await POST(req as Postable);
     expect(res.status).toBe(400);
   });
 
   it('rejects invalid event not in allowlist', async () => {
     mockRecordBusinessEvent.mockResolvedValue(false);
     const req = mockRequest({ event: 'invalid_event_name' });
-    const res = await POST(req as any);
+    const res = await POST(req as Postable);
     expect(res.status).toBe(400);
   });
 
   it('accepts valid event with page', async () => {
     const req = mockRequest({ event: 'weather_view', page: '/huescar' });
-    const res = await POST(req as any);
+    const res = await POST(req as Postable);
     expect(res.status).toBe(201);
     expect(mockRecordBusinessEvent).toHaveBeenCalledWith(
       expect.objectContaining({ event: 'weather_view', page: '/huescar' }),
@@ -55,10 +57,90 @@ describe('POST /api/events', () => {
   it('accepts valid event with metadata', async () => {
     const meta = { crop: 'Olivar', municipality: 'Huéscar' };
     const req = mockRequest({ event: 'lead_form_submitted', metadata: meta });
-    const res = await POST(req as any);
+    const res = await POST(req as Postable);
     expect(res.status).toBe(201);
     expect(mockRecordBusinessEvent).toHaveBeenCalledWith(
       expect.objectContaining({ event: 'lead_form_submitted', metadata: meta }),
+    );
+  });
+
+  it('accepts canonical funnel events', async () => {
+    const events = [
+      'weather_view', 'lead_cta_click', 'lead_form_open', 'lead_form_start',
+      'lead_form_error', 'lead_form_submit', 'lead_form_success', 'whatsapp_click',
+    ];
+    for (const event of events) {
+      mockRecordBusinessEvent.mockResolvedValue(true);
+      const req = mockRequest({ event, page: '/huescar' });
+      const res = await POST(req as Postable);
+      expect(res.status).toBe(201);
+    }
+  });
+
+  it('PRIVACIDAD: descarta claves con datos personales del metadata', async () => {
+    const req = mockRequest({
+      event: 'lead_form_success',
+      metadata: {
+        municipality: 'Huéscar',
+        crop: 'Olivar',
+        phone: '614242716',
+        name: 'Juan Pérez',
+        email: 'juan@example.com',
+        notes: 'llamar al 614 24 27 16 por la tarde',
+      },
+    });
+    const res = await POST(req as Postable);
+    expect(res.status).toBe(201);
+    const metadata = mockRecordBusinessEvent.mock.calls[0][0].metadata as Record<string, unknown>;
+    expect(metadata.municipality).toBe('Huéscar');
+    expect(metadata.crop).toBe('Olivar');
+    expect(metadata.phone).toBeUndefined();
+    expect(metadata.name).toBeUndefined();
+    expect(metadata.email).toBeUndefined();
+    expect(metadata.notes).toBeUndefined();
+  });
+
+  it('PRIVACIDAD: valores con pinta de teléfono se sustituyen por [filtered]', async () => {
+    const req = mockRequest({
+      event: 'whatsapp_click',
+      metadata: { context: 'contacto 614242716 gracias' },
+    });
+    const res = await POST(req as Postable);
+    expect(res.status).toBe(201);
+    const metadata = mockRecordBusinessEvent.mock.calls[0][0].metadata as Record<string, unknown>;
+    expect(metadata.context).toBe('[filtered]');
+  });
+
+  it('deriva el tipo de dispositivo del User-Agent', async () => {
+    const mobile = await POST(mockRequest({ event: 'weather_view' }, { 'user-agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)' }) as Postable);
+    expect(mobile.status).toBe(201);
+    expect(mockRecordBusinessEvent).toHaveBeenLastCalledWith(expect.objectContaining({ deviceType: 'mobile' }));
+
+    const desktop = await POST(mockRequest({ event: 'weather_view' }, { 'user-agent': 'Mozilla/5.0 (X11; Linux x86_64) Firefox/126.0' }) as Postable);
+    expect(desktop.status).toBe(201);
+    expect(mockRecordBusinessEvent).toHaveBeenLastCalledWith(expect.objectContaining({ deviceType: 'desktop' }));
+
+    const tablet = await POST(mockRequest({ event: 'weather_view' }, { 'user-agent': 'Mozilla/5.0 (iPad; CPU OS 17_0)' }) as Postable);
+    expect(tablet.status).toBe(201);
+    expect(mockRecordBusinessEvent).toHaveBeenLastCalledWith(expect.objectContaining({ deviceType: 'tablet' }));
+  });
+
+  it('guarda página de entrada y campaña UTM para atribución', async () => {
+    const req = mockRequest({
+      event: 'lead_form_success',
+      page: '/huescar',
+      entryPage: '/huescar/campo',
+      utmCampaign: 'primavera-2026',
+      metadata: { municipality: 'Huéscar', crop: 'Almendro', interest: 'Avisos de helada' },
+    });
+    const res = await POST(req as Postable);
+    expect(res.status).toBe(201);
+    expect(mockRecordBusinessEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        entryPage: '/huescar/campo',
+        utmCampaign: 'primavera-2026',
+        metadata: { municipality: 'Huéscar', crop: 'Almendro', interest: 'Avisos de helada' },
+      }),
     );
   });
 
@@ -71,14 +153,14 @@ describe('POST /api/events', () => {
     for (const event of events) {
       mockRecordBusinessEvent.mockResolvedValue(true);
       const req = mockRequest({ event });
-      const res = await POST(req as any);
+      const res = await POST(req as Postable);
       expect(res.status).toBe(201);
     }
   });
 
   it('extracts client IP from forwarded headers', async () => {
     const req = mockRequest({ event: 'weather_view' }, { 'x-forwarded-for': '1.2.3.4, 5.6.7.8' });
-    const res = await POST(req as any);
+    const res = await POST(req as Postable);
     expect(res.status).toBe(201);
     expect(mockRecordBusinessEvent).toHaveBeenCalledWith(
       expect.objectContaining({ ipHash: expect.any(String) }),

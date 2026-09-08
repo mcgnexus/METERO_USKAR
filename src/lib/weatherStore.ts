@@ -258,6 +258,9 @@ CREATE TABLE IF NOT EXISTS event_rate_limits (
   event_count INT NOT NULL DEFAULT 0,
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+ALTER TABLE business_events ADD COLUMN IF NOT EXISTS device_type TEXT;
+ALTER TABLE business_events ADD COLUMN IF NOT EXISTS entry_page TEXT;
+ALTER TABLE business_events ADD COLUMN IF NOT EXISTS utm_campaign TEXT;
 ALTER TABLE agricultural_leads ADD COLUMN IF NOT EXISTS source TEXT DEFAULT 'direct';
 ALTER TABLE agricultural_leads ADD COLUMN IF NOT EXISTS landing_page TEXT DEFAULT '/';
 ALTER TABLE agricultural_leads ADD COLUMN IF NOT EXISTS utm_source TEXT;
@@ -748,6 +751,14 @@ const VALID_EVENTS = new Set([
   'alerts_page_viewed',
   'field_navigation_clicked',
   'alerts_navigation_clicked',
+  // Nombres canónicos del embudo de conversión (spec analítica).
+  'lead_cta_click',
+  'lead_form_open',
+  'lead_form_start',
+  'lead_form_error',
+  'lead_form_submit',
+  'lead_form_success',
+  'whatsapp_click',
 ]);
 
 export async function recordBusinessEvent(input: {
@@ -755,17 +766,23 @@ export async function recordBusinessEvent(input: {
   page?: string;
   metadata?: Record<string, unknown>;
   ipHash?: string;
+  deviceType?: string;
+  entryPage?: string;
+  utmCampaign?: string;
 }): Promise<boolean> {
   if (!VALID_EVENTS.has(input.event)) return false;
   try {
     await getPool().query(
-      `INSERT INTO business_events (event_name, page, metadata, ip_hash)
-       VALUES ($1, $2, $3::jsonb, $4)`,
+      `INSERT INTO business_events (event_name, page, metadata, ip_hash, device_type, entry_page, utm_campaign)
+       VALUES ($1, $2, $3::jsonb, $4, $5, $6, $7)`,
       [
         input.event,
         input.page ?? null,
         input.metadata ? JSON.stringify(input.metadata) : null,
         input.ipHash ?? null,
+        input.deviceType ?? null,
+        input.entryPage ?? null,
+        input.utmCampaign ?? null,
       ],
     );
     return true;

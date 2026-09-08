@@ -1,9 +1,25 @@
 'use client';
 
 import { useCallback, useRef } from 'react';
+import { captureUtms } from '@/lib/utm';
 
 const sentEvents = new Map<string, number>();
 const DEDUP_WINDOW_MS = 60_000;
+const ENTRY_PAGE_KEY = 'meteo_entry_page';
+
+/** Página de ENTRADA de la sesión (se fija en la primera vista, no cambia al navegar). */
+function entryPage(): string | undefined {
+  if (typeof window === 'undefined') return undefined;
+  try {
+    const stored = sessionStorage.getItem(ENTRY_PAGE_KEY);
+    if (stored) return stored;
+    const current = window.location.pathname;
+    sessionStorage.setItem(ENTRY_PAGE_KEY, current);
+    return current;
+  } catch {
+    return window.location.pathname;
+  }
+}
 
 export function useTrackEvent() {
   const pendingRef = useRef<Set<string>>(new Set());
@@ -20,8 +36,15 @@ export function useTrackEvent() {
     pendingRef.current.add(key);
 
     const page = window.location.pathname;
-
-    const payload = JSON.stringify({ event, page, metadata });
+    // Dimensiones de conversión: página de entrada y campaña UTM de la sesión.
+    const utmCampaign = captureUtms().utm_campaign;
+    const payload = JSON.stringify({
+      event,
+      page,
+      entryPage: entryPage(),
+      utmCampaign,
+      metadata,
+    });
 
     try {
       if (navigator.sendBeacon) {

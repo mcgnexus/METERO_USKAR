@@ -15,6 +15,9 @@ const interests = [
   'Información sobre Terracía',
 ];
 
+const WHATSAPP_URL =
+  'https://wa.me/34614242716?text=Hola%20TecRural%2C%20vengo%20de%20Meteo%20Hu%C3%A9scar.%20Me%20interesa%20recibir%20informaci%C3%B3n%20sobre%20avisos%20agr%C3%ADcolas%20para%20mi%20finca.';
+
 export function AgriculturalLeadForm() {
   const [open, setOpen] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -22,6 +25,8 @@ export function AgriculturalLeadForm() {
   const [sending, setSending] = useState(false);
   const [started, setStarted] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  /** Resumen de lo enviado, para el estado de éxito (municipio, cultivo, intereses). */
+  const [receipt, setReceipt] = useState<{ municipality: string; crop: string; interests: string[] } | null>(null);
   const track = useTrackEvent();
   /** Guard anti doble envío: ignorar submits mientras hay una petición en curso. */
   const sendingRef = useRef(false);
@@ -72,8 +77,16 @@ export function AgriculturalLeadForm() {
     if (!parsed.success) {
       setFieldErrors(fieldErrorsFromZod(parsed.error));
       setError('Revisa los campos marcados antes de enviar.');
+      track('lead_form_error', { reason: 'validation', crop: rawPayload.crop, municipality: rawPayload.municipality });
       return;
     }
+
+    // Envío real (datos válidos): intento de conversión.
+    track('lead_form_submit', {
+      municipality: parsed.data.municipality,
+      crop: parsed.data.crop,
+      interests: parsed.data.interests,
+    });
 
     sendingRef.current = true;
     setSending(true);
@@ -93,7 +106,20 @@ export function AgriculturalLeadForm() {
       if (response.status === 201 || (response.ok && result.duplicate)) {
         // Guardado (o duplicado reciente tratado como éxito: no se vuelve a insertar).
         idempotencyKeyRef.current = null;
+        // Resumen para el estado de éxito (datos ya validados por el esquema).
+        setReceipt({
+          municipality: parsed.data.municipality,
+          crop: parsed.data.crop,
+          interests: parsed.data.interests,
+        });
         setSubmitted(true);
+        setError(null);
+        setFieldErrors({});
+        track('lead_form_success', {
+          municipality: parsed.data.municipality,
+          crop: parsed.data.crop,
+          interests: parsed.data.interests,
+        });
         track('lead_form_submitted', { crop: rawPayload.crop, municipality: rawPayload.municipality });
         event.currentTarget.reset();
         return;
@@ -103,15 +129,19 @@ export function AgriculturalLeadForm() {
         idempotencyKeyRef.current = null;
         if (result.fieldErrors) setFieldErrors(result.fieldErrors);
         setError(result.error ?? 'Revisa los campos marcados antes de enviar.');
+        track('lead_form_error', { reason: 'invalid_data', crop: parsed.data.crop, municipality: parsed.data.municipality });
         return;
       }
       if (response.status === 429) {
         setError(result.error ?? 'Has alcanzado el límite de solicitudes. Inténtalo más tarde.');
+        track('lead_form_error', { reason: 'rate_limited', crop: parsed.data.crop, municipality: parsed.data.municipality });
         return;
       }
       setError(result.error ?? 'No se pudo enviar la solicitud. Inténtalo de nuevo.');
+      track('lead_form_error', { reason: 'server', crop: parsed.data.crop, municipality: parsed.data.municipality });
     } catch {
       setError('Sin conexión. Comprueba tu red y vuelve a intentarlo.');
+      track('lead_form_error', { reason: 'network', crop: rawPayload.crop, municipality: rawPayload.municipality });
     } finally {
       sendingRef.current = false;
       setSending(false);
@@ -125,22 +155,34 @@ export function AgriculturalLeadForm() {
       {!open && !submitted && (
         <button
           type="button"
-           onClick={() => { setOpen(true); track('cta_clicked', { cta: 'Quiero avisos para mi finca', destination: 'inline-lead-form' }); track('lead_form_opened'); }}
+           onClick={() => { setOpen(true); track('lead_cta_click', { cta: 'Quiero avisos para mi finca', destination: 'inline-lead-form' }); track('lead_form_open'); }}
           className="mt-3 rounded-full bg-emerald-700 px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-emerald-800"
         >
           Quiero avisos para mi finca
         </button>
       )}
-      {submitted && (
-        <div className="mt-3 space-y-3">
-          <p className="rounded-xl bg-white/70 p-3 text-xs font-semibold text-emerald-900" role="status">
-            Solicitud recibida. Te contactaremos para conocer mejor tu finca.
-          </p>
+      {submitted && receipt && (
+        <div className="mt-3 space-y-3" role="status">
+          <div className="rounded-xl bg-white/80 p-3">
+            <p className="text-sm font-black text-emerald-900">✅ Solicitud recibida</p>
+            <ul className="mt-2 space-y-0.5 text-xs font-semibold text-emerald-900/90">
+              <li>📍 Municipio: {receipt.municipality}</li>
+              <li>🌱 Cultivo: {receipt.crop}</li>
+              {receipt.interests.length > 0 && <li>🔎 Intereses: {receipt.interests.join(', ')}</li>}
+            </ul>
+            <p className="mt-2 text-xs leading-5 text-emerald-800">Te contactaremos normalmente en menos de 24 horas.</p>
+          </div>
+          <Link
+            href="/huescar"
+            className="flex items-center justify-center gap-2 rounded-full bg-sky-700 px-4 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-sky-800"
+          >
+            ← Volver a la previsión
+          </Link>
           <a
-            href="https://wa.me/34614242716?text=Hola%20TecRural%2C%20vengo%20de%20Meteo%20Hu%C3%A9scar.%20Me%20interesa%20recibir%20informaci%C3%B3n%20sobre%20avisos%20agr%C3%ADcolas%20para%20mi%20finca."
+            href={WHATSAPP_URL}
             target="_blank"
             rel="noreferrer"
-            onClick={() => track('whatsapp_clicked', { context: 'lead-form-post-submit' })}
+            onClick={() => track('whatsapp_click', { context: 'lead-form-post-submit' })}
             className="flex items-center justify-center gap-2 rounded-full bg-emerald-600 px-4 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-emerald-700"
           >
              Hablar con TecRural
@@ -148,7 +190,7 @@ export function AgriculturalLeadForm() {
         </div>
       )}
       {open && !submitted && (
-        <form onSubmit={handleSubmit} onChange={() => { if (!started) { setStarted(true); track('lead_form_started'); } }} className="mt-4 space-y-3" noValidate>
+        <form onSubmit={handleSubmit} onChange={() => { if (!started) { setStarted(true); track('lead_form_start'); } }} className="mt-4 space-y-3" noValidate>
           <div className="grid gap-3 sm:grid-cols-2">
             <label htmlFor="inline-name" className="text-xs font-semibold text-slate-700">
               Nombre <span className="font-normal text-slate-400">(opcional)</span>
@@ -225,9 +267,23 @@ export function AgriculturalLeadForm() {
             <p className="leading-5 text-slate-500">Responsable: Manuel Carrasco García. Consulta la <Link className="font-semibold text-emerald-800 underline" href="/privacidad">política de privacidad</Link>. Puedes retirar cada consentimiento por separado en la <Link className="font-semibold text-emerald-800 underline" href="/privacidad#retirada-consentimiento">sección de retirada</Link> o escribiendo a <a className="font-semibold text-emerald-800 underline" href="mailto:mcgtecrural@gmail.com">mcgtecrural@gmail.com</a>.</p>
           </div>
           <input name="website" tabIndex={-1} autoComplete="off" className="hidden" aria-hidden="true" />
-          {error && <p id="inline-form-error" role="alert" className="text-xs font-semibold text-rose-700">{error}</p>}
+          {error && (
+            <div className="space-y-2">
+              <p id="inline-form-error" role="alert" className="text-xs font-semibold text-rose-700">{error}</p>
+              <p className="text-[10px] leading-4 text-slate-500">Tus datos siguen en el formulario: corrige o reintenta sin volver a escribirlos.</p>
+              <a
+                href={WHATSAPP_URL}
+                target="_blank"
+                rel="noreferrer"
+                onClick={() => track('whatsapp_click', { context: 'lead-form-error' })}
+                className="inline-flex items-center gap-1.5 rounded-full bg-emerald-600 px-3 py-1.5 text-[11px] font-bold text-white shadow-sm hover:bg-emerald-700"
+              >
+                💬 También puedes escribirnos por WhatsApp
+              </a>
+            </div>
+          )}
           <div className="flex gap-2">
-            <button type="submit" disabled={sending} className="rounded-full bg-emerald-700 px-4 py-2 text-xs font-bold text-white hover:bg-emerald-800 disabled:opacity-50">{sending ? 'Enviando...' : 'Enviar solicitud'}</button>
+            <button type="submit" disabled={sending} className="rounded-full bg-emerald-700 px-4 py-2 text-xs font-bold text-white hover:bg-emerald-800 disabled:opacity-50">{sending ? 'Enviando...' : error ? 'Reintentar' : 'Enviar solicitud'}</button>
             <button type="button" onClick={() => setOpen(false)} className="rounded-full px-3 py-2 text-xs font-bold text-slate-600 hover:bg-white">Cancelar</button>
           </div>
         </form>

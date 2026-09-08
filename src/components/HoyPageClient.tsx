@@ -70,7 +70,7 @@ export function HoyPageClient({ response }: { response: HuescarWeatherResponse }
   }, [cd, wd]);
 
   const track = useTrackEvent();
-  useEffect(() => { track('weather_view'); }, [track]);
+  useEffect(() => { track('weather_view', { municipality: response.municipality }); }, [track, response.municipality]);
 
   if (!cd) {
     return (
