@@ -1,7 +1,8 @@
 import crypto from 'node:crypto';
 import { NextRequest, NextResponse } from 'next/server';
-import { consumeLeadAttempt, findRecentLead, initializeDatabase, saveAgriculturalLead } from '@/lib/weatherStore';
+import { consumeLeadAttempt, findRecentLead, initializeDatabase, recordLeadConsents, saveAgriculturalLead } from '@/lib/weatherStore';
 import { notifyNewLead } from '@/services/telegramNotify';
+import { CONSENT_COMMERCIAL_CHANNELS, CONSENT_POLICY_VERSION, CONSENT_SERVICE_CHANNELS } from '@/lib/leadSchema';
 
 const CROPS = new Set(['Olivar', 'Almendro', 'Pistacho', 'Hortícola', 'Otro']);
 const AREAS = new Set(['Menos de 5 ha', '5-20 ha', '20-50 ha', 'Más de 50 ha', 'Prefiero no decirlo']);
@@ -80,8 +81,20 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       utmSource: text(body?.utmSource, 100) || undefined,
       utmMedium: text(body?.utmMedium, 100) || undefined,
       utmCampaign: text(body?.utmCampaign, 100) || undefined,
+      consentPolicyVersion: CONSENT_POLICY_VERSION,
     });
     if (!saved) return NextResponse.json({ error: 'No se pudo guardar la solicitud.' }, { status: 503 });
+
+    // Evidencia de consentimiento por finalidad (la comercial se registra
+    // también cuando se rechaza, como prueba de que se ofreció por separado).
+    await recordLeadConsents(
+      saved,
+      [
+        { purpose: 'service_alerts', granted: true, channels: [...CONSENT_SERVICE_CHANNELS] },
+        { purpose: 'commercial', granted: body?.commercialConsent === true, channels: [...CONSENT_COMMERCIAL_CHANNELS] },
+      ],
+      CONSENT_POLICY_VERSION,
+    );
 
     void notifyNewLead({ name, phone, municipality, crop, area, interests });
 

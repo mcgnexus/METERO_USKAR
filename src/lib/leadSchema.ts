@@ -24,36 +24,70 @@ export const LEAD_INTERESTS = [
 /** Teléfono: dígitos con separadores habituales; 7-30 caracteres. */
 export const PHONE_REGEX = /^[+0-9 ()-]{7,30}$/;
 
+/** Versión de la política de privacidad/consentimientos vigente (evidencia en BD). */
+export const CONSENT_POLICY_VERSION = '2026-09-v1';
+
+/** Canales informados al usuario para cada finalidad (se conservan como evidencia). */
+export const CONSENT_SERVICE_CHANNELS = ['whatsapp', 'notificaciones'] as const;
+export const CONSENT_COMMERCIAL_CHANNELS = ['whatsapp', 'email', 'notificaciones'] as const;
+
+/** Elimina separadores del teléfono para comparación/guardado homogéneo. */
+export function normalizePhone(phone: string): string {
+  return phone.replace(/[\s().-]/g, '');
+}
+
+/** Elimina caracteres de control y ángulos de cualquier texto libre. */
+function sanitizeText(value: string): string {
+  return value.replace(/[\u0000-\u001f\u007f<>]/g, '');
+}
+
+const freeText = (max: number) =>
+  z
+    .string()
+    .transform(sanitizeText)
+    .pipe(z.string().trim().max(max));
+
 export const leadFormSchema = z.object({
   /** Nombre opcional del solicitante. */
-  name: z.string().trim().max(80).optional().default(''),
+  name: freeText(80).optional().default(''),
   phone: z
     .string()
     .trim()
-    .min(1, 'Introduce un teléfono o WhatsApp.')
     .max(30, 'El teléfono es demasiado largo.')
-    .regex(PHONE_REGEX, 'Introduce un teléfono o WhatsApp válido.'),
+    .regex(PHONE_REGEX, 'Introduce un teléfono o WhatsApp válido.')
+    .refine((value) => value.replace(/\D/g, '').length >= 7, 'Introduce un teléfono o WhatsApp válido.')
+    .transform(normalizePhone),
   municipality: z
     .string()
-    .trim()
-    .min(1, 'Introduce el municipio.')
-    .max(80, 'El municipio es demasiado largo.'),
+    .transform(sanitizeText)
+    .pipe(
+      z
+        .string()
+        .trim()
+        .min(2, 'Introduce el municipio.')
+        .max(80, 'El municipio es demasiado largo.'),
+    ),
   crop: z.enum(LEAD_CROPS, { message: 'Selecciona un cultivo.' }),
-  interests: z.array(z.enum(LEAD_INTERESTS)).max(5, 'Selecciona como máximo 5 intereses.').default([]),
-  /** Consentimiento del servicio (avisos meteorológicos): obligatorio. */
-  serviceConsent: z.literal(true, { message: 'Debes aceptar los avisos meteorológicos para enviar la solicitud.' }),
+  interests: z
+    .array(z.enum(LEAD_INTERESTS))
+    .max(10)
+    .transform((values) => [...new Set(values)])
+    .refine((values) => values.length <= 5, 'Selecciona como máximo 5 intereses.')
+    .default([]),
+  /** Consentimiento del servicio (avisos de la finca): obligatorio e independiente del comercial. */
+  serviceConsent: z.literal(true, { message: 'Debes aceptar los avisos para tu finca para enviar la solicitud.' }),
   /** Consentimiento comercial opcional. */
   marketingConsent: z.boolean().optional().default(false),
   /** Origen del lead (p. ej. "meteo-huescar"). */
-  source: z.string().trim().max(40).optional(),
+  source: freeText(40).optional(),
   /** Campaña de marketing (se guarda como utm_campaign). */
-  campaign: z.string().trim().max(100).optional(),
+  campaign: freeText(100).optional(),
   /** Superficie aproximada (opcional). */
   area: z.enum(LEAD_AREAS).optional().or(z.literal('')),
   /** Página desde la que se envía. */
-  landingPage: z.string().trim().max(200).optional(),
-  utmSource: z.string().trim().max(100).optional(),
-  utmMedium: z.string().trim().max(100).optional(),
+  landingPage: freeText(200).optional(),
+  utmSource: freeText(100).optional(),
+  utmMedium: freeText(100).optional(),
   /** Honeypot anti-spam: debe llegar vacío. */
   website: z.string().max(20).optional().default(''),
 });

@@ -225,6 +225,23 @@ CREATE TABLE IF NOT EXISTS lead_rate_limits (
   submission_count INT NOT NULL DEFAULT 0,
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+CREATE TABLE IF NOT EXISTS lead_idempotency (
+  idem_key TEXT PRIMARY KEY,
+  lead_id BIGINT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE TABLE IF NOT EXISTS lead_consents (
+  id BIGSERIAL PRIMARY KEY,
+  lead_id BIGINT NOT NULL,
+  purpose TEXT NOT NULL,
+  granted BOOLEAN NOT NULL,
+  channels JSONB NOT NULL DEFAULT '[]'::jsonb,
+  policy_version TEXT NOT NULL,
+  consented_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  revoked_at TIMESTAMPTZ
+);
+CREATE INDEX IF NOT EXISTS lead_consents_lead_id_idx ON lead_consents (lead_id);
+CREATE INDEX IF NOT EXISTS lead_consents_purpose_idx ON lead_consents (purpose, revoked_at);
 CREATE TABLE IF NOT EXISTS business_events (
   id BIGSERIAL PRIMARY KEY,
   event_name TEXT NOT NULL,
@@ -249,6 +266,7 @@ ALTER TABLE agricultural_leads ADD COLUMN IF NOT EXISTS utm_campaign TEXT;
 ALTER TABLE agricultural_leads ADD COLUMN IF NOT EXISTS notification_status TEXT NOT NULL DEFAULT 'new';
 ALTER TABLE agricultural_leads ADD COLUMN IF NOT EXISTS notified_at TIMESTAMPTZ;
 ALTER TABLE agricultural_leads ADD COLUMN IF NOT EXISTS notification_attempts INT NOT NULL DEFAULT 0;
+ALTER TABLE agricultural_leads ADD COLUMN IF NOT EXISTS consent_policy_version TEXT NOT NULL DEFAULT '2026-09-v1';
 CREATE INDEX IF NOT EXISTS agricultural_leads_notification_pending_idx
   ON agricultural_leads (created_at ASC)
   WHERE notification_status IN ('new', 'notification_failed');
@@ -379,13 +397,14 @@ export async function saveAgriculturalLead(input: {
   utmSource?: string;
   utmMedium?: string;
   utmCampaign?: string;
+  consentPolicyVersion?: string;
 }): Promise<number | null> {
   try {
     const result = await getPool().query(
       `INSERT INTO agricultural_leads
         (name, phone, municipality, crop, area, interests, meteorological_consent, commercial_consent, ip_hash,
-         source, landing_page, utm_source, utm_medium, utm_campaign)
-       VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7, $8, $9, $10, $11, $12, $13, $14)
+         source, landing_page, utm_source, utm_medium, utm_campaign, consent_policy_version)
+       VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7, $8, $9, $10, $11, $12, $13, $14, $15)
        RETURNING id`,
       [
         input.name,
@@ -402,12 +421,69 @@ export async function saveAgriculturalLead(input: {
         input.utmSource ?? null,
         input.utmMedium ?? null,
         input.utmCampaign ?? null,
+        input.consentPolicyVersion ?? '2026-09-v1',
       ],
     );
     const id = result.rows[0]?.id;
     return id != null ? Number(id) : null;
   } catch {
     return null;
+  }
+}
+
+export type LeadConsentPurpose = 'service_alerts' | 'commercial';
+
+export type LeadConsentInput = {
+  purpose: LeadConsentPurpose;
+  granted: boolean;
+  channels: string[];
+};
+
+/**
+ * Conserva la EVIDENCIA de la autorización: una fila por finalidad (avisos o
+ * comercial) con canales informados, versión de política y fecha. Se graba
+ * SIEMPRE, también cuando el usuario NO acepta la comercial, para poder
+ * demostrar que se le ofreció por separado y qué respondió.
+ */
+export async function recordLeadConsents(
+  leadId: number,
+  consents: LeadConsentInput[],
+  policyVersion: string,
+): Promise<void> {
+  try {
+    for (const consent of consents) {
+      await getPool().query(
+        `INSERT INTO lead_consents (lead_id, purpose, granted, channels, policy_version)
+         VALUES ($1, $2, $3, $4::jsonb, $5)`,
+        [leadId, consent.purpose, consent.granted, JSON.stringify(consent.channels), policyVersion],
+      );
+    }
+  } catch {
+    // El lead ya está guardado; la falta de evidencia se registra en logs.
+    console.error(`[weatherStore] No se pudo registrar evidencia de consentimiento para lead ${leadId}`);
+  }
+}
+
+/**
+ * Retirada de consentimiento por finalidad: marca revoked_at en la evidencia
+ * y sincroniza el flag resumen del lead. Devuelve true si se retiró algo.
+ */
+export async function withdrawLeadConsent(phone: string, purpose: LeadConsentPurpose): Promise<boolean> {
+  try {
+    const flagColumn = purpose === 'commercial' ? 'commercial_consent' : 'meteorological_consent';
+    const result = await getPool().query(
+      `UPDATE lead_consents lc SET revoked_at = NOW()
+       FROM agricultural_leads al
+       WHERE lc.lead_id = al.id AND al.phone = $1 AND lc.purpose = $2 AND lc.revoked_at IS NULL`,
+      [phone, purpose],
+    );
+    await getPool().query(
+      `UPDATE agricultural_leads SET ${flagColumn} = false WHERE phone = $1`,
+      [phone],
+    );
+    return (result.rowCount ?? 0) > 0;
+  } catch {
+    return false;
   }
 }
 
@@ -499,6 +575,71 @@ export async function findRecentLead(phone: string, municipality: string, within
     return (result.rowCount ?? 0) > 0;
   } catch {
     return false;
+  }
+}
+
+/** Ventana (minutos) en la que un segundo envío del mismo teléfono se trata como duplicado. */
+export const LEAD_DUPLICATE_PHONE_WINDOW_MINUTES = 30;
+
+/** Envío del mismo teléfono en los últimos N minutos → duplicado, sea cual sea el resto del formulario. */
+export async function findRecentLeadWithinMinutes(phone: string, withinMinutes = LEAD_DUPLICATE_PHONE_WINDOW_MINUTES): Promise<boolean> {
+  try {
+    const result = await getPool().query(
+      `SELECT 1 FROM agricultural_leads
+       WHERE phone = $1
+         AND created_at > NOW() - ($2 || ' minutes')::INTERVAL
+       LIMIT 1`,
+      [phone, withinMinutes],
+    );
+    return (result.rowCount ?? 0) > 0;
+  } catch {
+    return false;
+  }
+}
+
+export type LeadIdempotencyClaim = 'new' | 'exists' | 'error';
+
+/**
+ * Reclama una clave de idempotencia: solo la PRIMERA petición con esa clave
+ * obtiene 'new'; cualquier repetición (doble clic, reintento de red) recibe
+ * 'exists' y no vuelve a insertar ni a notificar.
+ */
+export async function claimLeadIdempotencyKey(idemKey: string): Promise<LeadIdempotencyClaim> {
+  try {
+    await getPool().query(
+      `DELETE FROM lead_idempotency WHERE created_at < NOW() - INTERVAL '48 hours'`,
+    );
+    const result = await getPool().query(
+      `INSERT INTO lead_idempotency (idem_key) VALUES ($1)
+       ON CONFLICT (idem_key) DO NOTHING
+       RETURNING idem_key`,
+      [idemKey],
+    );
+    return (result.rowCount ?? 0) > 0 ? 'new' : 'exists';
+  } catch {
+    // Sin idempotencia disponible se sigue con el resto de protecciones.
+    return 'error';
+  }
+}
+
+/** Asocia el lead guardado a la clave de idempotencia reclamada. */
+export async function attachLeadIdempotencyLead(idemKey: string, leadId: number): Promise<void> {
+  try {
+    await getPool().query(`UPDATE lead_idempotency SET lead_id = $2 WHERE idem_key = $1`, [idemKey, leadId]);
+  } catch {
+    // La clave caduca sola en 48 h; el lead ya está guardado.
+  }
+}
+
+/**
+ * Libera una clave reclamada cuyo lead NO llegó a guardarse, para que un
+ * reintento legítimo con la misma clave pueda volver a intentarlo.
+ */
+export async function releaseLeadIdempotencyKey(idemKey: string): Promise<void> {
+  try {
+    await getPool().query(`DELETE FROM lead_idempotency WHERE idem_key = $1 AND lead_id IS NULL`, [idemKey]);
+  } catch {
+    // Si falla, la clave caduca sola; no bloquea el flujo.
   }
 }
 

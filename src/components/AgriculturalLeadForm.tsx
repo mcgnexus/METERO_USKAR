@@ -25,6 +25,17 @@ export function AgriculturalLeadForm() {
   const track = useTrackEvent();
   /** Guard anti doble envío: ignorar submits mientras hay una petición en curso. */
   const sendingRef = useRef(false);
+  /**
+   * Clave de idempotencia del envío actual: se mantiene entre reintentos del
+   * MISMO envío (red lenta, 429, 5xx) y se renueva tras éxito o corrección.
+   * Así, pulsar varias veces o reintentar nunca crea leads duplicados.
+   */
+  const idempotencyKeyRef = useRef<string | null>(null);
+
+  function nextIdempotencyKey(): string {
+    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') return crypto.randomUUID();
+    return `idem-${Date.now()}-${Math.random().toString(36).slice(2)}${Math.random().toString(36).slice(2)}`;
+  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -66,10 +77,11 @@ export function AgriculturalLeadForm() {
 
     sendingRef.current = true;
     setSending(true);
+    if (!idempotencyKeyRef.current) idempotencyKeyRef.current = nextIdempotencyKey();
     try {
       const response = await fetch('/api/leads', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Idempotency-Key': idempotencyKeyRef.current },
         body: JSON.stringify(rawPayload),
       });
       const result = (await response.json().catch(() => ({}))) as {
@@ -80,12 +92,15 @@ export function AgriculturalLeadForm() {
 
       if (response.status === 201 || (response.ok && result.duplicate)) {
         // Guardado (o duplicado reciente tratado como éxito: no se vuelve a insertar).
+        idempotencyKeyRef.current = null;
         setSubmitted(true);
         track('lead_form_submitted', { crop: rawPayload.crop, municipality: rawPayload.municipality });
         event.currentTarget.reset();
         return;
       }
       if (response.status === 400) {
+        // Corrección del usuario = envío nuevo: clave nueva.
+        idempotencyKeyRef.current = null;
         if (result.fieldErrors) setFieldErrors(result.fieldErrors);
         setError(result.error ?? 'Revisa los campos marcados antes de enviar.');
         return;
@@ -181,17 +196,33 @@ export function AgriculturalLeadForm() {
             </div>
             {fieldErrors.interests && <p className="mt-0.5 text-[10px] font-semibold text-rose-600">{fieldErrors.interests}</p>}
           </fieldset>
-          <div className="space-y-2 rounded-xl bg-white/70 p-3 text-xs text-slate-700">
-            <label className="flex items-start gap-2">
-              <input type="checkbox" name="serviceConsent" required aria-invalid={Boolean(fieldErrors.serviceConsent)} className="mt-0.5 accent-emerald-700" />
-              <span>Acepto recibir avisos meteorológicos para mi finca por WhatsApp y/o notificaciones.</span>
-            </label>
-            {fieldErrors.serviceConsent && <p className="text-[10px] font-semibold text-rose-600">{fieldErrors.serviceConsent}</p>}
-            <label className="flex items-start gap-2">
-              <input type="checkbox" name="marketingConsent" className="mt-0.5 accent-emerald-700" />
-              <span>Quiero recibir información comercial de TecRural sobre servicios, sensores y diagnóstico agrícola.</span>
-            </label>
-            <p className="leading-5 text-slate-500">Responsable: Manuel Carrasco García. Puedes retirar tu consentimiento escribiendo a <a className="font-semibold text-emerald-800 underline" href="mailto:mcgtecrural@gmail.com">mcgtecrural@gmail.com</a>. Consulta la <Link className="font-semibold text-emerald-800 underline" href="/privacidad">política de privacidad</Link>.</p>
+          <div className="space-y-3 rounded-xl bg-white/70 p-3 text-xs text-slate-700">
+            <div>
+              <label className="flex items-start gap-2">
+                <input type="checkbox" name="serviceConsent" required aria-invalid={Boolean(fieldErrors.serviceConsent)} className="mt-0.5 accent-emerald-700" />
+                <span>
+                  <span className="mr-1 rounded bg-emerald-100 px-1.5 py-0.5 text-[10px] font-black text-emerald-800">Obligatorio</span>
+                  Acepto recibir los avisos solicitados para mi finca.
+                </span>
+              </label>
+              <p className="ml-6 mt-0.5 text-[10px] leading-4 text-slate-500">
+                Canales: WhatsApp y notificaciones push. Solo información meteorológica y agrícola solicitada; no incluye publicidad.
+              </p>
+            </div>
+            {fieldErrors.serviceConsent && <p className="ml-6 text-[10px] font-semibold text-rose-600">{fieldErrors.serviceConsent}</p>}
+            <div>
+              <label className="flex items-start gap-2">
+                <input type="checkbox" name="marketingConsent" className="mt-0.5 accent-emerald-700" />
+                <span>
+                  <span className="mr-1 rounded bg-slate-200 px-1.5 py-0.5 text-[10px] font-black text-slate-600">Opcional</span>
+                  Acepto recibir información comercial sobre sensores, diagnóstico, riego y otros servicios de TecRural.
+                </span>
+              </label>
+              <p className="ml-6 mt-0.5 text-[10px] leading-4 text-slate-500">
+                Canales: WhatsApp, email y notificaciones. Si no la marcas, seguirás recibiendo tus avisos con normalidad.
+              </p>
+            </div>
+            <p className="leading-5 text-slate-500">Responsable: Manuel Carrasco García. Consulta la <Link className="font-semibold text-emerald-800 underline" href="/privacidad">política de privacidad</Link>. Puedes retirar cada consentimiento por separado en la <Link className="font-semibold text-emerald-800 underline" href="/privacidad#retirada-consentimiento">sección de retirada</Link> o escribiendo a <a className="font-semibold text-emerald-800 underline" href="mailto:mcgtecrural@gmail.com">mcgtecrural@gmail.com</a>.</p>
           </div>
           <input name="website" tabIndex={-1} autoComplete="off" className="hidden" aria-hidden="true" />
           {error && <p id="inline-form-error" role="alert" className="text-xs font-semibold text-rose-700">{error}</p>}

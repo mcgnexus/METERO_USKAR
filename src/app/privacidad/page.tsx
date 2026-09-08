@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { ConsentWithdrawForm } from "@/components/ConsentWithdrawForm";
 
 export const metadata: Metadata = {
   title: "Política de privacidad | Meteo Huéscar · TecRural",
@@ -27,7 +28,7 @@ export default function PrivacidadPage() {
 
         <h2 className="pt-4 text-xl font-bold">3. Base jurídica y conservación</h2>
         <p>La base jurídica para atender la solicitud y enviar avisos meteorológicos es tu consentimiento expreso. La base jurídica de las comunicaciones comerciales es un consentimiento específico, separado y opcional. Ambos consentimientos son revocables en cualquier momento y la retirada no afecta a la licitud del tratamiento realizado anteriormente.</p>
-        <p>En cada solicitud se registra la fecha del consentimiento y un identificador técnico protegido de la conexión, junto con las opciones aceptadas, para poder demostrar cuándo y cómo se obtuvo el consentimiento. Los datos de los formularios agrícolas se conservarán durante un máximo de 12 meses desde el último contacto, salvo obligación legal o relación activa que justifique otro plazo; se suprimirán o anonimizarán al finalizarlo. Los datos de suscripción push se conservan mientras permanezca activa y se eliminan cuando se solicita la baja o el navegador la invalida.</p>
+        <p>En cada solicitud se registra la fecha del consentimiento, la versión de la política vigente, la finalidad (avisos de la finca o información comercial), los canales informados (WhatsApp, email, notificaciones), si cada casilla fue aceptada o rechazada, y un identificador técnico protegido de la conexión, junto con las opciones aceptadas, para poder demostrar cuándo y cómo se obtuvo el consentimiento, así como cuándo se retiró. Los datos de los formularios agrícolas se conservarán durante un máximo de 12 meses desde el último contacto, salvo obligación legal o relación activa que justifique otro plazo; se suprimirán o anonimizarán al finalizarlo. Los datos de suscripción push se conservan mientras permanezca activa y se eliminan cuando se solicita la baja o el navegador la invalida.</p>
 
         <h2 className="pt-4 text-xl font-bold">4. Proveedores y acceso</h2>
         <p>El servicio utiliza Vercel para alojamiento, ejecución y analítica agregada, y Neon/PostgreSQL para almacenar las solicitudes de avisos agrícolas, suscripciones push y eventos de uso. Los datos meteorológicos proceden de proveedores externos, pero no se les envían los datos identificativos del formulario.</p>
@@ -37,6 +38,16 @@ export default function PrivacidadPage() {
         <h2 className="pt-4 text-xl font-bold">5. Bajas, derechos y reclamaciones</h2>
         <p>Para dejar de recibir avisos o publicidad, escribe a <strong>mcgtecrural@gmail.com</strong> indicando “BAJA” y el número de teléfono asociado, o solicita la baja por el mismo canal de contacto utilizado. También puedes retirar por separado el consentimiento meteorológico y el comercial.</p>
         <p>Puedes solicitar acceso, rectificación, supresión, oposición, limitación o portabilidad, así como retirar tu consentimiento, escribiendo a <strong>mcgtecrural@gmail.com</strong>. También puedes reclamar ante la Agencia Española de Protección de Datos.</p>
+      </section>
+
+      <section id="retirada-consentimiento" className="mt-10 rounded-2xl border border-slate-200 bg-slate-50 p-5">
+        <h2 className="text-xl font-bold">Retirada de consentimiento</h2>
+        <p className="mt-2 text-sm leading-6 text-slate-600">
+          Puedes retirar cada consentimiento por separado: los avisos solicitados para tu finca y la información
+          comercial de TecRural son autorizaciones independientes. La retirada es inmediata, gratuita y no afecta
+          a la licitud del tratamiento anterior; tampoco te impide volver a solicitar los avisos en el futuro.
+        </p>
+        <ConsentWithdrawForm />
       </section>
     </main>
   );

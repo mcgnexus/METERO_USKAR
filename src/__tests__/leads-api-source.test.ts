@@ -12,6 +12,7 @@ vi.mock('@/lib/weatherStore', () => ({
   consumeLeadAttempt: mockConsumeLeadAttempt,
   saveAgriculturalLead: mockSaveAgriculturalLead,
   findRecentLead: mockFindRecentLead,
+  recordLeadConsents: vi.fn(),
 }));
 
 import { POST } from '@/app/api/leads/agricultural/route';
