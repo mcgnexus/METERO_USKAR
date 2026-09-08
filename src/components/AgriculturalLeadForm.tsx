@@ -18,6 +18,12 @@ const interests = [
 const WHATSAPP_URL =
   'https://wa.me/34614242716?text=Hola%20TecRural%2C%20vengo%20de%20Meteo%20Hu%C3%A9scar.%20Me%20interesa%20recibir%20informaci%C3%B3n%20sobre%20avisos%20agr%C3%ADcolas%20para%20mi%20finca.';
 
+/** Campos cómodos en móvil: ≥44px de alto y 16px de letra (evita el zoom automático de iOS). */
+const FIELD_CLASS =
+  'mt-1 w-full min-h-[44px] rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-base font-normal outline-none focus:border-emerald-600 focus-visible:ring-2 focus-visible:ring-emerald-500';
+/** Checkbox 20px dentro de una fila táctil de ≥44px de alto. */
+const CHECKBOX_CLASS = 'h-5 w-5 shrink-0 accent-emerald-700';
+
 export function AgriculturalLeadForm() {
   const [open, setOpen] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -156,8 +162,8 @@ export function AgriculturalLeadForm() {
         <button
           type="button"
            onClick={() => { setOpen(true); track('lead_cta_click', { cta: 'Quiero avisos para mi finca', destination: 'inline-lead-form' }); track('lead_form_open'); }}
-          className="mt-3 rounded-full bg-emerald-700 px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-emerald-800"
-        >
+          className="mt-3 min-h-[44px] rounded-full bg-emerald-700 px-4 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-emerald-800"
+          >
           Quiero avisos para mi finca
         </button>
       )}
@@ -174,7 +180,7 @@ export function AgriculturalLeadForm() {
           </div>
           <Link
             href="/huescar"
-            className="flex items-center justify-center gap-2 rounded-full bg-sky-700 px-4 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-sky-800"
+            className="flex items-center justify-center gap-2 rounded-full bg-sky-700 min-h-[44px] px-4 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-sky-800"
           >
             ← Volver a la previsión
           </Link>
@@ -183,7 +189,7 @@ export function AgriculturalLeadForm() {
             target="_blank"
             rel="noreferrer"
             onClick={() => track('whatsapp_click', { context: 'lead-form-post-submit' })}
-            className="flex items-center justify-center gap-2 rounded-full bg-emerald-600 px-4 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-emerald-700"
+            className="flex items-center justify-center gap-2 rounded-full bg-emerald-600 min-h-[44px] px-4 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-emerald-700"
           >
              Hablar con TecRural
           </a>
@@ -194,21 +200,21 @@ export function AgriculturalLeadForm() {
           <div className="grid gap-3 sm:grid-cols-2">
             <label htmlFor="inline-name" className="text-xs font-semibold text-slate-700">
               Nombre <span className="font-normal text-slate-400">(opcional)</span>
-              <input id="inline-name" name="name" maxLength={80} className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-normal outline-none focus:border-emerald-600 focus-visible:ring-2 focus-visible:ring-emerald-500" />
+              <input id="inline-name" name="name" autoComplete="name" maxLength={80} className={FIELD_CLASS} />
             </label>
             <label htmlFor="inline-phone" className="text-xs font-semibold text-slate-700">
               Teléfono / WhatsApp
-              <input id="inline-phone" name="phone" required maxLength={30} inputMode="tel" aria-invalid={Boolean(fieldErrors.phone)} aria-describedby={fieldErrors.phone ? 'inline-err-phone' : undefined} className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-normal outline-none focus:border-emerald-600 focus-visible:ring-2 focus-visible:ring-emerald-500" />
+              <input id="inline-phone" name="phone" type="tel" autoComplete="tel" inputMode="tel" enterKeyHint="done" required maxLength={30} aria-invalid={Boolean(fieldErrors.phone)} aria-describedby={fieldErrors.phone ? 'inline-err-phone' : undefined} className={FIELD_CLASS} />
               {fieldErrors.phone && <p id="inline-err-phone" className="mt-0.5 text-[10px] font-semibold text-rose-600">{fieldErrors.phone}</p>}
             </label>
             <label htmlFor="inline-municipality" className="text-xs font-semibold text-slate-700">
               Municipio
-              <input id="inline-municipality" name="municipality" required maxLength={80} aria-invalid={Boolean(fieldErrors.municipality)} aria-describedby={fieldErrors.municipality ? 'inline-err-municipality' : undefined} className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-normal outline-none focus:border-emerald-600 focus-visible:ring-2 focus-visible:ring-emerald-500" />
+              <input id="inline-municipality" name="municipality" autoComplete="address-level2" required maxLength={80} aria-invalid={Boolean(fieldErrors.municipality)} aria-describedby={fieldErrors.municipality ? 'inline-err-municipality' : undefined} className={FIELD_CLASS} />
               {fieldErrors.municipality && <p id="inline-err-municipality" className="mt-0.5 text-[10px] font-semibold text-rose-600">{fieldErrors.municipality}</p>}
             </label>
             <label htmlFor="inline-area" className="text-xs font-semibold text-slate-700">
               Superficie aproximada <span className="font-normal text-slate-400">(opcional)</span>
-              <select id="inline-area" name="area" className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-normal outline-none focus:border-emerald-600 focus-visible:ring-2 focus-visible:ring-emerald-500">
+              <select id="inline-area" name="area" className={FIELD_CLASS}>
                 <option value="">Selecciona</option>
                 <option>Menos de 5 ha</option>
                 <option>5-20 ha</option>
@@ -220,7 +226,7 @@ export function AgriculturalLeadForm() {
           </div>
           <label htmlFor="inline-crop" className="block text-xs font-semibold text-slate-700">
             Cultivo
-            <select id="inline-crop" name="crop" required aria-invalid={Boolean(fieldErrors.crop)} aria-describedby={fieldErrors.crop ? 'inline-err-crop' : undefined} className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-normal outline-none focus:border-emerald-600 focus-visible:ring-2 focus-visible:ring-emerald-500">
+            <select id="inline-crop" name="crop" required aria-invalid={Boolean(fieldErrors.crop)} aria-describedby={fieldErrors.crop ? 'inline-err-crop' : undefined} className={FIELD_CLASS}>
               <option value="">Selecciona</option>
               {crops.map((crop) => <option key={crop}>{crop}</option>)}
             </select>
@@ -228,10 +234,10 @@ export function AgriculturalLeadForm() {
           </label>
           <fieldset>
             <legend className="text-xs font-semibold text-slate-700">¿Qué te interesa?</legend>
-            <div className="mt-2 grid gap-2 sm:grid-cols-2">
+            <div className="mt-2 grid gap-1 sm:grid-cols-2">
               {interests.map((interest) => (
-                <label key={interest} className="flex items-start gap-2 text-xs text-slate-700">
-                  <input type="checkbox" name="interests" value={interest} className="mt-0.5 accent-emerald-700" />
+                <label key={interest} className="flex min-h-[44px] items-center gap-2 rounded-lg px-1 text-xs text-slate-700 hover:bg-emerald-50">
+                  <input type="checkbox" name="interests" value={interest} className={CHECKBOX_CLASS} />
                   <span>{interest}</span>
                 </label>
               ))}
@@ -240,8 +246,8 @@ export function AgriculturalLeadForm() {
           </fieldset>
           <div className="space-y-3 rounded-xl bg-white/70 p-3 text-xs text-slate-700">
             <div>
-              <label className="flex items-start gap-2">
-                <input type="checkbox" name="serviceConsent" required aria-invalid={Boolean(fieldErrors.serviceConsent)} className="mt-0.5 accent-emerald-700" />
+              <label className="flex min-h-[44px] items-center gap-2">
+                <input type="checkbox" name="serviceConsent" required aria-invalid={Boolean(fieldErrors.serviceConsent)} className={CHECKBOX_CLASS} />
                 <span>
                   <span className="mr-1 rounded bg-emerald-100 px-1.5 py-0.5 text-[10px] font-black text-emerald-800">Obligatorio</span>
                   Acepto recibir los avisos solicitados para mi finca.
@@ -253,8 +259,8 @@ export function AgriculturalLeadForm() {
             </div>
             {fieldErrors.serviceConsent && <p className="ml-6 text-[10px] font-semibold text-rose-600">{fieldErrors.serviceConsent}</p>}
             <div>
-              <label className="flex items-start gap-2">
-                <input type="checkbox" name="marketingConsent" className="mt-0.5 accent-emerald-700" />
+              <label className="flex min-h-[44px] items-center gap-2">
+                <input type="checkbox" name="marketingConsent" className={CHECKBOX_CLASS} />
                 <span>
                   <span className="mr-1 rounded bg-slate-200 px-1.5 py-0.5 text-[10px] font-black text-slate-600">Opcional</span>
                   Acepto recibir información comercial sobre sensores, diagnóstico, riego y otros servicios de TecRural.
@@ -276,15 +282,15 @@ export function AgriculturalLeadForm() {
                 target="_blank"
                 rel="noreferrer"
                 onClick={() => track('whatsapp_click', { context: 'lead-form-error' })}
-                className="inline-flex items-center gap-1.5 rounded-full bg-emerald-600 px-3 py-1.5 text-[11px] font-bold text-white shadow-sm hover:bg-emerald-700"
+                className="inline-flex items-center gap-1.5 rounded-full bg-emerald-600 min-h-[44px] px-4 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-emerald-700"
               >
                 💬 También puedes escribirnos por WhatsApp
               </a>
             </div>
           )}
           <div className="flex gap-2">
-            <button type="submit" disabled={sending} className="rounded-full bg-emerald-700 px-4 py-2 text-xs font-bold text-white hover:bg-emerald-800 disabled:opacity-50">{sending ? 'Enviando...' : error ? 'Reintentar' : 'Enviar solicitud'}</button>
-            <button type="button" onClick={() => setOpen(false)} className="rounded-full px-3 py-2 text-xs font-bold text-slate-600 hover:bg-white">Cancelar</button>
+            <button type="submit" disabled={sending} className="rounded-full bg-emerald-700 min-h-[44px] px-4 py-2.5 text-xs font-bold text-white hover:bg-emerald-800 disabled:opacity-50">{sending ? 'Enviando...' : error ? 'Reintentar' : 'Enviar solicitud'}</button>
+            <button type="button" onClick={() => setOpen(false)} className="rounded-full min-h-[44px] px-4 py-2.5 text-xs font-bold text-slate-600 hover:bg-white">Cancelar</button>
           </div>
         </form>
       )}

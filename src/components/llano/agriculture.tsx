@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { fmtN } from '@/components/llano/atoms';
 import { IrrigationCard } from '@/components/llano/irrigation';
 import { CropRequirements } from '@/components/llano/crop-requirements';
+import { ModalDialog } from '@/components/common/ModalDialog';
 import type { ClimateCalibrationPayload } from '@/hooks/useClimateCalibration';
 import type { AgriculturalData } from '@/types/weather';
 
@@ -39,39 +40,32 @@ function modalTone(tone: AgronomyDetail['tone']): string {
 
 function AgronomyModal({ detail, onClose }: { detail: AgronomyDetail; onClose: () => void }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
-      <div
-        className={`max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-[28px] border p-6 ${modalTone(detail.tone)}`}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <p className="text-xs font-bold uppercase tracking-[0.18em] text-sky-700">Capa agronómica</p>
-            <h2 className="mt-1 text-2xl font-black">{detail.title}</h2>
-            <p className="mt-3 text-4xl font-black">
-              {detail.value}
-              {detail.unit && <span className="ml-2 text-base font-bold text-slate-500">{detail.unit}</span>}
-            </p>
-          </div>
-          <button
-            onClick={onClose}
-            className="rounded-full bg-black/10 p-2 text-slate-700 hover:bg-black/20"
-            aria-label="Cerrar"
-          >
-            x
-          </button>
-        </div>
-
-        <div className="mt-6 space-y-4">
-          {detail.sections.map((section) => (
-            <section key={section.title} className="rounded-2xl bg-white/70 p-4">
-              <h3 className="text-xs font-bold uppercase tracking-[0.16em] text-slate-500">{section.title}</h3>
-              <p className="mt-2 text-sm leading-6 text-slate-700">{section.body}</p>
-            </section>
-          ))}
+    <ModalDialog
+      onClose={onClose}
+      labelId="agronomy-modal-title"
+      descriptionId="agronomy-modal-value"
+      panelClassName={`max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-[28px] border p-6 ${modalTone(detail.tone)}`}
+    >
+      <div className="flex items-start justify-between gap-4 pr-12">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-sky-700">Capa agronómica</p>
+          <h2 id="agronomy-modal-title" className="mt-1 text-2xl font-black">{detail.title}</h2>
+          <p id="agronomy-modal-value" className="mt-3 text-4xl font-black">
+            {detail.value}
+            {detail.unit && <span className="ml-2 text-base font-bold text-slate-500">{detail.unit}</span>}
+          </p>
         </div>
       </div>
-    </div>
+
+      <div className="mt-6 space-y-4">
+        {detail.sections.map((section) => (
+          <section key={section.title} className="rounded-2xl bg-white/70 p-4">
+            <h3 className="text-xs font-bold uppercase tracking-[0.16em] text-slate-500">{section.title}</h3>
+            <p className="mt-2 text-sm leading-6 text-slate-700">{section.body}</p>
+          </section>
+        ))}
+      </div>
+    </ModalDialog>
   );
 }
 

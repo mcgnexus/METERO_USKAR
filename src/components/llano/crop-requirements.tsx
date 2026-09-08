@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { fmtN } from '@/components/llano/atoms';
 import { useClientNow } from '@/hooks/useClientNow';
 import { IndicatorHelp } from '@/components/llano/indicator-help';
+import { ModalDialog } from '@/components/common/ModalDialog';
 import { IrrigationCard, type IrrigationNeed } from '@/components/llano/irrigation';
 import type { AgriculturalData } from '@/types/weather';
 
@@ -936,30 +937,24 @@ function CropModal({ assessment, onClose, soilTemp, chillHours, et0CumulativeMm,
 }) {
   const a = assessment;
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
-      <div
-        className={`max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-[28px] border p-6 ${statusTone(a.status)}`}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-start justify-between">
-          <div className="flex items-center gap-3">
-            <CropIcon crop={a.crop} size="lg" />
-            <div>
-              <h2 className="text-2xl font-black text-slate-950">{a.crop.name}</h2>
-              <p className="text-sm text-slate-600 capitalize">{a.crop.category}</p>
+    <ModalDialog
+      onClose={onClose}
+      labelId="crop-modal-title"
+      descriptionId="crop-modal-category"
+      panelClassName={`max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-[28px] border p-6 ${statusTone(a.status)}`}
+    >
+      <div className="flex items-start justify-between pr-12">
+        <div className="flex items-center gap-3">
+          <CropIcon crop={a.crop} size="lg" />
+          <div>
+            <h2 id="crop-modal-title" className="text-2xl font-black text-slate-950">{a.crop.name}</h2>
+              <p id="crop-modal-category" className="text-sm text-slate-600 capitalize">{a.crop.category}</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
             <span className={`rounded-full px-3 py-1 text-sm font-bold ${statusBadge(a.status)}`}>
               {statusLabel(a.status)}
             </span>
-            <button
-              onClick={onClose}
-              className="rounded-full bg-slate-200 p-2 text-slate-700 hover:bg-slate-300"
-              aria-label="Cerrar"
-            >
-              ✕
-            </button>
           </div>
         </div>
 
@@ -1098,8 +1093,7 @@ function CropModal({ assessment, onClose, soilTemp, chillHours, et0CumulativeMm,
             </div>
           </section>
         </div>
-      </div>
-    </div>
+    </ModalDialog>
   );
 }
 

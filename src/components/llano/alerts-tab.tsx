@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { type PulseAlarm, levelBadge, levelClass, levelLabel, levelEmoji, audienceEmoji } from '@/components/llano/alarms-logic';
+import { ModalDialog } from '@/components/common/ModalDialog';
 
 const SOURCE_META = {
   aemet: { label: 'AEMET', tone: 'bg-rose-100 text-rose-800', desc: 'Alerta oficial' },
@@ -33,46 +34,46 @@ function audienceDescription(audience: string): string {
 function AlertModal({ alarm, onClose }: { alarm: PulseAlarm; onClose: () => void }) {
   const meta = alarm.source ? SOURCE_META[alarm.source] : null;
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
-      <div
-        className={`max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-[28px] border p-6 ${levelClass(alarm.level)}`}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-start justify-between">
-          <div className="flex items-center gap-3">
-            <span className="text-2xl">{levelEmoji(alarm.level)}</span>
-            <div>
-              <h2 className="text-xl font-black">{alarm.title}</h2>
-              <p className="mt-0.5 text-sm opacity-75">{audienceEmoji(alarm.audience)} {alarm.audience}</p>
-            </div>
+    <ModalDialog
+      onClose={onClose}
+      labelId="alert-modal-title"
+      descriptionId="alert-modal-audience"
+      panelClassName={`max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-[28px] border p-6 ${levelClass(alarm.level)}`}
+    >
+      <div className="flex items-start justify-between pr-12">
+        <div className="flex items-center gap-3">
+          <span className="text-2xl">{levelEmoji(alarm.level)}</span>
+          <div>
+            <h2 id="alert-modal-title" className="text-xl font-black">{alarm.title}</h2>
+            <p id="alert-modal-audience" className="mt-0.5 text-sm opacity-75">{audienceEmoji(alarm.audience)} {alarm.audience}</p>
           </div>
-          <span className={`rounded-full px-3 py-1 text-xs font-bold ${levelBadge(alarm.level)}`}>
-            {levelLabel(alarm.level)}
-          </span>
         </div>
-
-        <div className="mt-6 space-y-4">
-          <Section title="📋 Qué ocurre" body={alarm.message} />
-          <Section title="👥 A quién afecta" body={audienceDescription(alarm.audience)} />
-          <Section title="✅ Qué hacer" body={actionForLevel(alarm.level, alarm.audience)} emphasis="Acción recomendada" />
-
-          {meta && (
-            <div className="flex items-center gap-2 rounded-xl bg-white/60 p-3 text-sm">
-              <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${meta.tone}`}>{meta.label}</span>
-              <span className="text-slate-700">{meta.desc}</span>
-            </div>
-          )}
-        </div>
-
-        <button
-          type="button"
-          onClick={onClose}
-          className="mt-6 w-full rounded-full bg-white/80 py-3 text-sm font-bold text-slate-700 shadow-sm hover:bg-white"
-        >
-          Cerrar
-        </button>
+        <span className={`rounded-full px-3 py-1 text-xs font-bold ${levelBadge(alarm.level)}`}>
+          {levelLabel(alarm.level)}
+        </span>
       </div>
-    </div>
+
+      <div className="mt-6 space-y-4">
+        <Section title="📋 Qué ocurre" body={alarm.message} />
+        <Section title="👥 A quién afecta" body={audienceDescription(alarm.audience)} />
+        <Section title="✅ Qué hacer" body={actionForLevel(alarm.level, alarm.audience)} emphasis="Acción recomendada" />
+
+        {meta && (
+          <div className="flex items-center gap-2 rounded-xl bg-white/60 p-3 text-sm">
+            <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${meta.tone}`}>{meta.label}</span>
+            <span className="text-slate-700">{meta.desc}</span>
+          </div>
+        )}
+      </div>
+
+      <button
+        type="button"
+        onClick={onClose}
+        className="mt-6 w-full min-h-[44px] rounded-full bg-white/80 py-3 text-sm font-bold text-slate-700 shadow-sm hover:bg-white"
+      >
+        Cerrar
+      </button>
+    </ModalDialog>
   );
 }
 

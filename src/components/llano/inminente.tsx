@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import type { WeatherAlert, WeatherPayload } from '@/types/weather';
+import { ModalDialog } from '@/components/common/ModalDialog';
 
 function levelTone(level: string): string {
   if (level === 'peligro' || level === 'severo') return 'border-rose-200 bg-rose-50 text-rose-950';
@@ -37,32 +38,26 @@ function actionText(level: WeatherAlert['level']): string {
 
 function AemetAlertModal({ alert, onClose }: { alert: WeatherAlert; onClose: () => void }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/55 p-4" onClick={onClose}>
-      <div
-        className={`max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-[30px] border p-6 shadow-2xl ${levelTone(alert.level)}`}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <p className="text-xs font-black uppercase tracking-[0.18em] text-rose-700">Aviso oficial AEMET</p>
-            <h2 className="mt-1 text-2xl font-black text-slate-950">{alert.title}</h2>
-            <div className="mt-3 flex flex-wrap items-center gap-2">
-              <span className={`rounded-full px-3 py-1 text-xs font-black uppercase tracking-[0.12em] ${levelBadgeTone(alert.level)}`}>
-                {levelLabel(alert.level)}
-              </span>
-              <span className="rounded-full bg-white/80 px-3 py-1 text-xs font-bold text-slate-700">
-                Fuente oficial AEMET
-              </span>
-            </div>
+    <ModalDialog
+      onClose={onClose}
+      labelId="aemet-alert-modal-title"
+      descriptionId="aemet-alert-modal-source"
+      panelClassName={`max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-[30px] border p-6 shadow-2xl ${levelTone(alert.level)}`}
+    >
+      <div className="flex items-start justify-between gap-4 pr-12">
+        <div>
+          <p className="text-xs font-black uppercase tracking-[0.18em] text-rose-700">Aviso oficial AEMET</p>
+          <h2 id="aemet-alert-modal-title" className="mt-1 text-2xl font-black text-slate-950">{alert.title}</h2>
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <span className={`rounded-full px-3 py-1 text-xs font-black uppercase tracking-[0.12em] ${levelBadgeTone(alert.level)}`}>
+              {levelLabel(alert.level)}
+            </span>
+            <span id="aemet-alert-modal-source" className="rounded-full bg-white/80 px-3 py-1 text-xs font-bold text-slate-700">
+              Fuente oficial AEMET
+            </span>
           </div>
-          <button
-            onClick={onClose}
-            className="rounded-full bg-white/80 px-3 py-2 text-sm font-black text-slate-700 shadow-sm hover:bg-white"
-            aria-label="Cerrar"
-          >
-            x
-          </button>
         </div>
+      </div>
 
         <div className="mt-5 rounded-3xl bg-slate-950 p-5 text-white">
           <p className="text-xs font-bold uppercase tracking-[0.16em] text-rose-300">Lectura rápida</p>
@@ -103,8 +98,7 @@ function AemetAlertModal({ alert, onClose }: { alert: WeatherAlert; onClose: () 
             <p className="mt-2 text-sm font-medium leading-6 text-slate-700">{actionText(alert.level)}</p>
           </section>
         </div>
-      </div>
-    </div>
+    </ModalDialog>
   );
 }
 

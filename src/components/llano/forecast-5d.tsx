@@ -4,6 +4,7 @@ import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { dayLabel, weatherCodeDescription, weatherEmoji } from '@/lib/display';
 import { fmtDayMonthMadrid } from '@/lib/timezone';
+import { ModalDialog } from '@/components/common/ModalDialog';
 import { type ForecastPayload } from '@/hooks/useForecast';
 import { type DailyWeather } from '@/types/weather';
 import { fmtN } from '@/components/llano/atoms';
@@ -34,51 +35,44 @@ function metricTone(tone: ForecastDetail['metrics'][number]['tone']): string {
 
 function ForecastModal({ detail, onClose }: { detail: ForecastDetail; onClose: () => void }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/55 p-4" onClick={onClose}>
-      <div
-        className={`max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-[30px] border p-6 shadow-2xl ${toneClasses(detail.tone)}`}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <p className="text-xs font-black uppercase tracking-[0.18em] text-emerald-700">Próximos 5 días</p>
-            <h2 className="mt-1 text-2xl font-black text-slate-950">{detail.title}</h2>
-            <p className="mt-1 text-sm font-semibold text-slate-600">{detail.subtitle}</p>
-          </div>
-          <button
-            onClick={onClose}
-            className="rounded-full bg-white/80 px-3 py-2 text-sm font-black text-slate-700 shadow-sm hover:bg-white"
-            aria-label="Cerrar"
-          >
-            x
-          </button>
-        </div>
-
-        <div className="mt-5 rounded-3xl bg-slate-950 p-5 text-white">
-          <p className="text-xs font-bold uppercase tracking-[0.16em] text-emerald-300">Lectura rápida</p>
-          <p className="mt-2 text-3xl font-black leading-tight">{detail.headline}</p>
-        </div>
-
-        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {detail.metrics.map((m) => (
-            <div key={m.label} className={`rounded-2xl p-3 shadow-sm ${metricTone(m.tone)}`}>
-              <p className="text-[10px] font-black uppercase tracking-[0.14em] opacity-60">{m.label}</p>
-              <p className="mt-1 text-xl font-black tabular-nums">{m.value}</p>
-            </div>
-          ))}
-        </div>
-
-        <div className="mt-5 space-y-3">
-          {detail.sections.map((section) => (
-            <section key={section.title} className="rounded-2xl bg-white/85 p-4 shadow-sm">
-              <h3 className="text-xs font-black uppercase tracking-[0.16em] text-slate-500">{section.title}</h3>
-              {section.emphasis && <p className="mt-2 text-lg font-black text-slate-950">{section.emphasis}</p>}
-              <p className="mt-2 text-sm font-medium leading-6 text-slate-700">{section.body}</p>
-            </section>
-          ))}
+    <ModalDialog
+      onClose={onClose}
+      labelId="forecast-modal-title"
+      descriptionId="forecast-modal-subtitle"
+      panelClassName={`max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-[30px] border p-6 shadow-2xl ${toneClasses(detail.tone)}`}
+    >
+      <div className="flex items-start justify-between gap-4 pr-12">
+        <div>
+          <p className="text-xs font-black uppercase tracking-[0.18em] text-emerald-700">Próximos 5 días</p>
+          <h2 id="forecast-modal-title" className="mt-1 text-2xl font-black text-slate-950">{detail.title}</h2>
+          <p id="forecast-modal-subtitle" className="mt-1 text-sm font-semibold text-slate-600">{detail.subtitle}</p>
         </div>
       </div>
-    </div>
+
+      <div className="mt-5 rounded-3xl bg-slate-950 p-5 text-white">
+        <p className="text-xs font-bold uppercase tracking-[0.16em] text-emerald-300">Lectura rápida</p>
+        <p className="mt-2 text-3xl font-black leading-tight">{detail.headline}</p>
+      </div>
+
+      <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {detail.metrics.map((m) => (
+          <div key={m.label} className={`rounded-2xl p-3 shadow-sm ${metricTone(m.tone)}`}>
+            <p className="text-[10px] font-black uppercase tracking-[0.14em] opacity-60">{m.label}</p>
+            <p className="mt-1 text-xl font-black tabular-nums">{m.value}</p>
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-5 space-y-3">
+        {detail.sections.map((section) => (
+          <section key={section.title} className="rounded-2xl bg-white/85 p-4 shadow-sm">
+            <h3 className="text-xs font-black uppercase tracking-[0.16em] text-slate-500">{section.title}</h3>
+            {section.emphasis && <p className="mt-2 text-lg font-black text-slate-950">{section.emphasis}</p>}
+            <p className="mt-2 text-sm font-medium leading-6 text-slate-700">{section.body}</p>
+          </section>
+        ))}
+      </div>
+    </ModalDialog>
   );
 }
 
