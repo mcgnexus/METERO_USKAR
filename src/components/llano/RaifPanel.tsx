@@ -201,7 +201,7 @@ function AlertCard({ alert, weather }: { alert: RaifAlert; weather: WeatherPaylo
 }
 
 export function RaifPanel({ weather }: { weather: WeatherPayload | null }) {
-  const { data, error, loading } = useApiData<RaifAlertsPayload>(
+  const { data, error, loading, refresh } = useApiData<RaifAlertsPayload>(
     '/api/weather/raif?zone=granada_interior',
     'raif-alerts-granada-interior'
   );
@@ -222,6 +222,13 @@ export function RaifPanel({ weather }: { weather: WeatherPayload | null }) {
         <p className="mt-3 text-sm text-slate-500">
           📡 No se pudieron cargar las alertas de la Red de Alerta e Información Fitosanitaria.
         </p>
+        <button
+          type="button"
+          onClick={refresh}
+          className="mt-4 rounded-full bg-sky-700 px-4 py-2 text-xs font-bold text-white hover:bg-sky-800 active:scale-95"
+        >
+          Reintentar
+        </button>
       </div>
     );
   }

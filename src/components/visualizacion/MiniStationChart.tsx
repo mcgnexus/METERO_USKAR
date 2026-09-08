@@ -1,6 +1,7 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
+import { useClientNow } from '@/hooks/useClientNow';
 import { useClimateCalibration } from '@/hooks/useClimateCalibration';
 import { useApiData } from '@/hooks/useApiData';
 import type { ClimateNode } from '@/types/climate';
@@ -38,9 +39,9 @@ export default function MiniStationChart() {
   const station: ClimateNode | null = climate?.nodes?.localStation ?? null;
   const { data: historyData } = useApiData<StationHistoryPayload>('/api/weather/stations/history', 'station-history');
   const readings = useMemo(() => historyData?.readings ?? [], [historyData?.readings]);
-  const [nowMs] = useState(() => Date.now());
+  const nowMs = useClientNow();
 
-  const stationAgeMin = station?.time
+  const stationAgeMin = station?.time && nowMs !== null
     ? Math.max(0, Math.round((nowMs - new Date(station.time).getTime()) / 60000))
     : null;
   const hasStation = station?.status === 'OK' && stationAgeMin !== null && stationAgeMin < 180;

@@ -1,5 +1,6 @@
 'use client';
 
+import { useClientNow } from '@/hooks/useClientNow';
 import { fmtNumber, KpiCard, StatusBadge } from '@/components/motor/atoms';
 import type { ClimateCalibrationPayload, ClimateNode } from '@/types/climate';
 
@@ -9,13 +10,13 @@ function sourceLabel(source: string): string {
   return 'observación oficial';
 }
 
-function ageMinutes(time: string): number | null {
-  const ms = Date.now() - new Date(time).getTime();
+function ageMinutesFrom(time: string, nowMs: number): number | null {
+  const ms = nowMs - new Date(time).getTime();
   return Number.isFinite(ms) ? Math.round(ms / 60000) : null;
 }
 
-function NodeRow({ label, node }: { label: string; node: ClimateNode & { role?: string } }) {
-  const age = ageMinutes(node.time);
+function NodeRow({ label, node, nowMs }: { label: string; node: ClimateNode & { role?: string }; nowMs: number | null }) {
+  const age = nowMs !== null ? ageMinutesFrom(node.time, nowMs) : null;
   return (
     <div className="rounded-[22px] border border-slate-100 bg-slate-50 p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -44,14 +45,15 @@ function NodeRow({ label, node }: { label: string; node: ClimateNode & { role?: 
 }
 
 export function ContrastPanel({ data }: { data: ClimateCalibrationPayload }) {
+  const nowMs = useClientNow();
   const hasTrustedLocalSensor = data.nodes.localStation?.status === 'OK' && data.calibration.realTemperatureC !== null;
   return (
     <section className="surface-card-strong rounded-[28px] p-5 sm:p-6">
       <p className="text-xs font-bold uppercase tracking-[0.2em] text-sky-700">Panel de contraste</p>
       <h2 className="mt-1 text-2xl font-black text-slate-950">La prueba del delito orográfico</h2>
       <div className="mt-5 space-y-3">
-        <NodeRow label="AEMET Baza" node={data.nodes.baza} />
-        <NodeRow label="AEMET San Clemente" node={data.nodes.sanClemente} />
+        <NodeRow label="AEMET Baza" node={data.nodes.baza} nowMs={nowMs} />
+        <NodeRow label="AEMET San Clemente" node={data.nodes.sanClemente} nowMs={nowMs} />
         <NodeRow
           label="Huéscar Ciudad"
           node={{
@@ -68,6 +70,7 @@ export function ContrastPanel({ data }: { data: ClimateCalibrationPayload }) {
             }),
             elevationM: data.nodes.localStation?.elevationM ?? data.location.elevation,
           }}
+          nowMs={nowMs}
         />
       </div>
       <div className={`mt-5 rounded-[22px] p-4 ${data.interpolation.inversionDetected ? 'bg-orange-50 text-orange-950' : 'bg-emerald-50 text-emerald-950'}`}>

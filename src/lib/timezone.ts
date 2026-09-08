@@ -27,9 +27,14 @@ export function naiveUtcToUtcIso(iso: string): string {
   return Number.isNaN(t) ? iso : new Date(t).toISOString();
 }
 
-/** Compute age in minutes from a UTC ISO string to now. Always ≥ 0. */
-export function ageMinutes(iso: string): number {
-  return Math.max(0, (Date.now() - new Date(iso).getTime()) / 60_000);
+/**
+ * Compute age in minutes from a UTC ISO string. Always ≥ 0.
+ * Pasa `nowMs` (instante UTC en ms) cuando el resultado se renderice para no
+ * depender de `Date.now()` implícito y evitar discrepancias de hidratación.
+ */
+export function ageMinutes(iso: string, nowMs?: number): number {
+  const now = nowMs !== undefined && nowMs !== null ? nowMs : Date.now();
+  return Math.max(0, (now - new Date(iso).getTime()) / 60_000);
 }
 
 /** Human-readable age in Spanish: "menos de 1 min", "3 min", "1h 23min" */
@@ -80,14 +85,18 @@ export function fmtDayMonthMadrid(iso: string): string {
   });
 }
 
-/** UTC ISO string → Madrid date label: "Hoy", "Mañana", or day name */
-export function fmtDayLabelMadrid(iso: string): string {
-  const days = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+/**
+ * UTC ISO string → Madrid date label: "Hoy", "Mañana", or day name.
+ * `nowMs` debe pasarse siempre que se llame desde un render para evitar usar
+ * `Date.now()` implícito (rompe la hidratación si el render cae en un cambio
+ * de día). Si se omite, se usa la hora actual (compatible con llamadas previas).
+ */
+export function fmtDayLabelMadrid(iso: string, nowMs?: number): string {
   const d = new Date(iso);
   const formatter = new Intl.DateTimeFormat('es-ES', { timeZone: MADRID_TZ, year: 'numeric', month: '2-digit', day: '2-digit' });
   const dateStr = formatter.format(d);
 
-  const now = new Date();
+  const now = nowMs !== undefined && nowMs !== null ? new Date(nowMs) : new Date();
   const todayStr = formatter.format(now);
   const tomorrow = new Date(now);
   tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);

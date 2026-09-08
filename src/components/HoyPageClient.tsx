@@ -14,11 +14,11 @@ import { HourlyForecastStrip } from '@/components/weather/HourlyForecastStrip';
 import { QuickDecisionGrid } from '@/components/weather/QuickDecisionGrid';
 import { AdviceGrid } from '@/components/advice/AdviceGrid';
 import { SectionTitle } from '@/components/common/SectionTitle';
+import { UpdatedAtNote } from '@/components/common/UpdatedAtNote';
+import { NoDataState } from '@/components/common/NoDataState';
 import PwaRegister from '@/components/PwaRegister';
 import { useTrackEvent } from '@/hooks/useTrackEvent';
-import type { ClimateCalibrationPayload } from '@/types/climate';
-import type { WeatherPayload } from '@/types/weather';
-import type { ForecastPayload } from '@/types/forecast';
+import type { HuescarWeatherResponse } from '@/types/weather-response';
 import type { AdviceContext } from '@/lib/weather-advice/types';
 import { madridHourFromUTC, madridMonthFromUTC, seasonFromMonth } from '@/lib/timezone';
 
@@ -27,18 +27,10 @@ const WeekTrend = dynamic(() => import('@/components/llano/week-tab').then((m) =
   loading: () => <div className="h-40 animate-pulse rounded-2xl bg-slate-100" />,
 });
 
-export function HoyPageClient({
-  initialClimateData,
-  initialWeatherData,
-  initialForecastData,
-}: {
-  initialClimateData: ClimateCalibrationPayload | null;
-  initialWeatherData: WeatherPayload | null;
-  initialForecastData: ForecastPayload | null;
-}) {
-  const cd = initialClimateData;
-  const wd = initialWeatherData;
-  const fd = initialForecastData;
+export function HoyPageClient({ response }: { response: HuescarWeatherResponse }) {
+  const cd = response.climate;
+  const wd = response.weather;
+  const fd = response.forecast;
 
   const alarms = useMemo(() => {
     if (!cd) return [];
@@ -82,20 +74,32 @@ export function HoyPageClient({
 
   if (!cd) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#f4f7fb] px-4">
-        <div className="rounded-2xl border border-rose-200 bg-white p-6 text-center shadow-sm">
-          <p className="font-semibold text-rose-700">No se pudo cargar la previsión</p>
-          <p className="mt-2 text-sm text-slate-500">Los datos meteorológicos no están disponibles ahora.</p>
-          <button type="button" onClick={() => window.location.reload()} className="mt-4 rounded-full bg-sky-700 px-5 py-2.5 text-sm font-bold text-white hover:bg-sky-800">Reintentar</button>
-        </div>
-      </div>
+      <NoDataState
+        fullScreen
+        title="Previsión no disponible ahora"
+        message="Las fuentes meteorológicas no han devuelto datos en esta consulta. El resto de la app sigue disponible."
+      />
     );
   }
 
   const temp = cd.calibration.realTemperatureC ?? cd.interpolation.estimatedTemperatureC ?? 0;
   const humidity = cd.nodes.localStation?.humidityPct ?? cd.eto.inputs.humidityPct ?? wd?.current?.humidityPct ?? null;
-  const windSpeed = cd.nodes.radiationWind.windSpeed2mKmh ?? 0;
-  const wcode = wd?.current?.weatherCode ?? 0;
+
+  // Tarjeta principal: usa el `current` canónico del snapshot unificado
+  // (temperatura calibrada por el motor) completado con datos del motor.
+  const todaySummaryCurrent = {
+    time: response.current.time,
+    temperatureC: response.current.temperatureC,
+    apparentTemperatureC: response.current.apparentTemperatureC ?? temp,
+    humidityPct: response.current.humidityPct ?? humidity ?? 50,
+    precipitationMm: response.current.precipitationMm,
+    weatherCode: response.current.weatherCode,
+    windSpeedKmh: response.current.windSpeedKmh,
+    windDirectionDeg: cd.extrapolation.bazaWindDirectionDeg ?? 0,
+    windGustKmh: response.current.windGustKmh ?? 0,
+    solarRadiationWm2: cd.eto.inputs.solarRadiationWm2 ?? 0,
+    et0Mm: cd.eto.etoHourlyMm ?? 0,
+  };
 
   return (
     <div className="min-h-screen bg-[#f4f7fb]">
@@ -106,6 +110,7 @@ export function HoyPageClient({
             <div>
               <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-sky-700">🏔️ Meteo Huéscar</p>
               <h1 className="mt-0.5 text-xl font-black text-slate-900">Meteo Huéscar</h1>
+              <UpdatedAtNote response={response} />
             </div>
             <a
               href="/api/daily-card"
@@ -127,19 +132,7 @@ export function HoyPageClient({
         <PwaRegister />
 
         <main className="space-y-5">
-          <TodaySummaryCard forecast={wd?.current ?? {
-            time: cd.generatedAt,
-            temperatureC: temp,
-            apparentTemperatureC: temp,
-            humidityPct: humidity ?? 50,
-            precipitationMm: wd?.current?.precipitationMm ?? 0,
-            weatherCode: wcode,
-            windSpeedKmh: windSpeed,
-            windDirectionDeg: cd.extrapolation.bazaWindDirectionDeg ?? 0,
-            windGustKmh: wd?.current?.windGustKmh ?? 0,
-            solarRadiationWm2: cd.eto.inputs.solarRadiationWm2 ?? 0,
-            et0Mm: cd.eto.etoHourlyMm ?? 0,
-          }} />
+          <TodaySummaryCard forecast={todaySummaryCurrent} />
 
           {adviceCtx && (
             <section>
@@ -192,7 +185,7 @@ export function HoyPageClient({
           <details className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
             <summary className="cursor-pointer list-none text-sm font-black text-slate-800">📊 Ver datos técnicos</summary>
             <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
-              <DataRow label="Viento medio" value={`${windSpeed.toFixed(0)} km/h`} />
+              <DataRow label="Viento medio" value={`${(cd.nodes.radiationWind.windSpeed2mKmh ?? 0).toFixed(0)} km/h`} />
               <DataRow label="Ráfagas" value={wd?.current?.windGustKmh != null ? `${wd.current.windGustKmh.toFixed(0)} km/h` : '—'} />
               <DataRow label="Humedad" value={humidity != null ? `${humidity.toFixed(0)}%` : '—'} />
               <DataRow label="Presión" value={cd.extrapolation.pressureHPa != null ? `${cd.extrapolation.pressureHPa.toFixed(0)} hPa` : '—'} />

@@ -2,6 +2,7 @@
 
 import dynamic from 'next/dynamic';
 import { useMemo, useState } from 'react';
+import { useClientNow } from '@/hooks/useClientNow';
 import { weatherCodeDescription, weatherEmoji } from '@/lib/display';
 import { interpretTemperature, interpretRain, interpretWind, interpretWindForTreatment } from '@/lib/interpretation';
 import { fmtHourMadrid, fmtDayLabelMadrid } from '@/lib/timezone';
@@ -51,7 +52,12 @@ export function HoursTab({ hourly, forecast, daily, weather }: {
 }) {
   const [view, setView] = useState<'resumen' | 'tabla' | 'grafica'>('resumen');
   const referenceTime = weather?.current?.time ?? weather?.fetchedAt ?? null;
-  const now = referenceTime ? new Date(referenceTime).getTime() : Date.now();
+  const seededNow = useClientNow(referenceTime);
+  const anchorMs = useMemo(() => {
+    const times = hourly?.time ?? [];
+    return times.length > 0 ? new Date(times[0]).getTime() : Date.now();
+  }, [hourly?.time]);
+  const now = seededNow ?? (referenceTime ? new Date(referenceTime).getTime() : anchorMs);
 
   const upcoming = useMemo(() => (hourly?.time ?? [])
     .map((time, index) => ({ time, index, ts: new Date(time).getTime() }))
@@ -206,7 +212,7 @@ export function HoursTab({ hourly, forecast, daily, weather }: {
                       {showDayLabel && (
                         <tr key={`day-${h.time}`} className="bg-slate-100">
                           <td colSpan={6} className="px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-600">
-                            {fmtDayLabelMadrid(h.time)}
+                            {fmtDayLabelMadrid(h.time, now)}
                           </td>
                         </tr>
                       )}

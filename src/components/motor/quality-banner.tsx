@@ -2,6 +2,7 @@
 
 import { ConfidenceBar, WarningBanner } from '@/components/motor/atoms';
 import { confidenceExplanation, confidenceHeadline } from '@/components/motor/quality-language';
+import { fmtDateHourMadrid } from '@/lib/timezone';
 
 export function QualityBanner({ confidencePct, warnings, generatedAt, hasTrustedLocalSensor = false }: {
   confidencePct: number;
@@ -35,8 +36,8 @@ export function QualityBanner({ confidencePct, warnings, generatedAt, hasTrusted
         </div>
       </div>
       <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-slate-500">
-        <span>
-          Generado {new Date(generatedAt).toLocaleString('es-ES', { dateStyle: 'short', timeStyle: 'short' })}
+        <span suppressHydrationWarning>
+          Generado {fmtDateHourMadrid(generatedAt)}
         </span>
       </div>
       {warnings.length > 0 && (

@@ -1,11 +1,12 @@
 'use client';
 
-import { FormEvent, useState } from 'react';
+import { FormEvent, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useTrackEvent } from '@/hooks/useTrackEvent';
 import { captureUtms } from '@/lib/utm';
+import { leadFormSchema, fieldErrorsFromZod, LEAD_CROPS } from '@/lib/leadSchema';
 
-const crops = ['Olivar', 'Almendro', 'Pistacho', 'Hortícola', 'Otro'];
+const crops = [...LEAD_CROPS];
 const interests = [
   'Avisos de helada',
   'Recomendaciones de riego',
@@ -20,46 +21,28 @@ export function AgriculturalLeadForm() {
   const [error, setError] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
   const [started, setStarted] = useState(false);
-  const track = useTrackEvent();
-
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
-
-  function validateForm(form: FormData): boolean {
-    const errors: Record<string, string> = {};
-    const phone = String(form.get('phone') ?? '').trim();
-    const municipality = String(form.get('municipality') ?? '').trim();
-    const crop = String(form.get('crop') ?? '');
-    const consent = form.get('meteorologicalConsent') === 'on';
-
-    if (!phone) errors.phone = 'Introduce un teléfono o WhatsApp.';
-    else if (!/^[+0-9 ()-]{7,30}$/.test(phone)) errors.phone = 'Teléfono no válido.';
-    if (!municipality) errors.municipality = 'Introduce el municipio.';
-    if (!crop) errors.crop = 'Selecciona un cultivo.';
-    if (!consent) errors.consent = 'Debes aceptar los avisos meteorológicos.';
-
-    setFieldErrors(errors);
-    return Object.keys(errors).length === 0;
-  }
+  const track = useTrackEvent();
+  /** Guard anti doble envío: ignorar submits mientras hay una petición en curso. */
+  const sendingRef = useRef(false);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (sendingRef.current) return; // sin envíos duplicados
     setError(null);
     setFieldErrors({});
 
     const form = new FormData(event.currentTarget);
-    if (!validateForm(form)) return;
-
-    setSending(true);
     const selectedInterests = interests.filter((interest) => form.getAll('interests').includes(interest));
-    const payload = {
+    const rawPayload = {
       name: String(form.get('name') ?? ''),
       phone: String(form.get('phone') ?? ''),
       municipality: String(form.get('municipality') ?? ''),
       crop: String(form.get('crop') ?? ''),
       area: String(form.get('area') ?? ''),
       interests: selectedInterests,
-      meteorologicalConsent: form.get('meteorologicalConsent') === 'on',
-      commercialConsent: form.get('commercialConsent') === 'on',
+      serviceConsent: form.get('serviceConsent') === 'on',
+      marketingConsent: form.get('marketingConsent') === 'on',
       website: String(form.get('website') ?? ''),
       source: 'meteo-huescar',
       landingPage: window.location.pathname,
@@ -68,32 +51,56 @@ export function AgriculturalLeadForm() {
         return {
           utmSource: utms.utm_source,
           utmMedium: utms.utm_medium,
-          utmCampaign: utms.utm_campaign,
+          campaign: utms.utm_campaign,
         };
       })(),
     };
 
-    for (let attempt = 0; attempt < 2; attempt++) {
-      try {
-        const response = await fetch('/api/leads/agricultural', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        });
-        const result = await response.json().catch(() => ({}));
-        if (!response.ok) throw new Error(result.error ?? 'No se pudo enviar la solicitud.');
-        setSubmitted(true);
-        track('lead_form_submitted', { crop: payload.crop, municipality: payload.municipality });
-        event.currentTarget.reset();
-        setSending(false);
-        return;
-      } catch (submitError) {
-        const msg = submitError instanceof Error ? submitError.message : 'No se pudo enviar la solicitud.';
-        if (attempt === 0) continue;
-        setError(msg);
-      }
+    // Validación en cliente con el MISMO esquema que aplica el servidor.
+    const parsed = leadFormSchema.safeParse(rawPayload);
+    if (!parsed.success) {
+      setFieldErrors(fieldErrorsFromZod(parsed.error));
+      setError('Revisa los campos marcados antes de enviar.');
+      return;
     }
-    setSending(false);
+
+    sendingRef.current = true;
+    setSending(true);
+    try {
+      const response = await fetch('/api/leads', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(rawPayload),
+      });
+      const result = (await response.json().catch(() => ({}))) as {
+        error?: string;
+        fieldErrors?: Record<string, string>;
+        duplicate?: boolean;
+      };
+
+      if (response.status === 201 || (response.ok && result.duplicate)) {
+        // Guardado (o duplicado reciente tratado como éxito: no se vuelve a insertar).
+        setSubmitted(true);
+        track('lead_form_submitted', { crop: rawPayload.crop, municipality: rawPayload.municipality });
+        event.currentTarget.reset();
+        return;
+      }
+      if (response.status === 400) {
+        if (result.fieldErrors) setFieldErrors(result.fieldErrors);
+        setError(result.error ?? 'Revisa los campos marcados antes de enviar.');
+        return;
+      }
+      if (response.status === 429) {
+        setError(result.error ?? 'Has alcanzado el límite de solicitudes. Inténtalo más tarde.');
+        return;
+      }
+      setError(result.error ?? 'No se pudo enviar la solicitud. Inténtalo de nuevo.');
+    } catch {
+      setError('Sin conexión. Comprueba tu red y vuelve a intentarlo.');
+    } finally {
+      sendingRef.current = false;
+      setSending(false);
+    }
   }
 
   return (
@@ -111,13 +118,9 @@ export function AgriculturalLeadForm() {
       )}
       {submitted && (
         <div className="mt-3 space-y-3">
-          <p className="rounded-xl bg-white/70 p-3 text-xs font-semibold text-emerald-900">
+          <p className="rounded-xl bg-white/70 p-3 text-xs font-semibold text-emerald-900" role="status">
             Solicitud recibida. Te contactaremos para conocer mejor tu finca.
           </p>
-          <label className="flex items-start gap-2 rounded-xl bg-white/70 p-3 text-xs text-slate-700">
-            <input type="checkbox" name="commercialConsent" className="mt-0.5 accent-emerald-700" />
-            <span>Además, quiero recibir información comercial de TecRural sobre servicios, sensores y diagnóstico agrícola.</span>
-          </label>
           <a
             href="https://wa.me/34614242716?text=Hola%20TecRural%2C%20vengo%20de%20Meteo%20Hu%C3%A9scar.%20Me%20interesa%20recibir%20informaci%C3%B3n%20sobre%20avisos%20agr%C3%ADcolas%20para%20mi%20finca."
             target="_blank"
@@ -176,13 +179,18 @@ export function AgriculturalLeadForm() {
                 </label>
               ))}
             </div>
+            {fieldErrors.interests && <p className="mt-0.5 text-[10px] font-semibold text-rose-600">{fieldErrors.interests}</p>}
           </fieldset>
           <div className="space-y-2 rounded-xl bg-white/70 p-3 text-xs text-slate-700">
             <label className="flex items-start gap-2">
-              <input type="checkbox" name="meteorologicalConsent" required className="mt-0.5 accent-emerald-700" />
+              <input type="checkbox" name="serviceConsent" required aria-invalid={Boolean(fieldErrors.serviceConsent)} className="mt-0.5 accent-emerald-700" />
               <span>Acepto recibir avisos meteorológicos para mi finca por WhatsApp y/o notificaciones.</span>
             </label>
-            {fieldErrors.consent && <p className="text-[10px] font-semibold text-rose-600">{fieldErrors.consent}</p>}
+            {fieldErrors.serviceConsent && <p className="text-[10px] font-semibold text-rose-600">{fieldErrors.serviceConsent}</p>}
+            <label className="flex items-start gap-2">
+              <input type="checkbox" name="marketingConsent" className="mt-0.5 accent-emerald-700" />
+              <span>Quiero recibir información comercial de TecRural sobre servicios, sensores y diagnóstico agrícola.</span>
+            </label>
             <p className="leading-5 text-slate-500">Responsable: Manuel Carrasco García. Puedes retirar tu consentimiento escribiendo a <a className="font-semibold text-emerald-800 underline" href="mailto:mcgtecrural@gmail.com">mcgtecrural@gmail.com</a>. Consulta la <Link className="font-semibold text-emerald-800 underline" href="/privacidad">política de privacidad</Link>.</p>
           </div>
           <input name="website" tabIndex={-1} autoComplete="off" className="hidden" aria-hidden="true" />

@@ -1,21 +1,12 @@
-import { getClimateCalibrationPayload } from '@/services/climateCalibrationPayloadService';
-import { getCurrentWeatherPayload } from '@/services/currentWeatherService';
 import { AlertasPageClient } from '@/components/AlertasPageClient';
+import { getHuescarWeatherResponse } from '@/services/huescarWeatherService';
 import type { Metadata } from 'next';
 
 export const revalidate = 300;
 export const metadata: Metadata = { alternates: { canonical: '/huescar/alertas' } };
 
 export default async function HuescarAlertasPage() {
-  const [climateResult, weatherResult] = await Promise.allSettled([
-    getClimateCalibrationPayload(),
-    getCurrentWeatherPayload(),
-  ]);
+  const response = await getHuescarWeatherResponse();
 
-  return (
-    <AlertasPageClient
-      initialClimateData={climateResult.status === 'fulfilled' ? climateResult.value : null}
-      initialWeatherData={weatherResult.status === 'fulfilled' ? weatherResult.value : null}
-    />
-  );
+  return <AlertasPageClient response={response} />;
 }

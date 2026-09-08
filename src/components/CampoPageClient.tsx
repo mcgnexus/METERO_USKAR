@@ -1,14 +1,16 @@
 'use client';
 
-import { useMemo, useEffect, Suspense } from 'react';
+import { useMemo, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { NavBottom } from '@/components/NavBottom';
 import { buildAlarms } from '@/components/llano/alarms-logic';
 import { SectionTitle } from '@/components/common/SectionTitle';
 import { TecRuralCtaBanner } from '@/components/TecRuralCtaBanner';
-import type { ClimateCalibrationPayload } from '@/types/climate';
-import type { WeatherPayload, AgriculturalData } from '@/types/weather';
+import { UpdatedAtNote } from '@/components/common/UpdatedAtNote';
+import { NoDataState } from '@/components/common/NoDataState';
 import { useTrackEvent } from '@/hooks/useTrackEvent';
+import type { HuescarWeatherResponse } from '@/types/weather-response';
+import type { AgriculturalData } from '@/types/weather';
 
 const FieldTab = dynamic(() => import('@/components/llano/field-tab').then((m) => ({ default: m.FieldTab })), {
   ssr: false,
@@ -25,15 +27,9 @@ const CropRequirements = dynamic(() => import('@/components/llano/crop-requireme
   loading: () => <div className="h-60 animate-pulse rounded-2xl bg-slate-100" />,
 });
 
-export function CampoPageClient({
-  initialClimateData,
-  initialWeatherData,
-}: {
-  initialClimateData: ClimateCalibrationPayload | null;
-  initialWeatherData: WeatherPayload | null;
-}) {
-  const cd = initialClimateData;
-  const wd = initialWeatherData;
+export function CampoPageClient({ response }: { response: HuescarWeatherResponse }) {
+  const cd = response.climate;
+  const wd = response.weather;
   const track = useTrackEvent();
   useEffect(() => { track('field_page_viewed'); }, [track]);
 
@@ -63,6 +59,7 @@ export function CampoPageClient({
         <header className="mb-4">
           <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-emerald-700">🌾 Meteo Huéscar Campo</p>
           <h1 className="mt-0.5 text-xl font-black text-slate-900">Campo</h1>
+          <UpdatedAtNote response={response} />
         </header>
 
         {cd ? (
@@ -97,9 +94,11 @@ export function CampoPageClient({
             </section>
           </div>
         ) : (
-          <div className="flex min-h-[360px] items-center justify-center rounded-[28px] bg-white p-12">
-            <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-slate-500" />
-          </div>
+          <NoDataState
+            emoji="🌾"
+            title="Datos de campo no disponibles"
+            message="El motor climático no ha devuelto datos agrícolas en esta consulta. El resto de la app sigue disponible."
+          />
         )}
 
         <div className="mt-5">

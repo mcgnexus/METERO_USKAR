@@ -1,17 +1,12 @@
 import { HorasPageClient } from '@/components/HorasPageClient';
-import { getHorasPageData } from '@/app/huescar/page-data-cache';
+import { getHuescarWeatherResponse } from '@/services/huescarWeatherService';
 import type { Metadata } from 'next';
 
 export const revalidate = 300;
 export const metadata: Metadata = { alternates: { canonical: '/huescar/horas' } };
 
 export default async function HuescarHorasPage() {
-  const pageData = await getHorasPageData();
+  const response = await getHuescarWeatherResponse();
 
-  return (
-    <HorasPageClient
-      initialWeatherData={pageData.weather}
-      initialForecastData={pageData.forecast}
-    />
-  );
+  return <HorasPageClient response={response} />;
 }

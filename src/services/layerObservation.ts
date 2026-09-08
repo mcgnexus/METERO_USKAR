@@ -219,6 +219,19 @@ async function fetchObservationLayerImpl(): Promise<{
     reliefPromise,
   ]);
 
+  // Registro de errores de consulta (criterio: loguear cuando una fuente falla).
+  for (const [label, result] of [
+    ['AEMET', aemetResult],
+    ['Open-Meteo', omResult],
+    ['LocalStations', stationsResult],
+    ['Relief', reliefResult],
+  ] as const) {
+    if (result.status === 'rejected') {
+      const reason = result.reason instanceof Error ? result.reason.message : String(result.reason ?? 'unknown error');
+      console.error(`[ObservationLayer] Error al consultar ${label}: ${reason}`);
+    }
+  }
+
   const relief: ReliefData | null = reliefResult.status === "fulfilled" ? reliefResult.value : null;
 
   let aemetObs: SourceObservation | null = null;

@@ -1,17 +1,12 @@
 import { SemanaPageClient } from '@/components/SemanaPageClient';
-import { getSemanaPageData } from '@/app/huescar/page-data-cache';
+import { getHuescarWeatherResponse } from '@/services/huescarWeatherService';
 import type { Metadata } from 'next';
 
 export const revalidate = 300;
 export const metadata: Metadata = { alternates: { canonical: '/huescar/semana' } };
 
 export default async function HuescarSemanaPage() {
-  const pageData = await getSemanaPageData();
+  const response = await getHuescarWeatherResponse();
 
-  return (
-    <SemanaPageClient
-      initialWeatherData={pageData.weather}
-      initialForecastData={pageData.forecast}
-    />
-  );
+  return <SemanaPageClient response={response} />;
 }

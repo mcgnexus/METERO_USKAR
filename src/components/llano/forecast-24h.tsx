@@ -1,12 +1,18 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo } from 'react';
+import { useClientNow } from '@/hooks/useClientNow';
 import { weatherCodeDescription, weatherEmoji } from '@/lib/display';
 import { fmtHourMadrid, fmtDayLabelMadrid } from '@/lib/timezone';
 import type { HourlyWeather } from '@/types/weather';
 
 export function Forecast24h({ hourly, count = 8 }: { hourly?: HourlyWeather; count?: number }) {
-  const [now] = useState(() => Date.now());
+  const clientNow = useClientNow();
+  const anchorMs = useMemo(() => {
+    const times = hourly?.time ?? [];
+    return times.length > 0 ? new Date(times[0]).getTime() : 0;
+  }, [hourly?.time]);
+  const now = clientNow ?? anchorMs;
 
   if (!hourly?.time?.length) return null;
 
@@ -39,7 +45,7 @@ export function Forecast24h({ hourly, count = 8 }: { hourly?: HourlyWeather; cou
             <div key={hour.time}>
               {showDayLabel && (
                 <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">
-                  {fmtDayLabelMadrid(hour.time)}
+                  {fmtDayLabelMadrid(hour.time, now)}
                 </p>
               )}
               <article className="rounded-[18px] border border-slate-100 bg-slate-50 p-3 text-center">

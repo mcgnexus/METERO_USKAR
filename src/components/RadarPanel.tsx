@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useCallback, useEffect } from 'react';
+import { useClientNow } from '@/hooks/useClientNow';
 import type { RadarData } from '@/types/weather';
 
 const HUESCAR = { lat: 37.809444, lon: -2.539444 };
@@ -43,7 +44,7 @@ export default function RadarPanel({
   const [imgError, setImgError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
-  const [nowMs] = useState(() => Date.now());
+  const nowMs = useClientNow();
 
   const containerRef = useRef<HTMLDivElement>(null);
   const dragging = useRef(false);
@@ -320,7 +321,7 @@ export default function RadarPanel({
               </div>
               <div className="flex items-center gap-2 text-slate-300">
                 <span>📍 Huéscar</span>
-                <span>🕐 {timeAgo(radar.lastUpdated, nowMs)}</span>
+                <span suppressHydrationWarning>🕐 {nowMs !== null ? timeAgo(radar.lastUpdated, nowMs) : ''}</span>
               </div>
             </div>
 

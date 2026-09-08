@@ -246,6 +246,12 @@ ALTER TABLE agricultural_leads ADD COLUMN IF NOT EXISTS landing_page TEXT DEFAUL
 ALTER TABLE agricultural_leads ADD COLUMN IF NOT EXISTS utm_source TEXT;
 ALTER TABLE agricultural_leads ADD COLUMN IF NOT EXISTS utm_medium TEXT;
 ALTER TABLE agricultural_leads ADD COLUMN IF NOT EXISTS utm_campaign TEXT;
+ALTER TABLE agricultural_leads ADD COLUMN IF NOT EXISTS notification_status TEXT NOT NULL DEFAULT 'new';
+ALTER TABLE agricultural_leads ADD COLUMN IF NOT EXISTS notified_at TIMESTAMPTZ;
+ALTER TABLE agricultural_leads ADD COLUMN IF NOT EXISTS notification_attempts INT NOT NULL DEFAULT 0;
+CREATE INDEX IF NOT EXISTS agricultural_leads_notification_pending_idx
+  ON agricultural_leads (created_at ASC)
+  WHERE notification_status IN ('new', 'notification_failed');
 `;
 
 let initialized = false;
@@ -353,6 +359,11 @@ export async function consumeEventAttempt(
   }
 }
 
+/**
+ * Guarda el lead y devuelve su identificador único (id de la fila).
+ * Telegram NUNCA interfiere en el guardado: se llama después de esta función.
+ * Devuelve null si la inserción falló.
+ */
 export async function saveAgriculturalLead(input: {
   name: string;
   phone: string;
@@ -368,13 +379,14 @@ export async function saveAgriculturalLead(input: {
   utmSource?: string;
   utmMedium?: string;
   utmCampaign?: string;
-}): Promise<boolean> {
+}): Promise<number | null> {
   try {
-    await getPool().query(
+    const result = await getPool().query(
       `INSERT INTO agricultural_leads
         (name, phone, municipality, crop, area, interests, meteorological_consent, commercial_consent, ip_hash,
          source, landing_page, utm_source, utm_medium, utm_campaign)
-       VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7, $8, $9, $10, $11, $12, $13, $14)`,
+       VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7, $8, $9, $10, $11, $12, $13, $14)
+       RETURNING id`,
       [
         input.name,
         input.phone,
@@ -392,9 +404,75 @@ export async function saveAgriculturalLead(input: {
         input.utmCampaign ?? null,
       ],
     );
-    return true;
+    const id = result.rows[0]?.id;
+    return id != null ? Number(id) : null;
   } catch {
-    return false;
+    return null;
+  }
+}
+
+/**
+ * Registra el resultado del intento de notificación Telegram de un lead.
+ * Estados: 'new' (sin intentar) → 'notified' | 'notification_failed'.
+ */
+export async function setLeadNotificationStatus(
+  leadId: number,
+  status: 'notified' | 'notification_failed',
+): Promise<void> {
+  try {
+    await getPool().query(
+      `UPDATE agricultural_leads SET
+         notification_status = $2,
+         notified_at = CASE WHEN $2 = 'notified' THEN NOW() ELSE notified_at END,
+         notification_attempts = notification_attempts + 1
+       WHERE id = $1`,
+      [leadId, status],
+    );
+  } catch (err) {
+    console.error('[weatherStore] No se pudo registrar el estado de notificación del lead:', err instanceof Error ? err.message : err);
+  }
+}
+
+export interface LeadPendingNotification {
+  id: number;
+  name: string;
+  phone: string;
+  municipality: string;
+  crop: string;
+  area: string;
+  interests: string[];
+  attempts: number;
+}
+
+/**
+ * Leads pendientes de notificar: 'new' (nunca intentado, p. ej. faltaban env
+ * vars) o 'notification_failed' (Telegram falló). Solo de los últimos 7 días
+ * y con menos de 5 intentos, para no perseguir leads antiguos para siempre.
+ */
+export async function findLeadsPendingNotification(limit = 20): Promise<LeadPendingNotification[]> {
+  try {
+    const result = await getPool().query(
+      `SELECT id, name, phone, municipality, crop, area, interests, notification_attempts
+       FROM agricultural_leads
+       WHERE notification_status IN ('new', 'notification_failed')
+         AND notification_attempts < 5
+         AND created_at > NOW() - INTERVAL '7 days'
+       ORDER BY created_at ASC
+       LIMIT $1`,
+      [limit],
+    );
+    return result.rows.map((row) => ({
+      id: Number(row.id),
+      name: row.name ?? '',
+      phone: row.phone ?? '',
+      municipality: row.municipality ?? '',
+      crop: row.crop ?? '',
+      area: row.area ?? '',
+      interests: Array.isArray(row.interests) ? row.interests : [],
+      attempts: Number(row.notification_attempts ?? 0),
+    }));
+  } catch {
+    return [];
   }
 }
 
