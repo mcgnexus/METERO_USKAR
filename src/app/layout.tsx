@@ -5,6 +5,7 @@ import { SiteFooter } from "@/components/SiteFooter";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://meteo.tecrural.es"),
+  alternates: { canonical: "/" },
   title: "Meteo agrícola Huéscar | Avisos para fincas | TecRural",
   description: "Previsión meteorológica y agrícola para Huéscar y el Altiplano de Granada. Consulta lluvia, viento, heladas, riego y cultivos. Recibe avisos personalizados de TecRural.",
   keywords: [

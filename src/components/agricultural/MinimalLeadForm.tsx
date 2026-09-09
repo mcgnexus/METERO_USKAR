@@ -220,13 +220,6 @@ export function MinimalLeadForm() {
                   ))}
                 </div>
               </fieldset>
-              <label className="flex min-h-[44px] items-center gap-2 text-xs text-slate-700">
-                <input type="checkbox" name="marketingConsent" className={CHECKBOX_CLASS} />
-                <span>
-                  <span className="mr-1 rounded bg-slate-200 px-1.5 py-0.5 text-[10px] font-black text-slate-600">Opcional</span>
-                  Acepto recibir información comercial sobre servicios de TecRural.
-                </span>
-              </label>
             </div>
           </details>
 
@@ -239,7 +232,20 @@ export function MinimalLeadForm() {
           </label>
           {fieldErrors.serviceConsent && <p className="text-[10px] font-semibold text-rose-600">{fieldErrors.serviceConsent}</p>}
           <p className="text-[10px] leading-4 text-slate-500">
-            Responsable: Manuel Carrasco García. Consulta la <Link className="font-semibold text-emerald-800 underline" href="/privacidad">política de privacidad</Link>.
+            Canales: WhatsApp y notificaciones push. Solo información meteorológica y agrícola solicitada; no incluye publicidad.
+          </p>
+          <label className="flex min-h-[44px] items-center gap-2 text-xs text-slate-700">
+            <input type="checkbox" name="marketingConsent" className={CHECKBOX_CLASS} />
+            <span>
+              <span className="mr-1 rounded bg-slate-200 px-1.5 py-0.5 text-[10px] font-black text-slate-600">Opcional</span>
+              Acepto recibir información comercial sobre sensores, diagnóstico, riego y otros servicios de TecRural.
+            </span>
+          </label>
+          <p className="text-[10px] leading-4 text-slate-500">
+            Canales: WhatsApp, email y notificaciones. Si no la marcas, seguirás recibiendo tus avisos con normalidad.
+          </p>
+          <p className="text-[10px] leading-4 text-slate-500">
+            Responsable: Manuel Carrasco García. Cada consentimiento se gestiona por separado y puedes retirarlo en la <Link className="font-semibold text-emerald-800 underline" href="/privacidad#retirada-consentimiento">sección de retirada</Link>. Consulta la <Link className="font-semibold text-emerald-800 underline" href="/privacidad">política de privacidad</Link>.
           </p>
 
           <input name="website" tabIndex={-1} autoComplete="off" className="hidden" aria-hidden="true" />

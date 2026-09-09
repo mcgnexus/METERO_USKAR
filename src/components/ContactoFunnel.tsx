@@ -207,13 +207,33 @@ export function ContactoFunnel() {
               </label>
             </div>
 
-            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm space-y-2">
+            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm space-y-3">
               <p className="text-sm font-bold text-slate-900">Consentimientos</p>
-              <label className="flex items-start gap-2 text-xs text-slate-700">
-                <input type="checkbox" name="meteorologicalConsent" required className="mt-0.5 accent-sky-700" />
-                <span>Acepto recibir avisos meteorológicos para mi finca por WhatsApp y/o notificaciones.</span>
-              </label>
-              <p className="leading-5 text-slate-500">Responsable: Manuel Carrasco García. Puedes retirar tu consentimiento escribiendo a <a className="font-semibold text-sky-800 underline" href="mailto:mcgtecrural@gmail.com">mcgtecrural@gmail.com</a>. Consulta la <Link className="font-semibold text-sky-800 underline" href="/privacidad">política de privacidad</Link>.</p>
+              <div>
+                <label className="flex items-start gap-2 text-xs text-slate-700">
+                  <input type="checkbox" name="meteorologicalConsent" required className="mt-0.5 accent-sky-700" />
+                  <span>
+                    <span className="mr-1 rounded bg-sky-100 px-1.5 py-0.5 text-[10px] font-black text-sky-800">Obligatorio</span>
+                    Acepto recibir los avisos meteorológicos solicitados para mi finca.
+                  </span>
+                </label>
+                <p className="ml-5 mt-1 text-[10px] leading-4 text-slate-500">
+                  Canales: WhatsApp y notificaciones push. Solo información meteorológica y agrícola solicitada; no incluye publicidad.
+                </p>
+              </div>
+              <div>
+                <label className="flex items-start gap-2 text-xs text-slate-700">
+                  <input type="checkbox" name="commercialConsent" className="mt-0.5 accent-sky-700" />
+                  <span>
+                    <span className="mr-1 rounded bg-slate-200 px-1.5 py-0.5 text-[10px] font-black text-slate-600">Opcional</span>
+                    Acepto recibir información comercial sobre sensores, diagnóstico, riego y otros servicios de TecRural.
+                  </span>
+                </label>
+                <p className="ml-5 mt-1 text-[10px] leading-4 text-slate-500">
+                  Canales: WhatsApp, email y notificaciones. Si no la marcas, seguirás recibiendo tus avisos con normalidad.
+                </p>
+              </div>
+              <p className="leading-5 text-slate-500">Responsable: Manuel Carrasco García. Cada consentimiento se registra por separado y puedes retirarlo de forma individual en la <Link className="font-semibold text-sky-800 underline" href="/privacidad#retirada-consentimiento">sección de retirada</Link> o escribiendo a <a className="font-semibold text-sky-800 underline" href="mailto:mcgtecrural@gmail.com">mcgtecrural@gmail.com</a>. Consulta la <Link className="font-semibold text-sky-800 underline" href="/privacidad">política de privacidad</Link>.</p>
             </div>
 
             <input name="website" tabIndex={-1} autoComplete="off" className="hidden" aria-hidden="true" />
