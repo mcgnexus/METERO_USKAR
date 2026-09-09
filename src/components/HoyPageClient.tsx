@@ -10,15 +10,13 @@ import { HomeHero } from '@/components/HomeHero';
 import { AudienceSwitcher } from '@/components/AudienceSwitcher';
 import { AgriDecisionGrid } from '@/components/agricultural/AgriDecisionGrid';
 import { CustomAlertPreview } from '@/components/agricultural/CustomAlertPreview';
-import { TecRuralProfileSection } from '@/components/TecRuralProfileSection';
 import { LocalAlarmNotifier } from '@/components/LocalAlarmNotifier';
 import { TodaySummaryCard } from '@/components/weather/TodaySummaryCard';
 import { HourlyForecastStrip } from '@/components/weather/HourlyForecastStrip';
-import { QuickDecisionGrid } from '@/components/weather/QuickDecisionGrid';
-import { AdviceGrid } from '@/components/advice/AdviceGrid';
 import { SectionTitle } from '@/components/common/SectionTitle';
 import { UpdatedAtNote } from '@/components/common/UpdatedAtNote';
 import { NoDataState } from '@/components/common/NoDataState';
+import { LazyMount } from '@/components/common/LazyMount';
 import { DataOriginNote, confidenceFromQuality } from '@/components/common/DataOriginNote';
 import { useTrackEvent } from '@/hooks/useTrackEvent';
 import type { HuescarWeatherResponse } from '@/types/weather-response';
@@ -28,6 +26,21 @@ import { madridHourFromUTC, madridMonthFromUTC, seasonFromMonth } from '@/lib/ti
 const WeekTrend = dynamic(() => import('@/components/llano/week-tab').then((m) => ({ default: m.WeekTab })), {
   ssr: false,
   loading: () => <div className="h-40 animate-pulse rounded-2xl bg-slate-100" />,
+});
+
+// Módulos pesados bajo demanda (código > 3 KB de reglas/texto) al final de la
+// home: se dividen en chunks lazy y solo se hidratan cuando entran en viewport.
+const DecisionGrid = dynamic(() => import('@/components/weather/QuickDecisionGrid').then((m) => ({ default: m.QuickDecisionGrid })), {
+  ssr: false,
+  loading: () => <div className="h-28 animate-pulse rounded-2xl bg-slate-100" />,
+});
+const AdviceGrid = dynamic(() => import('@/components/advice/AdviceGrid').then((m) => ({ default: m.AdviceGrid })), {
+  ssr: false,
+  loading: () => <div className="h-32 animate-pulse rounded-2xl bg-slate-100" />,
+});
+const TecRuralProfile = dynamic(() => import('@/components/TecRuralProfileSection').then((m) => ({ default: m.TecRuralProfileSection })), {
+  ssr: false,
+  loading: () => <div className="h-24 animate-pulse rounded-2xl bg-slate-100" />,
 });
 
 export function HoyPageClient({ response }: { response: HuescarWeatherResponse }) {
@@ -240,7 +253,9 @@ export function HoyPageClient({ response }: { response: HuescarWeatherResponse }
                     detail="Previsión diaria de Open-Meteo (ECMWF)"
                   />
                 </div>
-                <WeekTrend daily={wd?.daily ?? null} forecast={fd} />
+                <LazyMount fallback={<div className="h-40 animate-pulse rounded-2xl bg-slate-100" />}>
+                  <WeekTrend daily={wd?.daily ?? null} forecast={fd} />
+                </LazyMount>
               </section>
             )}
 
@@ -253,7 +268,9 @@ export function HoyPageClient({ response }: { response: HuescarWeatherResponse }
                   updatedAt={response.generatedAt}
                   detail="Recomendaciones del motor de consejos TecRural sobre previsión local"
                 />
-                <QuickDecisionGrid ctx={adviceCtx} />
+                <LazyMount fallback={<div className="h-28 animate-pulse rounded-2xl bg-slate-100" />}>
+                  <DecisionGrid ctx={adviceCtx} />
+                </LazyMount>
               </section>
             )}
 
@@ -266,11 +283,15 @@ export function HoyPageClient({ response }: { response: HuescarWeatherResponse }
                   updatedAt={response.generatedAt}
                   detail="Recomendaciones del motor de consejos TecRural sobre previsión local"
                 />
-                <AdviceGrid ctx={adviceCtx} />
+                <LazyMount fallback={<div className="h-32 animate-pulse rounded-2xl bg-slate-100" />}>
+                  <AdviceGrid ctx={adviceCtx} />
+                </LazyMount>
               </section>
             )}
 
-            <TecRuralProfileSection />
+            <LazyMount fallback={<div className="h-24 animate-pulse rounded-2xl bg-slate-100" />}>
+              <TecRuralProfile />
+            </LazyMount>
 
             <details className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
               <summary className="cursor-pointer list-none text-sm font-black text-slate-800">📊 Ver datos técnicos</summary>

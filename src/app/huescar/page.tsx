@@ -1,4 +1,4 @@
-import { getHuescarWeatherResponse } from '@/services/huescarWeatherService';
+import { compactHuescarHomeResponse, getHuescarWeatherResponse } from '@/services/huescarWeatherService';
 import { HoyPageClient } from '@/components/HoyPageClient';
 import type { Metadata } from 'next';
 
@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 };
 
 export default async function HuescarHoyPage() {
-  const response = await getHuescarWeatherResponse();
+  const response = compactHuescarHomeResponse(await getHuescarWeatherResponse());
 
   return <HoyPageClient response={response} />;
 }

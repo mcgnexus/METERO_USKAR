@@ -1,10 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import dynamic from 'next/dynamic';
 import { useTrackEvent } from '@/hooks/useTrackEvent';
 import { getLeadVariant, type LeadVariant } from '@/lib/leadAbTest';
-import { WhatsappOneClick } from '@/components/agricultural/WhatsappOneClick';
-import { MinimalLeadForm } from '@/components/agricultural/MinimalLeadForm';
 
 /**
  * Experimento A/B de captación de leads (punto 1.5):
@@ -13,7 +12,29 @@ import { MinimalLeadForm } from '@/components/agricultural/MinimalLeadForm';
  * La asignación es estable por visitante (localStorage) y utiliza la variante
  * como dimensión en todos los eventos del embudo para medir inicio, abandono
  * y lead válido de cada variante.
+ *
+ * Ambos brazos se cargan bajo demanda: solo se descarga/hidrata la variante
+ * asignada, no ambas en el bundle principal de la home.
  */
+const WhatsappOneClick = dynamic(() => import('@/components/agricultural/WhatsappOneClick').then((m) => ({ default: m.WhatsappOneClick })), {
+  ssr: false,
+  loading: () => (
+    <section className="rounded-[20px] border border-emerald-200 bg-emerald-50/80 p-4" aria-hidden="true">
+      <p className="text-sm font-black text-emerald-950">¿Quieres recibir avisos para tu cultivo?</p>
+      <div className="mt-3 min-h-[44px] w-2/3 animate-pulse rounded-full bg-emerald-200" />
+    </section>
+  ),
+});
+const MinimalForm = dynamic(() => import('@/components/agricultural/MinimalLeadForm').then((m) => ({ default: m.MinimalLeadForm })), {
+  ssr: false,
+  loading: () => (
+    <section className="rounded-[20px] border border-emerald-200 bg-emerald-50/80 p-4" aria-hidden="true">
+      <p className="text-sm font-black text-emerald-950">¿Quieres recibir avisos para tu cultivo?</p>
+      <div className="mt-3 min-h-[44px] w-2/3 animate-pulse rounded-full bg-emerald-200" />
+    </section>
+  ),
+});
+
 export function LeadCaptureExperiment() {
   const track = useTrackEvent();
   // La asignación A/B es cliente (localStorage), así que evitamos mismatch de
@@ -39,5 +60,5 @@ export function LeadCaptureExperiment() {
     );
   }
 
-  return variant === 'A' ? <WhatsappOneClick /> : <MinimalLeadForm />;
+  return variant === 'A' ? <WhatsappOneClick /> : <MinimalForm />;
 }

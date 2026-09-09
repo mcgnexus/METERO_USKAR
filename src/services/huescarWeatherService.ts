@@ -261,3 +261,48 @@ export async function getHuescarWeatherResponse(): Promise<HuescarWeatherRespons
     load: loadUnified,
   });
 }
+
+/**
+ * Recorta los datos serializados de la home (/huescar) al mínimo que consume
+ * realmente HoyPageClient: ventana horaria de ~24 h alrededor de "ahora" (la
+ * franja usa lookahead 6) y sin las comparaciones aemet/open-meteo por horas,
+ * que solo usan las pantallas /horas y /semana. Diario, agrícola y avisos se
+ * conservan intactos. Reduce el HTML/RSC inicial (~214 KB) sin tocar la lógica
+ * de render.
+ */
+export function compactHuescarHomeResponse(response: HuescarWeatherResponse): HuescarWeatherResponse {
+  const wd = response.weather;
+  const nowMs = new Date(response.generatedAt).getTime();
+
+  let weather = wd;
+  if (wd) {
+    let hourly = wd.hourly;
+    if (wd.hourly && wd.hourly.time.length > 0) {
+      const times = wd.hourly.time;
+      let start = times.findIndex((t) => new Date(t).getTime() >= nowMs);
+      if (start === -1) start = Math.max(0, times.length - 24);
+      start = Math.max(0, start - 1);
+      const end = Math.min(times.length, start + 24);
+      hourly = {
+        time: times.slice(start, end),
+        temperatureC: wd.hourly.temperatureC.slice(start, end),
+        humidityPct: wd.hourly.humidityPct.slice(start, end),
+        precipitationProbabilityPct: wd.hourly.precipitationProbabilityPct.slice(start, end),
+        precipitationMm: wd.hourly.precipitationMm.slice(start, end),
+        weatherCode: wd.hourly.weatherCode.slice(start, end),
+        windSpeedKmh: wd.hourly.windSpeedKmh.slice(start, end),
+      };
+    }
+    weather = {
+      ...wd,
+      hourly,
+      comparisonHourly: wd.comparisonHourly ? { aemet: null, openMeteo: null } : wd.comparisonHourly,
+    };
+  }
+
+  const hourlyWindow = response.hourly
+    .filter((h) => h.time && new Date(h.time).getTime() >= nowMs)
+    .slice(0, 24);
+
+  return { ...response, weather, hourly: hourlyWindow };
+}
