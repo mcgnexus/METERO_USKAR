@@ -350,9 +350,16 @@ export async function consumeLeadAttempt(
   }
 }
 
+/** Límite de eventos de analítica por minuto y por cliente. Configurable por entorno. */
+function defaultEventRateLimit(): number {
+  const raw = process.env.EVENT_RATE_LIMIT_PER_MINUTE;
+  const parsed = raw ? Number(raw) : NaN;
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 600;
+}
+
 export async function consumeEventAttempt(
   clientKey: string,
-  maxAttempts = 60,
+  maxAttempts = defaultEventRateLimit(),
   windowMs = 60_000,
 ): Promise<boolean> {
   try {
@@ -751,6 +758,7 @@ const VALID_EVENTS = new Set([
   'alerts_page_viewed',
   'field_navigation_clicked',
   'alerts_navigation_clicked',
+  'sources_navigation_clicked',
   // Nombres canónicos del embudo de conversión (spec analítica).
   'lead_cta_click',
   'lead_form_open',

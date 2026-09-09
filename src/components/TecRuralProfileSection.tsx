@@ -1,9 +1,5 @@
 import Link from 'next/link';
 
-const WHATSAPP_URL =
-  'https://wa.me/34614242716?text=' +
-  encodeURIComponent('Hola, quiero conocer las soluciones de TecRural para mi finca.');
-
 export function TecRuralProfileSection() {
   return (
     <section className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
@@ -41,14 +37,6 @@ export function TecRuralProfileSection() {
           className="rounded-full bg-sky-700 px-4 py-2 text-xs font-bold text-white hover:bg-sky-800"
         >
           Web de TecRural
-        </a>
-        <a
-          href={WHATSAPP_URL}
-          target="_blank"
-          rel="noreferrer"
-          className="rounded-full bg-emerald-600 px-4 py-2 text-xs font-bold text-white hover:bg-emerald-700"
-        >
-          Hablar con TecRural
         </a>
         <Link
           href="/huescar/campo"
