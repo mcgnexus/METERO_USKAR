@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import WeatherDashboard from '@/components/WeatherDashboard';
+import { AudienceSwitcher } from '@/components/AudienceSwitcher';
 import { getCurrentWeatherPayload } from '@/services/currentWeatherService';
 import type { Metadata } from 'next';
 
@@ -12,6 +13,7 @@ export default async function MeteoPage() {
   return (
     <div className="min-h-screen py-4 sm:py-8">
       <div className="app-shell space-y-4 sm:space-y-6">
+        <AudienceSwitcher compact />
         <header className="surface-card flex flex-col gap-4 rounded-[20px] px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:rounded-[28px] sm:px-7 sm:py-5">
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.24em] text-sky-700">Panel meteorologico local</p>

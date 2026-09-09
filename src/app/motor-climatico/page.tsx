@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import ClimateEngineDashboard from '@/components/ClimateEngineDashboard';
+import { AudienceSwitcher } from '@/components/AudienceSwitcher';
 import { getClimateCalibrationPayload } from '@/services/climateCalibrationPayloadService';
 import { getCurrentWeatherPayload } from '@/services/currentWeatherService';
 import type { Metadata } from 'next';
@@ -16,6 +17,9 @@ export default async function MotorClimaticoPage() {
   return (
     <div className="min-h-screen bg-[#f4f7fb]">
       <div className="mx-auto max-w-lg px-4 pt-4 pb-8">
+        <div className="mb-3">
+          <AudienceSwitcher compact />
+        </div>
         <header className="mb-4 flex items-center justify-between">
           <div>
             <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-sky-700">Capa científica</p>

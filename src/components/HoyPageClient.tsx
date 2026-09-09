@@ -7,6 +7,7 @@ import { NavBottom } from '@/components/NavBottom';
 import { NotificationPermission } from '@/components/NotificationPermission';
 import { AgriculturalLeadForm } from '@/components/AgriculturalLeadForm';
 import { HomeHero } from '@/components/HomeHero';
+import { AudienceSwitcher } from '@/components/AudienceSwitcher';
 import { AgriDecisionGrid } from '@/components/agricultural/AgriDecisionGrid';
 import { CustomAlertPreview } from '@/components/agricultural/CustomAlertPreview';
 import { TecRuralProfileSection } from '@/components/TecRuralProfileSection';
@@ -134,7 +135,13 @@ export function HoyPageClient({ response }: { response: HuescarWeatherResponse }
           </div>
         </header>
 
-        <HomeHero />
+        <div className="mt-3">
+          <AudienceSwitcher />
+        </div>
+
+        <div className="mt-5">
+          <HomeHero />
+        </div>
 
         <div className="mt-5 lg:grid lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start lg:gap-6">
         <div>
