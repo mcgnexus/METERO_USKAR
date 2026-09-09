@@ -90,6 +90,20 @@ describe('POST /api/events', () => {
     );
   });
 
+  it('conserva los parámetros UTM del embudo como metadata', async () => {
+    const req = mockRequest({
+      event: 'lead_cta_click',
+      metadata: { municipality: 'Huéscar', utm_source: 'google', utm_medium: 'cpc', utm_campaign: 'regadio-2026' },
+    });
+    const res = await POST(req as Postable);
+    expect(res.status).toBe(201);
+    expect(mockRecordBusinessEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        metadata: { municipality: 'Huéscar', utm_source: 'google', utm_medium: 'cpc', utm_campaign: 'regadio-2026' },
+      }),
+    );
+  });
+
   it('PRIVACIDAD: descarta claves con datos personales del metadata', async () => {
     const req = mockRequest({
       event: 'lead_form_success',

@@ -271,6 +271,7 @@ ALTER TABLE agricultural_leads ADD COLUMN IF NOT EXISTS notified_at TIMESTAMPTZ;
 ALTER TABLE agricultural_leads ADD COLUMN IF NOT EXISTS notification_attempts INT NOT NULL DEFAULT 0;
 ALTER TABLE agricultural_leads ADD COLUMN IF NOT EXISTS consent_policy_version TEXT NOT NULL DEFAULT '2026-09-v1';
 ALTER TABLE agricultural_leads ADD COLUMN IF NOT EXISTS ab_variant TEXT;
+ALTER TABLE agricultural_leads ADD COLUMN IF NOT EXISTS responded_at TIMESTAMPTZ;
 CREATE INDEX IF NOT EXISTS agricultural_leads_notification_pending_idx
   ON agricultural_leads (created_at ASC)
   WHERE notification_status IN ('new', 'notification_failed');
@@ -519,6 +520,41 @@ export async function setLeadNotificationStatus(
     );
   } catch (err) {
     console.error('[weatherStore] No se pudo registrar el estado de notificación del lead:', err instanceof Error ? err.message : err);
+  }
+}
+
+/**
+ * Marca un lead como "respondido" (la conversación de WhatsApp/Telegram avanzó
+ * o el aviso resultó útil). Actualiza el status del lead y registra el evento
+ * canónico 'lead_responded' con municipio y campaña UTM, para que el embudo de
+ * conversión pueda medir el último paso (respuesta) con los mismos filtros que
+ * el resto. Devuelve false si el lead no existe o ya estaba responded.
+ */
+export async function markLeadResponded(
+  leadId: number,
+): Promise<{ ok: boolean; municipality?: string | null; utmCampaign?: string | null }> {
+  try {
+    const result = await getPool().query(
+      `UPDATE agricultural_leads
+          SET status = 'responded', responded_at = NOW()
+        WHERE id = $1
+          AND status <> 'responded'
+        RETURNING id, municipality, utm_campaign`,
+      [leadId],
+    );
+    const row = result.rows[0];
+    if (!row) return { ok: false };
+    await recordBusinessEvent({
+      event: 'lead_responded',
+      metadata: {
+        lead_id: String(row.id),
+        municipality: row.municipality,
+        utm_campaign: row.utm_campaign,
+      },
+    });
+    return { ok: true, municipality: row.municipality, utmCampaign: row.utm_campaign };
+  } catch {
+    return { ok: false };
   }
 }
 
@@ -811,6 +847,154 @@ export async function getAbTestMetrics(daysBack = 60): Promise<AbTestReport> {
   return report;
 }
 
+export interface FunnelStep {
+  key: string;
+  label: string;
+  emoji: string;
+  count: number;
+  /** Conversión respecto al paso inmediatamente anterior (el primero = 100). */
+  conversionPct: number;
+}
+
+export interface FunnelReport {
+  daysBack: number;
+  municipality: string | null;
+  utmCampaign: string | null;
+  steps: FunnelStep[];
+  /** Valores distintos disponibles para filtrar (municipios y campañas UTM). */
+  municipalities: string[];
+  campaigns: string[];
+  hasData: boolean;
+}
+
+/** Pasos del embudo de captación: visita → CTA → form iniciado → completado → lead → WhatsApp → respuesta. */
+const FUNNEL_STEPS: Array<{ key: string; label: string; emoji: string; events: string[] }> = [
+  { key: 'visits', label: 'Visitas', emoji: '👀', events: ['weather_view', 'field_page_viewed', 'alerts_page_viewed'] },
+  { key: 'cta', label: 'CTA', emoji: '👆', events: ['lead_cta_click', 'cta_clicked'] },
+  { key: 'form_started', label: 'Form iniciado', emoji: '✍️', events: ['lead_form_start', 'lead_form_started'] },
+  { key: 'form_completed', label: 'Form completado', emoji: '📝', events: ['lead_form_submit', 'lead_form_submitted'] },
+  { key: 'lead_valid', label: 'Lead válido', emoji: '🎯', events: ['lead_form_success', 'lead_qualified'] },
+  { key: 'whatsapp', label: 'WhatsApp iniciado', emoji: '💬', events: ['whatsapp_click', 'whatsapp_clicked'] },
+  { key: 'responded', label: 'Respuesta', emoji: '📞', events: ['lead_responded'] },
+];
+
+/**
+ * Embudo completo de captación agregado desde los eventos canónicos + legacy,
+ * con filtros opcionales por municipio (metadata) y campaña UTM. El paso "lead
+ * válido" cruza los eventos de éxito con los leads realmente guardados en BD
+ * (cubre formularios que no emiten lead_form_success, p. ej. /contacto).
+ */
+export async function getFunnelMetrics(options?: {
+  daysBack?: number;
+  municipality?: string;
+  utmCampaign?: string;
+}): Promise<FunnelReport> {
+  const daysBack = Math.max(7, Math.min(365, options?.daysBack ?? 30));
+  const municipality = options?.municipality?.trim().slice(0, 100) || null;
+  const utmCampaign = options?.utmCampaign?.trim().slice(0, 100) || null;
+
+  const empty = (): FunnelReport => ({
+    daysBack,
+    municipality,
+    utmCampaign,
+    steps: FUNNEL_STEPS.map((s) => ({ key: s.key, label: s.label, emoji: s.emoji, count: 0, conversionPct: 0 })),
+    municipalities: [],
+    campaigns: [],
+    hasData: false,
+  });
+
+  try {
+    const rows = await safeQuery<{ event_name: string; municipality: string | null; campaign: string | null; total: number }>(
+      `SELECT event_name,
+              metadata->>'municipality' AS municipality,
+              COALESCE(NULLIF(metadata->>'utm_campaign', ''), utm_campaign) AS campaign,
+              COUNT(*)::int AS total
+         FROM business_events
+        WHERE created_at >= NOW() - ($1 || ' days')::interval
+        GROUP BY 1, 2, 3`,
+      [String(daysBack)],
+    );
+
+    let filtered = rows;
+    if (municipality) filtered = filtered.filter((r) => r.municipality === municipality);
+    if (utmCampaign) filtered = filtered.filter((r) => r.campaign === utmCampaign);
+
+    const sumEvents = (events: string[]): number =>
+      filtered.filter((r) => events.includes(r.event_name)).reduce((acc, r) => acc + r.total, 0);
+
+    const counts = new Map<string, number>();
+    for (const step of FUNNEL_STEPS) counts.set(step.key, sumEvents(step.events));
+
+    // Cruce con leads reales guardados en BD (mismo período y filtros).
+    const leadConds: string[] = [`created_at >= NOW() - ($1 || ' days')::interval`];
+    const leadParams: Array<string | number> = [String(daysBack)];
+    if (municipality) {
+      leadParams.push(municipality);
+      leadConds.push(`municipality = $${leadParams.length}`);
+    }
+    if (utmCampaign) {
+      leadParams.push(utmCampaign);
+      leadConds.push(`utm_campaign = $${leadParams.length}`);
+    }
+    const stored = await safeQuery<{ total: number }>(
+      `SELECT COUNT(*)::int AS total
+         FROM agricultural_leads
+        WHERE ${leadConds.join(' AND ')}`,
+      leadParams,
+    );
+    const storedTotal = stored.reduce((acc, r) => acc + r.total, 0);
+    counts.set('lead_valid', Math.max(counts.get('lead_valid') ?? 0, storedTotal));
+
+    if (rows.length === 0 && storedTotal === 0) return empty();
+
+    // Valores disponibles para los filtros del panel.
+    const municipalitySet = new Set<string>();
+    const campaignSet = new Set<string>();
+    for (const r of rows) {
+      if (r.municipality) municipalitySet.add(r.municipality);
+      if (r.campaign) campaignSet.add(r.campaign);
+    }
+    if (!municipality && !utmCampaign) {
+      const extra = await safeQuery<{ municipality: string | null }>(
+        `SELECT DISTINCT municipality AS municipality FROM agricultural_leads
+          WHERE created_at >= NOW() - ($1 || ' days')::interval AND municipality IS NOT NULL
+          LIMIT 60`,
+        [String(daysBack)],
+      ).catch(() => []);
+      for (const r of extra) if (r.municipality) municipalitySet.add(r.municipality);
+      const extraCampaigns = await safeQuery<{ utm_campaign: string | null }>(
+        `SELECT DISTINCT utm_campaign AS utm_campaign FROM agricultural_leads
+          WHERE created_at >= NOW() - ($1 || ' days')::interval AND utm_campaign IS NOT NULL
+          LIMIT 60`,
+        [String(daysBack)],
+      ).catch(() => []);
+      for (const r of extraCampaigns) if (r.utm_campaign) campaignSet.add(r.utm_campaign);
+    }
+
+    const steps: FunnelStep[] = FUNNEL_STEPS.map((s, index) => {
+      const count = counts.get(s.key) ?? 0;
+      const prev = counts.get(FUNNEL_STEPS[index - 1]?.key) ?? 0;
+      const conversionPct = index === 0 ? 100 : prev > 0 ? (count / prev) * 100 : 0;
+      return { key: s.key, label: s.label, emoji: s.emoji, count, conversionPct };
+    });
+
+    const municipalities = [...municipalitySet].sort((a, b) => a.localeCompare(b, 'es')).slice(0, 30);
+    const campaigns = [...campaignSet].sort((a, b) => a.localeCompare(b, 'es')).slice(0, 30);
+
+    return {
+      daysBack,
+      municipality,
+      utmCampaign,
+      steps,
+      municipalities,
+      campaigns,
+      hasData: rows.length > 0 || storedTotal > 0,
+    };
+  } catch {
+    return empty();
+  }
+}
+
 const VALID_EVENTS = new Set([
   'weather_view',
   'push_prompt_shown',
@@ -842,6 +1026,7 @@ const VALID_EVENTS = new Set([
   'lead_form_success',
   'whatsapp_click',
   'ab_test_assigned',
+  'lead_responded',
 ]);
 
 export async function recordBusinessEvent(input: {

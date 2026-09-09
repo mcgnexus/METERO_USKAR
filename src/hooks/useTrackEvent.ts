@@ -21,6 +21,16 @@ function entryPage(): string | undefined {
   }
 }
 
+/** Metadata + dimensiones UTM de la sesión (solo si existen valores). */
+function withUtm(metadata?: Record<string, unknown>): Record<string, unknown> {
+  const utms = captureUtms();
+  const merged: Record<string, unknown> = { ...(metadata ?? {}) };
+  if (utms.utm_source) merged.utm_source = utms.utm_source;
+  if (utms.utm_medium) merged.utm_medium = utms.utm_medium;
+  if (utms.utm_campaign) merged.utm_campaign = utms.utm_campaign;
+  return merged;
+}
+
 export function useTrackEvent() {
   const pendingRef = useRef<Set<string>>(new Set());
 
@@ -31,19 +41,20 @@ export function useTrackEvent() {
     const lastSent = sentEvents.get(event);
     if (lastSent && now - lastSent < DEDUP_WINDOW_MS) return;
 
-    const key = `${event}:${JSON.stringify(metadata ?? {})}`;
+    const key = `${event}:${JSON.stringify(withUtm(metadata))}`;
     if (pendingRef.current.has(key)) return;
     pendingRef.current.add(key);
 
     const page = window.location.pathname;
-    // Dimensiones de conversión: página de entrada y campaña UTM de la sesión.
-    const utmCampaign = captureUtms().utm_campaign;
+    // Dimensiones de conversión: página de entrada y parámetros UTM de la sesión.
+    // Los UTM viajan en la metadata permitida para poder filtrar el embudo por
+    // campaña sin depender de la columna top-level.
     const payload = JSON.stringify({
       event,
       page,
       entryPage: entryPage(),
-      utmCampaign,
-      metadata,
+      utmCampaign: captureUtms().utm_campaign,
+      metadata: withUtm(metadata),
     });
 
     try {

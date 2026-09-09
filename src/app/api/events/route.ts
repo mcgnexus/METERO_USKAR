@@ -42,6 +42,10 @@ const ALLOWED_METADATA_KEYS = new Set([
   'status',
   'experiment',
   'variant',
+  'lead_id',
+  'utm_source',
+  'utm_medium',
+  'utm_campaign',
 ]);
 
 /** Patrón de teléfono: cualquier valor con pinta de número de contacto se filtra. */

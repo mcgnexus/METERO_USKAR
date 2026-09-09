@@ -52,7 +52,7 @@ describe('Carga de las pantallas públicas (render de clientes de página)', () 
   it('/huescar — HoyPageClient renderiza con datos del snapshot', () => {
     const response = buildHuescarResponse();
     render(<HoyPageClient response={response} />);
-    expect(screen.getByRole('heading', { name: 'Meteo Huéscar' })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: /El tiempo que te ayuda a decidir en Huéscar/ })).toBeTruthy();
   });
 
   it('/huescar/horas — HorasPageClient renderiza', () => {

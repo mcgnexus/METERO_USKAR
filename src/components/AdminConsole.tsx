@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useApiData } from '@/hooks/useApiData';
 import WeatherStationPanel from '@/components/WeatherStationPanel';
 import ZonePanel from '@/components/ZonePanel';
+import { FunnelPanel } from '@/components/admin/FunnelPanel';
 
 interface SourceHealthStatus {
   source: string;
@@ -37,6 +38,7 @@ interface AgriculturalLead {
   area: string;
   interests: string[];
   commercial_consent: boolean;
+  status: string;
   source: string;
   landing_page: string;
   utm_source: string | null;
@@ -140,8 +142,26 @@ export default function AdminConsole() {
   const [refreshing, setRefreshing] = useState(false);
   const [confirmRefresh, setConfirmRefresh] = useState(false);
   const [refreshError, setRefreshError] = useState<string | null>(null);
+  const [respondingId, setRespondingId] = useState<string | number | null>(null);
   const { data: overview, loading, refresh } = useApiData<AdminOverview>('/api/admin/overview', 'admin-overview');
-  const { data: leads } = useApiData<{ leads: AgriculturalLead[] }>('/api/admin/leads', 'admin-leads');
+  const { data: leads, refresh: refreshLeads } = useApiData<{ leads: AgriculturalLead[] }>('/api/admin/leads', 'admin-leads');
+
+  async function handleMarkResponded(id: string | number) {
+    setRespondingId(id);
+    try {
+      const response = await fetch(`/api/admin/leads/${id}/responded`, { method: 'POST', cache: 'no-store' });
+      if (!response.ok) {
+        const body = await response.json().catch(() => null);
+        throw new Error(body?.error ?? 'No se pudo marcar el lead');
+      }
+      refreshLeads();
+    } catch (error) {
+      console.error(error);
+      setRefreshError(error instanceof Error ? error.message : 'No se pudo marcar el lead.');
+    } finally {
+      setRespondingId(null);
+    }
+  }
 
   async function handleForceRefresh() {
     setRefreshing(true);
@@ -265,6 +285,11 @@ export default function AdminConsole() {
       </section>
 
       <section>
+        <h2 className="mb-4 text-lg font-semibold">Embudo de conversión</h2>
+        <FunnelPanel />
+      </section>
+
+      <section>
         <h2 className="mb-4 text-lg font-semibold">Experimento A/B · Captación de leads</h2>
         <AbTestPanel />
       </section>
@@ -280,6 +305,7 @@ export default function AdminConsole() {
                   <th className="px-3 py-2 text-left">Finca</th>
                   <th className="px-3 py-2 text-left">Intereses</th>
                   <th className="px-3 py-2 text-left">Origen</th>
+                  <th className="px-3 py-2 text-left">Estado</th>
                   <th className="px-3 py-2 text-left">Fecha</th>
                 </tr>
               </thead>
@@ -295,7 +321,22 @@ export default function AdminConsole() {
                     <td className="px-3 py-2 text-xs text-slate-300">{lead.interests.join(', ')}</td>
                     <td className="px-3 py-2 text-xs text-slate-300">
                       {lead.source}<br />{lead.landing_page}
-                      {lead.utm_campaign && <><br />UTM: {lead.utm_campaign}</>}
+                      <br />UTM: {[lead.utm_source, lead.utm_medium, lead.utm_campaign].filter(Boolean).join(' / ') || '—'}
+                    </td>
+                    <td className="px-3 py-2">
+                      {lead.status === 'responded' ? (
+                        <span className="inline-block rounded-full bg-emerald-900 px-2 py-0.5 text-[10px] font-bold text-emerald-300">
+                          Respondido
+                        </span>
+                      ) : (
+                        <button
+                          onClick={() => handleMarkResponded(lead.id)}
+                          disabled={respondingId === lead.id}
+                          className="rounded-full border border-slate-600 px-2 py-0.5 text-[10px] font-bold text-slate-300 hover:bg-slate-700 disabled:opacity-50"
+                        >
+                          {respondingId === lead.id ? '…' : 'Marcar respondido'}
+                        </button>
+                      )}
                     </td>
                     <td className="whitespace-nowrap px-3 py-2 text-xs text-slate-400">{new Date(lead.created_at).toLocaleString('es-ES')}</td>
                   </tr>
