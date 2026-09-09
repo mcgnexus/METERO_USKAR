@@ -270,6 +270,7 @@ ALTER TABLE agricultural_leads ADD COLUMN IF NOT EXISTS notification_status TEXT
 ALTER TABLE agricultural_leads ADD COLUMN IF NOT EXISTS notified_at TIMESTAMPTZ;
 ALTER TABLE agricultural_leads ADD COLUMN IF NOT EXISTS notification_attempts INT NOT NULL DEFAULT 0;
 ALTER TABLE agricultural_leads ADD COLUMN IF NOT EXISTS consent_policy_version TEXT NOT NULL DEFAULT '2026-09-v1';
+ALTER TABLE agricultural_leads ADD COLUMN IF NOT EXISTS ab_variant TEXT;
 CREATE INDEX IF NOT EXISTS agricultural_leads_notification_pending_idx
   ON agricultural_leads (created_at ASC)
   WHERE notification_status IN ('new', 'notification_failed');
@@ -408,13 +409,14 @@ export async function saveAgriculturalLead(input: {
   utmMedium?: string;
   utmCampaign?: string;
   consentPolicyVersion?: string;
+  abVariant?: 'A' | 'B' | null;
 }): Promise<number | null> {
   try {
     const result = await getPool().query(
       `INSERT INTO agricultural_leads
         (name, phone, municipality, crop, area, interests, meteorological_consent, commercial_consent, ip_hash,
-         source, landing_page, utm_source, utm_medium, utm_campaign, consent_policy_version)
-       VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+         source, landing_page, utm_source, utm_medium, utm_campaign, consent_policy_version, ab_variant)
+       VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
        RETURNING id`,
       [
         input.name,
@@ -432,6 +434,7 @@ export async function saveAgriculturalLead(input: {
         input.utmMedium ?? null,
         input.utmCampaign ?? null,
         input.consentPolicyVersion ?? '2026-09-v1',
+        input.abVariant ?? null,
       ],
     );
     const id = result.rows[0]?.id;
@@ -737,6 +740,77 @@ export async function getRecentAgriculturalLeads(limit = 50): Promise<Array<{
   return rows.map((row) => ({ ...row, interests: Array.isArray(row.interests) ? row.interests : [] }));
 }
 
+export interface AbTestMetric {
+  assigned: number;
+  started: number;
+  leads: number;
+  startRate: number;
+  abandonmentRate: number;
+  leadRate: number;
+}
+
+export type AbTestReport = Record<'A' | 'B', AbTestMetric>;
+
+function emptyAbMetric(): AbTestMetric {
+  return { assigned: 0, started: 0, leads: 0, startRate: 0, abandonmentRate: 0, leadRate: 0 };
+}
+
+/**
+ * Cuenta por variante (A: WhatsApp 1 clic, B: formulario mínimo) los eventos del
+ * embudo de captación y los leads reales guardados con ab_variant. Se compara
+ * el mismo período: evento ab_test_assigned (asignación) contra leads con la
+ * variante en agricultural_leads.ab_variant.
+ */
+export async function getAbTestMetrics(daysBack = 60): Promise<AbTestReport> {
+  const report: AbTestReport = { A: emptyAbMetric(), B: emptyAbMetric() };
+  try {
+    const events = await safeQuery<{ variant: string | null; event_name: string; total: number }>(
+      `SELECT metadata->>'variant' AS variant, event_name,
+              COUNT(*)::int AS total
+         FROM business_events
+        WHERE event_name IN ('ab_test_assigned','lead_form_started','lead_form_start','whatsapp_click','lead_form_success')
+          AND metadata->>'variant' IN ('A','B')
+          AND created_at >= NOW() - ($1 || ' days')::interval
+        GROUP BY 1, 2`,
+      [String(Math.max(1, Math.min(daysBack, 365)))],
+    );
+    for (const event of events) {
+      const variant = event.variant as 'A' | 'B';
+      if (!report[variant]) continue;
+      if (event.event_name === 'ab_test_assigned') report[variant].assigned = event.total;
+      else if (event.event_name === 'whatsapp_click' || event.event_name === 'lead_form_started' || event.event_name === 'lead_form_start') {
+        report[variant].started += event.total;
+      } else if (event.event_name === 'lead_form_success') {
+        report[variant].leads += event.total;
+      }
+    }
+
+    const leads = await safeQuery<{ ab_variant: string | null; total: number }>(
+      `SELECT ab_variant, COUNT(*)::int AS total
+         FROM agricultural_leads
+        WHERE ab_variant IN ('A','B')
+          AND created_at >= NOW() - ($1 || ' days')::interval
+        GROUP BY 1`,
+      [String(Math.max(1, Math.min(daysBack, 365)))],
+    );
+    for (const lead of leads) {
+      const variant = lead.ab_variant as 'A' | 'B';
+      if (!report[variant]) continue;
+      report[variant].leads = Math.max(report[variant].leads, lead.total);
+    }
+
+    for (const variant of ['A', 'B'] as const) {
+      const metric = report[variant];
+      metric.startRate = metric.assigned > 0 ? metric.started / metric.assigned : 0;
+      metric.abandonmentRate = metric.started > 0 ? 1 - metric.leads / metric.started : 0;
+      metric.leadRate = metric.assigned > 0 ? metric.leads / metric.assigned : 0;
+    }
+  } catch {
+    /* métricas no disponibles */
+  }
+  return report;
+}
+
 const VALID_EVENTS = new Set([
   'weather_view',
   'push_prompt_shown',
@@ -767,6 +841,7 @@ const VALID_EVENTS = new Set([
   'lead_form_submit',
   'lead_form_success',
   'whatsapp_click',
+  'ab_test_assigned',
 ]);
 
 export async function recordBusinessEvent(input: {

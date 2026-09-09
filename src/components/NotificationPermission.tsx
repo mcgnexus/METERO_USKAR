@@ -127,8 +127,38 @@ export function NotificationPermission() {
         <div className="flex-1">
           <p className="text-sm font-bold text-slate-900">Activa las alertas</p>
           <p className="mt-0.5 text-xs leading-4 text-slate-600">
-            Recibe avisos de heladas, calor extremo, viento y tormentas en tu movil.
+            Una notificación en tu móvil u ordenador cuando el modelo detecta un riesgo real en tu zona. Sin coste y sin «ruido».
           </p>
+
+          <ul className="mt-2 space-y-1.5 text-xs leading-4 text-slate-600">
+            <li className="flex gap-1.5">
+              <span aria-hidden="true">📲</span>
+              <span><span className="font-semibold text-slate-700">Cómo llega:</span> notificación del navegador. No necesitas tener la web abierta.</span>
+            </li>
+            <li className="flex gap-1.5">
+              <span aria-hidden="true">🔕</span>
+              <span><span className="font-semibold text-slate-700">Cuándo:</span> solo con un riesgo nuevo, como máximo 1 aviso por hora y un resumen al día.</span>
+            </li>
+            <li className="flex gap-1.5">
+              <span aria-hidden="true">❄️</span>
+              <span><span className="font-semibold text-slate-700">Ejemplo:</span> si la mínima prevista baja de 2 °C o hay helada negra, recibirás el aviso de helada con consejos para activar los sistemas antihelada.</span>
+            </li>
+          </ul>
+
+          <details className="mt-2 rounded-xl bg-white/60 p-3">
+            <summary className="cursor-pointer text-xs font-bold text-sky-900">
+              Sin coste vs. servicio personalizado TecRural
+            </summary>
+            <div className="mt-2 space-y-2 text-xs leading-4 text-slate-600">
+              <p>
+                <span className="font-semibold text-emerald-800">Sin coste:</span> esta alerta automática del modelo para toda la zona (helada, calor extremo, viento, sequedad y avisos oficiales de AEMET y RAIF).
+              </p>
+              <p>
+                <span className="font-semibold text-emerald-800">TecRural (personalizado):</span> umbrales a medida de tu cultivo y parcela, sensores en campo y recomendaciones de riego. Lo gestionas después por WhatsApp o desde el campo <span className="font-semibold text-slate-700">«Campo»</span>, sin coste de esta activación.
+              </p>
+            </div>
+          </details>
+
           {error && <p className="mt-1 text-xs font-semibold text-rose-600">{error}</p>}
           <div className="mt-2.5 flex gap-2">
             <button

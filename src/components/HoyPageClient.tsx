@@ -5,7 +5,7 @@ import dynamic from 'next/dynamic';
 import { buildAlarms } from '@/components/llano/alarms-logic';
 import { NavBottom } from '@/components/NavBottom';
 import { NotificationPermission } from '@/components/NotificationPermission';
-import { AgriculturalLeadForm } from '@/components/AgriculturalLeadForm';
+import { LeadCaptureExperiment } from '@/components/agricultural/LeadCaptureExperiment';
 import { HomeHero } from '@/components/HomeHero';
 import { AudienceSwitcher } from '@/components/AudienceSwitcher';
 import { AgriDecisionGrid } from '@/components/agricultural/AgriDecisionGrid';
@@ -106,12 +106,15 @@ export function HoyPageClient({ response }: { response: HuescarWeatherResponse }
   // Día completo de horas (Open-Meteo entrega desde las 00:00 de hoy). La
   // franja arranca en "Ahora" y deja "desde medianoche" como vista secundaria.
   const hourlyTimes = wd?.hourly?.time ?? [];
+  const hourlyTemps = wd?.hourly?.temperatureC ?? [];
+  const hourlyCodes = wd?.hourly?.weatherCode ?? [];
+  const hourlyPrecip = wd?.hourly?.precipitationProbabilityPct ?? [];
   const nowIso = response.current.time || response.generatedAt;
   const allHours = hourlyTimes.map((t, k) => ({
     time: t,
-    temp: wd.hourly.temperatureC[k],
-    weatherCode: wd.hourly.weatherCode[k] ?? 0,
-    precipitationProb: wd.hourly.precipitationProbabilityPct[k] ?? null,
+    temp: hourlyTemps[k],
+    weatherCode: hourlyCodes[k] ?? 0,
+    precipitationProb: hourlyPrecip[k] ?? null,
   }));
 
   return (
@@ -163,9 +166,9 @@ export function HoyPageClient({ response }: { response: HuescarWeatherResponse }
           {/* 3 · Ejemplo concreto de aviso personalizado */}
           <CustomAlertPreview response={response} />
 
-          {/* 4 · CTA principal + formulario corto o WhatsApp */}
+          {/* 4 · CTA principal + experimento A/B (WhatsApp 1 clic vs formulario mínimo) */}
           <div className="mb-1">
-            <AgriculturalLeadForm />
+            <LeadCaptureExperiment />
           </div>
 
           {/* Activar notificaciones del navegador (mecánica de los avisos) */}

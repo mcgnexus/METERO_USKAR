@@ -145,6 +145,14 @@ describe('POST /api/leads', () => {
     expect(json.fieldErrors?.phone).toBeTruthy();
   });
 
+  it('201: guarda la variante A/B del experimento cuando se envía', async () => {
+    const res = await POST(mockRequest({ ...VALID_LEAD, abVariant: 'B' }));
+    expect(res.status).toBe(201);
+    expect(mockSaveAgriculturalLead).toHaveBeenCalledWith(
+      expect.objectContaining({ abVariant: 'B' }),
+    );
+  });
+
   it('400: faltan campos obligatorios y serviceConsent false', async () => {
     const res = await POST(
       mockRequest({ phone: '', municipality: '', crop: '', serviceConsent: false }),

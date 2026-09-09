@@ -68,6 +68,7 @@ describe('POST /api/events', () => {
     const events = [
       'weather_view', 'lead_cta_click', 'lead_form_open', 'lead_form_start',
       'lead_form_error', 'lead_form_submit', 'lead_form_success', 'whatsapp_click',
+      'ab_test_assigned',
     ];
     for (const event of events) {
       mockRecordBusinessEvent.mockResolvedValue(true);
@@ -75,6 +76,18 @@ describe('POST /api/events', () => {
       const res = await POST(req as Postable);
       expect(res.status).toBe(201);
     }
+  });
+
+  it('conserva la variante del experimento A/B como metadata', async () => {
+    const req = mockRequest({
+      event: 'ab_test_assigned',
+      metadata: { experiment: 'lead-capture', variant: 'B' },
+    });
+    const res = await POST(req as Postable);
+    expect(res.status).toBe(201);
+    expect(mockRecordBusinessEvent).toHaveBeenCalledWith(
+      expect.objectContaining({ metadata: { experiment: 'lead-capture', variant: 'B' } }),
+    );
   });
 
   it('PRIVACIDAD: descarta claves con datos personales del metadata', async () => {

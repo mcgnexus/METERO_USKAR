@@ -139,6 +139,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       utmMedium: data.utmMedium || undefined,
       utmCampaign: data.campaign || undefined,
       consentPolicyVersion: CONSENT_POLICY_VERSION,
+      abVariant: data.abVariant,
     });
     if (leadId == null) {
       // No se guardó: liberar la clave para permitir reintento legítimo.

@@ -45,6 +45,68 @@ interface AgriculturalLead {
   created_at: string;
 }
 
+interface AbVariantMetric {
+  assigned: number;
+  started: number;
+  leads: number;
+  startRate: number;
+  abandonmentRate: number;
+  leadRate: number;
+}
+
+interface AbTestReport {
+  report: Record<'A' | 'B', AbVariantMetric>;
+}
+
+function pct(value: number): string {
+  return `${(value * 100).toFixed(1)}%`;
+}
+
+function AbTestPanel() {
+  const { data, loading } = useApiData<AbTestReport>('/api/admin/ab-test', 'admin-ab-test');
+
+  if (loading) return <p className="text-sm text-slate-500">Cargando experimento…</p>;
+  if (!data) return <p className="text-sm text-slate-500">Sin datos del experimento todavía.</p>;
+
+  const variants: { id: 'A' | 'B'; name: string; description: string }[] = [
+    { id: 'A', name: 'A · WhatsApp 1 clic', description: 'CTA directa a conversación, sin formulario' },
+    { id: 'B', name: 'B · Formulario mínimo', description: '3 campos + paso 2 opcional (superficie e intereses)' },
+  ];
+
+  return (
+    <div className="space-y-4">
+      <div className="grid gap-4 sm:grid-cols-2">
+        {variants.map((variant) => {
+          const m = data.report[variant.id];
+          return (
+            <div key={variant.id} className="rounded-xl border border-slate-700 bg-slate-800 p-4">
+              <p className="text-sm font-semibold text-slate-100">{variant.name}</p>
+              <p className="mb-3 text-[11px] text-slate-400">{variant.description}</p>
+              <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
+                <dt className="text-slate-400">Asignaciones</dt>
+                <dd className="text-right font-semibold text-slate-100">{m.assigned}</dd>
+                <dt className="text-slate-400">Inicios</dt>
+                <dd className="text-right font-semibold text-slate-100">{m.started}</dd>
+                <dt className="text-slate-400">Leads</dt>
+                <dd className="text-right font-semibold text-emerald-300">{m.leads}</dd>
+                <dt className="text-slate-400">Tasa inicio</dt>
+                <dd className="text-right font-semibold text-slate-100">{pct(m.startRate)}</dd>
+                <dt className="text-slate-400">Abandono</dt>
+                <dd className="text-right font-semibold text-amber-300">{pct(m.abandonmentRate)}</dd>
+                <dt className="text-slate-400">Conversión</dt>
+                <dd className="text-right font-semibold text-emerald-300">{pct(m.leadRate)}</dd>
+              </dl>
+            </div>
+          );
+        })}
+      </div>
+      <p className="text-[10px] leading-4 text-slate-600">
+        Ventana de 60 días. Asignación = evento ab_test_assigned · Inicio = click WhatsApp (A) o primer contacto con el formulario (B) · Leads = agrícolas guardados con esa variante (o whatsapp_click para A). El abandono de A se aproxima (no hay formulario que cerrar).
+      </p>
+    </div>
+  );
+}
+
 function StatusCard({ health }: { health: SourceHealthStatus }) {
   const colors: Record<string, string> = {
     OK: 'border-green-700 bg-green-900/20',
@@ -200,6 +262,11 @@ export default function AdminConsole() {
             <p className="col-span-full text-sm text-slate-500">Sin métricas disponibles</p>
           )}
         </div>
+      </section>
+
+      <section>
+        <h2 className="mb-4 text-lg font-semibold">Experimento A/B · Captación de leads</h2>
+        <AbTestPanel />
       </section>
 
       <section>

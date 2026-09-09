@@ -40,6 +40,8 @@ const ALLOWED_METADATA_KEYS = new Set([
   'reason',
   'level',
   'status',
+  'experiment',
+  'variant',
 ]);
 
 /** Patrón de teléfono: cualquier valor con pinta de número de contacto se filtra. */

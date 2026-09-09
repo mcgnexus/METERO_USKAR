@@ -88,6 +88,8 @@ export const leadFormSchema = z.object({
   landingPage: freeText(200).optional(),
   utmSource: freeText(100).optional(),
   utmMedium: freeText(100).optional(),
+  /** Variante del experimento A/B de captación (metadato, no personal). */
+  abVariant: z.enum(['A', 'B']).optional(),
   /** Honeypot anti-spam: debe llegar vacío. */
   website: z.string().max(20).optional().default(''),
 });
