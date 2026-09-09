@@ -2,6 +2,7 @@
 
 import type { HuescarWeatherResponse } from '@/types/weather-response';
 import { fmt, frostRiskLabel } from '@/lib/display';
+import { DataOriginNote, type DataOrigin, type DataConfidence } from '@/components/common/DataOriginNote';
 
 type Decision = {
   emoji: string;
@@ -9,6 +10,8 @@ type Decision = {
   value: string;
   tone: 'good' | 'caution' | 'bad' | 'neutral';
   action: string;
+  origin: DataOrigin;
+  confidence: DataConfidence | null;
 };
 
 function frostTone(risk: string): Decision['tone'] {
@@ -21,12 +24,17 @@ function buildDecisions({ response }: { response: HuescarWeatherResponse }): Dec
   const wd = response.weather;
   const agri = wd?.agricultural;
 
+  const quality = wd?.dataQuality?.quality ?? null;
+  const confidence: DataConfidence | null = quality === 'buena' ? 'alta' : quality === 'media' ? 'media' : quality === 'baja' ? 'baja' : null;
+
   const frostRisk = agri?.frostRisk48h ?? 'none';
   const frost = {
     emoji: '❄️',
     title: 'Helada',
     value: agri ? frostRiskLabel(frostRisk) : '—',
     tone: frostTone(frostRisk),
+    origin: 'forecast' as const,
+    confidence,
     action:
       frostRisk === 'muy_alta' || frostRisk === 'alta'
         ? 'Prepara protección antihelada esta noche y evita regar con frío intenso.'
@@ -53,6 +61,8 @@ function buildDecisions({ response }: { response: HuescarWeatherResponse }): Dec
     title: 'Lluvia',
     value: mmToday != null && mmToday > 0 && rainProb != null && rainProb >= 40 ? `${fmt(rainProb, 0)}% · ${fmt(mmToday, 1)} mm` : rainVal,
     tone: rainProb != null && rainProb >= 70 ? 'bad' : rainProb != null && rainProb >= 40 ? 'caution' : 'good',
+    origin: 'forecast' as const,
+    confidence,
     action:
       rainProb != null && rainProb >= 70
         ? 'Aplaza el riego y tareas que no aguanten el agua; aprovecha el aporte.'
@@ -72,6 +82,8 @@ function buildDecisions({ response }: { response: HuescarWeatherResponse }): Dec
           : 'No requiere'
         : '—',
     tone: irrigationLiters != null && irrigationLiters > 0 ? 'caution' : 'good',
+    origin: 'recommendation' as const,
+    confidence,
     action:
       irrigationLiters != null && irrigationLiters > 0
         ? 'Revisa la humedad del suelo y riega en las horas de menos calor.'
@@ -114,6 +126,18 @@ export function AgriDecisionGrid({ response }: { response: HuescarWeatherRespons
             </div>
             <p className="mt-1.5 text-sm font-black text-slate-900">{d.value}</p>
             <p className="mt-1 text-xs leading-5 text-slate-600">{d.action}</p>
+            <div className="mt-2">
+              <DataOriginNote
+                origin={d.origin}
+                confidence={d.confidence}
+                updatedAt={response.generatedAt}
+                detail={
+                  d.origin === 'recommendation'
+                    ? 'Recomendación del motor agronómico TecRural'
+                    : 'Previsión de Open-Meteo (ECMWF) evaluada por el motor climático'
+                }
+              />
+            </div>
           </div>
         ))}
       </div>

@@ -1,7 +1,8 @@
+import type { ReactNode } from 'react';
 import type { CurrentWeather } from '@/types/weather';
 import { fmt, weatherEmoji, weatherCodeDescription } from '@/lib/display';
 
-export function TodaySummaryCard({ forecast }: { forecast: CurrentWeather }) {
+export function TodaySummaryCard({ forecast, originNote }: { forecast: CurrentWeather; originNote?: ReactNode }) {
   const icon = weatherEmoji(forecast.weatherCode ?? 0);
   const desc = weatherCodeDescription(forecast.weatherCode ?? 0);
   return (
@@ -37,6 +38,8 @@ export function TodaySummaryCard({ forecast }: { forecast: CurrentWeather }) {
           </p>
         </div>
       </div>
+
+      {originNote != null && <div className="mt-3">{originNote}</div>}
     </div>
   );
 }

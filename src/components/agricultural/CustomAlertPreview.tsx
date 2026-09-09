@@ -2,6 +2,7 @@
 
 import type { HuescarWeatherResponse } from '@/types/weather-response';
 import { fmt } from '@/lib/display';
+import { DataOriginNote, type DataOrigin } from '@/components/common/DataOriginNote';
 
 type Preview = {
   emoji: string;
@@ -9,6 +10,7 @@ type Preview = {
   title: string;
   body: string;
   tagline: string;
+  origin: DataOrigin;
 };
 
 function buildPreview({ response }: { response: HuescarWeatherResponse }): Preview {
@@ -25,6 +27,7 @@ function buildPreview({ response }: { response: HuescarWeatherResponse }): Previ
       title: 'Helada fuerte esta madrugada',
       body: 'Mín. -3°C en zonas bajas de Huéscar. Protege cultivos sensibles, revisa riego antihelada y evita labores al amanecer.',
       tagline: 'Ejemplo de un aviso que recibirías en tu móvil con tu cultivo.',
+      origin: 'forecast',
     };
   }
 
@@ -35,6 +38,7 @@ function buildPreview({ response }: { response: HuescarWeatherResponse }): Previ
       title: 'Lluvia a partir de media tarde',
       body: `Prob. de lluvia del ${fmt(probToday, 0)}% en Huéscar. Aplaza el riego y guarda lo que no aguante el agua.`,
       tagline: 'Ejemplo de un aviso que recibirías en tu móvil con tu cultivo.',
+      origin: 'forecast',
     };
   }
 
@@ -45,6 +49,7 @@ function buildPreview({ response }: { response: HuescarWeatherResponse }): Previ
       title: 'Recomendación de riego',
       body: `Demanda hídrica alta: aporta unos ${fmt(risk, 1)} L/m² en las próximas horas, repartidos para evitar escorrentía.`,
       tagline: 'Ejemplo de un aviso que recibirías en tu móvil con tu cultivo.',
+      origin: 'recommendation',
     };
   }
 
@@ -54,6 +59,7 @@ function buildPreview({ response }: { response: HuescarWeatherResponse }): Previ
     title: 'Noche despejada, posible helada',
     body: 'Cielo despejado y calma: en zonas bajas de Huéscar la mínima puede caer de 0°C. Revisa cultivos sensibles antes del amanecer.',
     tagline: 'Ejemplo del tipo de aviso que recibirías en tu móvil con tu cultivo.',
+    origin: 'forecast',
   };
 }
 
@@ -74,6 +80,18 @@ export function CustomAlertPreview({ response }: { response: HuescarWeatherRespo
         </div>
       </div>
       <p className="mt-3 text-xs leading-5 text-slate-500">💬 {p.tagline}</p>
+      <div className="mt-2">
+        <DataOriginNote
+          origin={p.origin}
+          confidence={null}
+          updatedAt={response.generatedAt}
+          detail={
+            p.origin === 'recommendation'
+              ? 'Recomendación del motor agronómico TecRural'
+              : 'Previsión de Open-Meteo (ECMWF) evaluada por el motor climático'
+          }
+        />
+      </div>
     </section>
   );
 }

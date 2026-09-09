@@ -19,6 +19,7 @@ import { AdviceGrid } from '@/components/advice/AdviceGrid';
 import { SectionTitle } from '@/components/common/SectionTitle';
 import { UpdatedAtNote } from '@/components/common/UpdatedAtNote';
 import { NoDataState } from '@/components/common/NoDataState';
+import { DataOriginNote, confidenceFromQuality } from '@/components/common/DataOriginNote';
 import { useTrackEvent } from '@/hooks/useTrackEvent';
 import type { HuescarWeatherResponse } from '@/types/weather-response';
 import type { AdviceContext } from '@/lib/weather-advice/types';
@@ -87,6 +88,13 @@ export function HoyPageClient({ response }: { response: HuescarWeatherResponse }
   const temp = cd.calibration.realTemperatureC ?? cd.interpolation.estimatedTemperatureC ?? 0;
   const humidity = cd.nodes.localStation?.humidityPct ?? cd.eto.inputs.humidityPct ?? wd?.current?.humidityPct ?? null;
 
+  // Origen y confianza canónicos de la carga (punto 1.7): el valor actual es
+  // "observado" si procede del sensor local auditado; si no, prevalece el modelo.
+  const quality = wd?.dataQuality?.quality ?? null;
+  const confidence = quality ? confidenceFromQuality(quality) : 'media';
+  const isCurrentObserved = response.current.sourceName === 'Sensor local auditado';
+  const currentOrigin = isCurrentObserved ? 'observed' : 'estimated';
+
   // Tarjeta principal: usa el `current` canónico del snapshot unificado
   // (temperatura calibrada por el motor) completado con datos del motor.
   const todaySummaryCurrent = {
@@ -151,10 +159,32 @@ export function HoyPageClient({ response }: { response: HuescarWeatherResponse }
         <main className="space-y-5">
           {/* 1 · Estado actual y próximas horas (desde "ahora") */}
           <section className="space-y-5">
-            <TodaySummaryCard forecast={todaySummaryCurrent} />
+            <TodaySummaryCard
+              forecast={todaySummaryCurrent}
+              originNote={
+                <DataOriginNote
+                  origin={currentOrigin}
+                  confidence={confidence}
+                  updatedAt={response.current.time}
+                  detail={
+                    isCurrentObserved
+                      ? 'Sensor local TecRural auditado'
+                      : 'El sensor local no responde: valor estimado por el motor climático'
+                  }
+                />
+              }
+            />
             {allHours.length > 0 && (
               <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-200">
                 <SectionTitle>🕐 Próximas horas</SectionTitle>
+                <div className="mb-2">
+                  <DataOriginNote
+                    origin="forecast"
+                    confidence={confidence}
+                    updatedAt={response.generatedAt}
+                    detail="Previsión horaria de Open-Meteo (ECMWF)"
+                  />
+                </div>
                 <HourlyForecastStrip hours={allHours} nowIso={nowIso} lookahead={6} />
               </div>
             )}
@@ -202,6 +232,14 @@ export function HoyPageClient({ response }: { response: HuescarWeatherResponse }
             {fd && fd.forecastDays && fd.forecastDays.length > 0 && (
               <section className="mt-4 bg-white rounded-2xl p-4 shadow-sm border border-slate-200">
                 <SectionTitle>📅 Tendencia semanal</SectionTitle>
+                <div className="mb-2">
+                  <DataOriginNote
+                    origin="forecast"
+                    confidence={confidence}
+                    updatedAt={response.generatedAt}
+                    detail="Previsión diaria de Open-Meteo (ECMWF)"
+                  />
+                </div>
                 <WeekTrend daily={wd?.daily ?? null} forecast={fd} />
               </section>
             )}
@@ -209,6 +247,12 @@ export function HoyPageClient({ response }: { response: HuescarWeatherResponse }
             {adviceCtx && (
               <section className="mt-4">
                 <SectionTitle>⚡ Planes del día</SectionTitle>
+                <DataOriginNote
+                  origin="recommendation"
+                  confidence={confidence}
+                  updatedAt={response.generatedAt}
+                  detail="Recomendaciones del motor de consejos TecRural sobre previsión local"
+                />
                 <QuickDecisionGrid ctx={adviceCtx} />
               </section>
             )}
@@ -216,6 +260,12 @@ export function HoyPageClient({ response }: { response: HuescarWeatherResponse }
             {adviceCtx && (
               <section className="mt-4">
                 <SectionTitle>💡 Consejos para hoy</SectionTitle>
+                <DataOriginNote
+                  origin="recommendation"
+                  confidence={confidence}
+                  updatedAt={response.generatedAt}
+                  detail="Recomendaciones del motor de consejos TecRural sobre previsión local"
+                />
                 <AdviceGrid ctx={adviceCtx} />
               </section>
             )}
@@ -224,6 +274,14 @@ export function HoyPageClient({ response }: { response: HuescarWeatherResponse }
 
             <details className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
               <summary className="cursor-pointer list-none text-sm font-black text-slate-800">📊 Ver datos técnicos</summary>
+              <div className="mt-2">
+                <DataOriginNote
+                  origin="estimated"
+                  confidence={confidence}
+                  updatedAt={cd.generatedAt}
+                  detail="Valores estimados por el motor climático TecRural (sensores + correcciones)"
+                />
+              </div>
               <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
                 <DataRow label="Viento medio" value={`${(cd.nodes.radiationWind.windSpeed2mKmh ?? 0).toFixed(0)} km/h`} />
                 <DataRow label="Ráfagas" value={wd?.current?.windGustKmh != null ? `${wd.current.windGustKmh.toFixed(0)} km/h` : '—'} />
