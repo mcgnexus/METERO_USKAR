@@ -1017,6 +1017,9 @@ const VALID_EVENTS = new Set([
   'field_navigation_clicked',
   'alerts_navigation_clicked',
   'sources_navigation_clicked',
+  'web_vital_cls',
+  'web_vital_inp',
+  'web_vital_lcp',
   // Nombres canónicos del embudo de conversión (spec analítica).
   'lead_cta_click',
   'lead_form_open',

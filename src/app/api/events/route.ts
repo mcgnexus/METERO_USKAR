@@ -46,6 +46,16 @@ const ALLOWED_METADATA_KEYS = new Set([
   'utm_source',
   'utm_medium',
   'utm_campaign',
+  'route',
+  'device_type',
+  'connection_type',
+  'value',
+  'delta',
+  'rating',
+  'id',
+  'navigationType',
+  'entryType',
+  'loadState',
 ]);
 
 /** Patrón de teléfono: cualquier valor con pinta de número de contacto se filtra. */
@@ -59,6 +69,8 @@ function sanitizeMetadata(input: unknown): Record<string, unknown> | undefined {
     if (typeof value === 'string') {
       const clean = value.trim().slice(0, 100);
       out[key] = PHONE_LIKE.test(clean) ? '[filtered]' : clean;
+    } else if (typeof value === 'number' && Number.isFinite(value)) {
+      out[key] = value;
     } else if (Array.isArray(value)) {
       const clean = value
         .filter((item): item is string => typeof item === 'string')

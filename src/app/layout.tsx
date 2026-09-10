@@ -2,6 +2,8 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { Analytics } from "@vercel/analytics/react";
 import { SiteFooter } from "@/components/SiteFooter";
+import { WebVitalsTracker } from "@/components/WebVitalsTracker";
+import { ConsentBanner } from "@/components/ConsentBanner";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://meteo.tecrural.es"),
@@ -65,6 +67,8 @@ export default function RootLayout({
         {children}
         <SiteFooter />
         <Analytics />
+        <WebVitalsTracker />
+        <ConsentBanner />
       </body>
     </html>
   );

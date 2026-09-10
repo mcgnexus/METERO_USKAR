@@ -185,6 +185,57 @@ describe('POST /api/events', () => {
     }
   });
 
+  it('acepta métricas RUM (LCP, INP, CLS)', async () => {
+    for (const event of ['web_vital_lcp', 'web_vital_inp', 'web_vital_cls']) {
+      mockRecordBusinessEvent.mockResolvedValue(true);
+      const req = mockRequest({ event, page: '/huescar/campo' });
+      const res = await POST(req as Postable);
+      expect(res.status).toBe(201);
+    }
+  });
+
+  it('conserva dimensiones RUM: ruta, municipio, dispositivo y conexión', async () => {
+    const req = mockRequest({
+      event: 'web_vital_lcp',
+      page: '/castril',
+      metadata: {
+        value: 1234.5,
+        delta: 1234.5,
+        rating: 'good',
+        id: 'v3-123',
+        navigationType: 'navigate',
+        route: '/castril',
+        municipality: 'castril',
+        device_type: 'mobile',
+        connection_type: '4g',
+      },
+    });
+    const res = await POST(req as Postable);
+    expect(res.status).toBe(201);
+    const metadata = mockRecordBusinessEvent.mock.calls[0][0].metadata as Record<string, unknown>;
+    expect(metadata).toEqual(expect.objectContaining({
+      value: 1234.5,
+      rating: 'good',
+      route: '/castril',
+      municipality: 'castril',
+      device_type: 'mobile',
+      connection_type: '4g',
+    }));
+  });
+
+  it('PRIVACIDAD: las métricas RUM no admiten claves arbitrarias', async () => {
+    const req = mockRequest({
+      event: 'web_vital_inp',
+      metadata: { rating: 'good', user_id: 'abc', fingerprint: 'xyz' },
+    });
+    const res = await POST(req as Postable);
+    expect(res.status).toBe(201);
+    const metadata = mockRecordBusinessEvent.mock.calls[0][0].metadata as Record<string, unknown>;
+    expect(metadata.rating).toBe('good');
+    expect(metadata.user_id).toBeUndefined();
+    expect(metadata.fingerprint).toBeUndefined();
+  });
+
   it('extracts client IP from forwarded headers', async () => {
     const req = mockRequest({ event: 'weather_view' }, { 'x-forwarded-for': '1.2.3.4, 5.6.7.8' });
     const res = await POST(req as Postable);

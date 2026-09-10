@@ -21,9 +21,11 @@ export default function CookiesPage() {
         <h2 className="pt-4 text-xl font-bold">2. Tecnologías utilizadas</h2>
         <p><strong>Cookie técnica de administración:</strong> se utiliza únicamente en la zona privada para mantener la sesión de una persona autorizada. Es necesaria para prestar esa función y no se usa para seguimiento publicitario.</p>
         <p><strong>Notificaciones push:</strong> al activar las alertas, el navegador y el sistema operativo gestionan una suscripción técnica. No es una cookie; se guarda en el servidor para poder enviar las notificaciones que has solicitado y puede revocarse desde los ajustes del navegador.</p>
+        <p><strong>Analítica de rendimiento propia (RUM):</strong> si aceptas, medimos métricas de rendimiento de la página (LCP, INP y CLS) junto con la ruta, el municipio, el tipo de dispositivo y el tipo de conexión, de forma agregada y sin identificarte. Se guarda tu decisión en el almacenamiento local del navegador. No se envía ninguna métrica si rechazas o no decides.</p>
         <p><strong>Vercel Analytics:</strong> se utiliza para obtener métricas agregadas de uso y mejorar el servicio. Según la configuración del proveedor, no requiere cookies de seguimiento. Si esta configuración cambia, esta política se actualizará y se solicitará el consentimiento que corresponda.</p>
 
         <h2 className="pt-4 text-xl font-bold">3. Gestión y desactivación</h2>
+        <p>Puedes cambiar tu decisión sobre la analítica de rendimiento en cualquier momento desde el botón <strong>⚙️ Analítica</strong> que aparece en la esquina inferior de la página.</p>
         <p>Puedes bloquear o eliminar cookies desde la configuración de tu navegador. El bloqueo de la cookie de administración impedirá acceder a la consola privada, pero no afecta a la consulta pública del tiempo.</p>
 
         <h2 className="pt-4 text-xl font-bold">4. Contacto</h2>
