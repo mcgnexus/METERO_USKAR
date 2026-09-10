@@ -2,13 +2,17 @@
 
 import { Line, Bar } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement, Tooltip, Legend, Filler } from 'chart.js';
+import { chartPerf } from '@/components/visualizacion/chart-perf';
+
+const perf = chartPerf();
+
 import type { ForecastPayload } from '@/types/forecast';
 import { fmtHourMadrid } from '@/lib/timezone';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Tooltip, Legend, Filler);
 
-function ChartBox({ height, children }: { height: number; children: React.ReactNode }) {
-  return <div className="relative overflow-hidden" style={{ height }}>{children}</div>;
+function ChartBox({ heightClass, children }: { heightClass: string; children: React.ReactNode }) {
+  return <div className={`relative overflow-hidden ${heightClass}`}>{children}</div>;
 }
 
 export default function WindChart({ forecastData }: { forecastData: ForecastPayload | null | undefined }) {
@@ -38,7 +42,7 @@ export default function WindChart({ forecastData }: { forecastData: ForecastPayl
 
       {hasHourly && (
         <div className="mt-5">
-          <ChartBox height={256}>
+          <ChartBox heightClass="h-56 sm:h-64">
             <Line
               data={{
                 labels: times,
@@ -69,13 +73,14 @@ export default function WindChart({ forecastData }: { forecastData: ForecastPayl
               options={{
                 responsive: true,
                 maintainAspectRatio: false,
-                resizeDelay: 0,
+                resizeDelay: 150,
+                  devicePixelRatio: perf.devicePixelRatio,
                 interaction: { mode: 'index', intersect: false },
                 plugins: {
                   legend: { position: 'top', labels: { boxWidth: 12, padding: 12, font: { size: 11 } } },
                 },
                 scales: {
-                  x: { ticks: { maxTicksLimit: 12, font: { size: 10 } }, grid: { display: false } },
+                  x: { ticks: perf.xTicks, grid: { display: false } },
                   y: { beginAtZero: true, ticks: { font: { size: 10 } }, grid: { color: 'rgba(0,0,0,0.04)' }, title: { display: true, text: 'km/h', font: { size: 10 } } },
                 },
               }}
@@ -87,7 +92,7 @@ export default function WindChart({ forecastData }: { forecastData: ForecastPayl
       {hasDaily && (
         <div className="mt-6">
           <p className="mb-2 text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Viento medio diario</p>
-          <ChartBox height={192}>
+          <ChartBox heightClass="h-44 sm:h-48">
             <Bar
               data={{
                 labels: dayLabels,
@@ -103,10 +108,11 @@ export default function WindChart({ forecastData }: { forecastData: ForecastPayl
               options={{
                 responsive: true,
                 maintainAspectRatio: false,
-                resizeDelay: 0,
+                resizeDelay: 150,
+                  devicePixelRatio: perf.devicePixelRatio,
                 plugins: { legend: { display: false } },
                 scales: {
-                  x: { ticks: { font: { size: 10 } }, grid: { display: false } },
+                  x: { ticks: perf.xTicks, grid: { display: false } },
                   y: { beginAtZero: true, ticks: { font: { size: 10 } }, grid: { color: 'rgba(0,0,0,0.04)' } },
                 },
               }}

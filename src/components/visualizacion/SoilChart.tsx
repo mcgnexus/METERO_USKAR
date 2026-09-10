@@ -2,12 +2,16 @@
 
 import { Line, Bar } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement, Tooltip, Legend, Filler } from 'chart.js';
+import { chartPerf } from '@/components/visualizacion/chart-perf';
+
+const perf = chartPerf();
+
 import type { ForecastPayload } from '@/hooks/useForecast';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Tooltip, Legend, Filler);
 
-function ChartBox({ height, children }: { height: number; children: React.ReactNode }) {
-  return <div className="relative overflow-hidden" style={{ height }}>{children}</div>;
+function ChartBox({ heightClass, children }: { heightClass: string; children: React.ReactNode }) {
+  return <div className={`relative overflow-hidden ${heightClass}`}>{children}</div>;
 }
 
 export default function SoilChart({ forecastData }: { forecastData: ForecastPayload | null | undefined }) {
@@ -35,7 +39,7 @@ export default function SoilChart({ forecastData }: { forecastData: ForecastPayl
 
       {hasSoil && (
         <div className="mt-5">
-          <ChartBox height={224}>
+          <ChartBox heightClass="h-52 sm:h-56">
             <Line
               data={{
                 labels,
@@ -66,13 +70,14 @@ export default function SoilChart({ forecastData }: { forecastData: ForecastPayl
               options={{
                 responsive: true,
                 maintainAspectRatio: false,
-                resizeDelay: 0,
+                resizeDelay: 150,
+                  devicePixelRatio: perf.devicePixelRatio,
                 interaction: { mode: 'index', intersect: false },
                 plugins: {
                   legend: { position: 'top', labels: { boxWidth: 12, padding: 12, font: { size: 11 } } },
                 },
                 scales: {
-                  x: { ticks: { font: { size: 10 } }, grid: { display: false } },
+                  x: { ticks: perf.xTicks, grid: { display: false } },
                     y: { ticks: { font: { size: 10 } }, grid: { color: 'rgba(0,0,0,0.04)' }, title: { display: true, text: 'C', font: { size: 10 } } },
                 },
               }}
@@ -85,7 +90,7 @@ export default function SoilChart({ forecastData }: { forecastData: ForecastPayl
         {hasEto && (
           <div>
             <p className="mb-2 text-xs font-bold uppercase tracking-[0.12em] text-slate-500">ETo (mm/dia)</p>
-            <ChartBox height={192}>
+            <ChartBox heightClass="h-44 sm:h-48">
               <Bar
                 data={{
                   labels,
@@ -101,10 +106,11 @@ export default function SoilChart({ forecastData }: { forecastData: ForecastPayl
                 options={{
                   responsive: true,
                   maintainAspectRatio: false,
-                  resizeDelay: 0,
+                  resizeDelay: 150,
+                  devicePixelRatio: perf.devicePixelRatio,
                   plugins: { legend: { display: false } },
                   scales: {
-                    x: { ticks: { font: { size: 10 } }, grid: { display: false } },
+                    x: { ticks: perf.xTicks, grid: { display: false } },
                     y: { beginAtZero: true, ticks: { font: { size: 10 } }, grid: { color: 'rgba(0,0,0,0.04)' } },
                   },
                 }}
@@ -115,7 +121,7 @@ export default function SoilChart({ forecastData }: { forecastData: ForecastPayl
         {hasRad && (
           <div>
             <p className="mb-2 text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Radiacion solar (MJ/m2)</p>
-            <ChartBox height={192}>
+            <ChartBox heightClass="h-44 sm:h-48">
               <Bar
                 data={{
                   labels,
@@ -131,10 +137,11 @@ export default function SoilChart({ forecastData }: { forecastData: ForecastPayl
                 options={{
                   responsive: true,
                   maintainAspectRatio: false,
-                  resizeDelay: 0,
+                  resizeDelay: 150,
+                  devicePixelRatio: perf.devicePixelRatio,
                   plugins: { legend: { display: false } },
                   scales: {
-                    x: { ticks: { font: { size: 10 } }, grid: { display: false } },
+                    x: { ticks: perf.xTicks, grid: { display: false } },
                     y: { beginAtZero: true, ticks: { font: { size: 10 } }, grid: { color: 'rgba(0,0,0,0.04)' } },
                   },
                 }}

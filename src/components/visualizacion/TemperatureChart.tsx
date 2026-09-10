@@ -5,8 +5,11 @@ import { Line } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Filler, Tooltip, Legend } from 'chart.js';
 import type { WeatherPayload } from '@/types/weather';
 import { fmtHourMadrid } from '@/lib/timezone';
+import { chartPerf } from '@/components/visualizacion/chart-perf';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Filler, Tooltip, Legend);
+
+const perf = chartPerf();
 
 function fmtDay(iso: string): string {
   return new Date(iso).toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric' });
@@ -16,8 +19,8 @@ function fmtN(value: number | null | undefined, digits = 1): string {
   return typeof value === 'number' && Number.isFinite(value) ? value.toFixed(digits) : '--';
 }
 
-function ChartBox({ height, children }: { height: number; children: React.ReactNode }) {
-  return <div className="relative overflow-hidden" style={{ height }}>{children}</div>;
+function ChartBox({ heightClass, children }: { heightClass: string; children: React.ReactNode }) {
+  return <div className={`relative overflow-hidden ${heightClass}`}>{children}</div>;
 }
 
 export default function TemperatureChart({ currentData }: { currentData: WeatherPayload | null | undefined }) {
@@ -71,7 +74,7 @@ export default function TemperatureChart({ currentData }: { currentData: Weather
 
       <div className="mt-5">
         {hasHourly && (
-          <ChartBox height={288}>
+          <ChartBox heightClass="h-64 sm:h-72">
             <Line
               data={{
                 labels: hourlyTimes.map(fmtHourMadrid),
@@ -101,7 +104,8 @@ export default function TemperatureChart({ currentData }: { currentData: Weather
               options={{
                 responsive: true,
                 maintainAspectRatio: false,
-                resizeDelay: 0,
+                resizeDelay: 150,
+                devicePixelRatio: perf.devicePixelRatio,
                 interaction: { mode: 'index', intersect: false },
                 plugins: {
                   legend: { display: false },
@@ -112,7 +116,7 @@ export default function TemperatureChart({ currentData }: { currentData: Weather
                   },
                 },
                 scales: {
-                  x: { ticks: { maxTicksLimit: 12, font: { size: 10 } }, grid: { display: false } },
+                  x: { ticks: perf.xTicks, grid: { display: false } },
                   y: { ticks: { font: { size: 10 } }, grid: { color: 'rgba(0,0,0,0.04)' } },
                 },
               }}
@@ -124,7 +128,7 @@ export default function TemperatureChart({ currentData }: { currentData: Weather
 
       {dailyLabels.length > 0 && (
         <div className="mt-6">
-          <ChartBox height={224}>
+          <ChartBox heightClass="h-52 sm:h-56">
             <Line
               data={{
                 labels: dailyLabels,
@@ -156,13 +160,14 @@ export default function TemperatureChart({ currentData }: { currentData: Weather
               options={{
                 responsive: true,
                 maintainAspectRatio: false,
-                resizeDelay: 0,
+                resizeDelay: 150,
+                devicePixelRatio: perf.devicePixelRatio,
                 interaction: { mode: 'index', intersect: false },
                 plugins: {
                   legend: { position: 'top', labels: { boxWidth: 12, padding: 12, font: { size: 11 } } },
                 },
                 scales: {
-                  x: { ticks: { font: { size: 10 } }, grid: { display: false } },
+                  x: { ticks: { ...perf.xTicks, maxTicksLimit: 7 }, grid: { display: false } },
                   y: { ticks: { font: { size: 10 } }, grid: { color: 'rgba(0,0,0,0.04)' } },
                 },
               }}

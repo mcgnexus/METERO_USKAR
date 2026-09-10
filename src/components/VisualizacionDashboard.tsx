@@ -23,7 +23,7 @@ function ChartSkeleton({ title, className = 'h-72' }: { title: string; className
 
 const MiniStationChart = dynamic(() => import('@/components/visualizacion/MiniStationChart'), {
   ssr: false,
-  loading: () => <ChartSkeleton title="Cargando estación en miniatura" className="h-56" />,
+  loading: () => <ChartSkeleton title="Cargando estación en miniatura" className="h-44 sm:h-52" />,
 });
 const CurrentGauges = dynamic(() => import('@/components/visualizacion/CurrentGauges'), {
   ssr: false,
@@ -31,23 +31,23 @@ const CurrentGauges = dynamic(() => import('@/components/visualizacion/CurrentGa
 });
 const TemperatureChart = dynamic(() => import('@/components/visualizacion/TemperatureChart'), {
   ssr: false,
-  loading: () => <ChartSkeleton title="Cargando gráfica de temperatura" className="h-80" />,
+  loading: () => <ChartSkeleton title="Cargando gráfica de temperatura" className="h-64 sm:h-72" />,
 });
 const WaterChart = dynamic(() => import('@/components/visualizacion/WaterChart'), {
   ssr: false,
-  loading: () => <ChartSkeleton title="Cargando gráfica de agua" className="h-80" />,
+  loading: () => <ChartSkeleton title="Cargando gráfica de agua" className="h-52 sm:h-56" />,
 });
 const WindChart = dynamic(() => import('@/components/visualizacion/WindChart'), {
   ssr: false,
-  loading: () => <ChartSkeleton title="Cargando gráfica de viento" className="h-72" />,
+  loading: () => <ChartSkeleton title="Cargando gráfica de viento" className="h-56 sm:h-64" />,
 });
 const SoilChart = dynamic(() => import('@/components/visualizacion/SoilChart'), {
   ssr: false,
-  loading: () => <ChartSkeleton title="Cargando gráfica de suelo" className="h-72" />,
+  loading: () => <ChartSkeleton title="Cargando gráfica de suelo" className="h-44 sm:h-48" />,
 });
 const ZoneChart = dynamic(() => import('@/components/visualizacion/ZoneChart'), {
   ssr: false,
-  loading: () => <ChartSkeleton title="Cargando microclimas por zona" className="h-64" />,
+  loading: () => <ChartSkeleton title="Cargando microclimas por zona" className="h-52 sm:h-56" />,
 });
 const ConfidenceGauges = dynamic(() => import('@/components/visualizacion/ConfidenceGauges'), {
   ssr: false,
@@ -55,7 +55,7 @@ const ConfidenceGauges = dynamic(() => import('@/components/visualizacion/Confid
 });
 const BiasComparisonChart = dynamic(() => import('@/components/visualizacion/BiasComparisonChart'), {
   ssr: false,
-  loading: () => <ChartSkeleton title="Cargando comparación con AEMET" className="h-80" />,
+  loading: () => <ChartSkeleton title="Cargando comparación con AEMET" className="h-52 sm:h-56" />,
 });
 
 export default function VisualizacionDashboard({
@@ -89,31 +89,31 @@ export default function VisualizacionDashboard({
 
   return (
     <div className="space-y-6">
-      <LazyMount fallback={<ChartSkeleton title="Estación en miniatura" className="h-56" />}>
+      <LazyMount fallback={<ChartSkeleton title="Estación en miniatura" className="h-44 sm:h-52" />}>
         <MiniStationChart />
       </LazyMount>
       <LazyMount fallback={<ChartSkeleton title="Medidas actuales" className="h-36" />}>
         <CurrentGauges data={currentData} />
       </LazyMount>
-      <LazyMount fallback={<ChartSkeleton title="Temperatura" className="h-80" />}>
+      <LazyMount fallback={<ChartSkeleton title="Temperatura" className="h-64 sm:h-72" />}>
         <TemperatureChart currentData={currentData} />
       </LazyMount>
-      <LazyMount fallback={<ChartSkeleton title="Agua" className="h-80" />}>
+      <LazyMount fallback={<ChartSkeleton title="Agua" className="h-52 sm:h-56" />}>
         <WaterChart currentData={currentData} />
       </LazyMount>
-      <LazyMount fallback={<ChartSkeleton title="Viento" className="h-72" />}>
+      <LazyMount fallback={<ChartSkeleton title="Viento" className="h-56 sm:h-64" />}>
         <WindChart forecastData={forecastData} />
       </LazyMount>
-      <LazyMount fallback={<ChartSkeleton title="Suelo" className="h-72" />}>
+      <LazyMount fallback={<ChartSkeleton title="Suelo" className="h-44 sm:h-48" />}>
         <SoilChart forecastData={forecastData} />
       </LazyMount>
-      <LazyMount fallback={<ChartSkeleton title="Microclimas por zona" className="h-64" />}>
+      <LazyMount fallback={<ChartSkeleton title="Microclimas por zona" className="h-52 sm:h-56" />}>
         <ZoneChart zones={zones.data ?? []} />
       </LazyMount>
       <LazyMount fallback={<ChartSkeleton title="Nivel de confianza" className="h-40" />}>
         <ConfidenceGauges currentData={currentData} calibrationData={calibrationData} />
       </LazyMount>
-      <LazyMount fallback={<ChartSkeleton title="Comparación con AEMET" className="h-80" />}>
+      <LazyMount fallback={<ChartSkeleton title="Comparación con AEMET" className="h-52 sm:h-56" />}>
         <BiasComparisonChart forecastData={forecastData} />
       </LazyMount>
     </div>

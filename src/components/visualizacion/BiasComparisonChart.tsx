@@ -3,8 +3,11 @@
 import { Bar } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Tooltip, Legend } from 'chart.js';
 import type { ForecastPayload } from '@/hooks/useForecast';
+import { chartPerf } from '@/components/visualizacion/chart-perf';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, Legend);
+
+const perf = chartPerf();
 
 export default function BiasComparisonChart({ forecastData }: { forecastData: ForecastPayload | null | undefined }) {
   const biasCorrection = forecastData?.biasCorrection;
@@ -30,7 +33,7 @@ export default function BiasComparisonChart({ forecastData }: { forecastData: Fo
       <div className="mt-6 grid gap-6 lg:grid-cols-2">
         <div>
           <p className="mb-2 text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Sesgo de temperatura (C)</p>
-          <div className="relative overflow-hidden" style={{ height: 224 }}>
+          <div className="relative h-52 overflow-hidden sm:h-56">
             <Bar
               data={{
                 labels,
@@ -46,10 +49,11 @@ export default function BiasComparisonChart({ forecastData }: { forecastData: Fo
               options={{
                 responsive: true,
                 maintainAspectRatio: false,
-                resizeDelay: 0,
+                resizeDelay: 150,
+                devicePixelRatio: perf.devicePixelRatio,
                 plugins: { legend: { display: false } },
                 scales: {
-                  x: { ticks: { font: { size: 10 } }, grid: { display: false } },
+                  x: { ticks: perf.xTicks, grid: { display: false } },
                   y: { ticks: { font: { size: 10 } }, grid: { color: 'rgba(0,0,0,0.04)' } },
                 },
               }}

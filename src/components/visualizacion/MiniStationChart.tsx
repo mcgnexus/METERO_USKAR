@@ -8,6 +8,8 @@ import type { ClimateNode } from '@/types/climate';
 import { Line } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement, Tooltip, Legend, Filler } from 'chart.js';
 
+import { chartPerf } from '@/components/visualizacion/chart-perf';
+
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Tooltip, Legend, Filler);
 
 interface StationHistoryReading {
@@ -21,9 +23,17 @@ interface StationHistoryPayload {
   readings: StationHistoryReading[];
 }
 
-function ChartBox({ height, children }: { height: number; children: React.ReactNode }) {
-  return <div className="relative overflow-hidden" style={{ height }}>{children}</div>;
+function ChartBox({ heightClass, children }: { heightClass: string; children: React.ReactNode }) {
+  return <div className={`relative overflow-hidden ${heightClass}`}>{children}</div>;
 }
+
+const perf = chartPerf();
+const miniTicks = {
+  autoSkip: true,
+  maxRotation: 0,
+  maxTicksLimit: perf.isMobile ? 4 : 8,
+  font: { size: 9 },
+};
 
 function fmtHour(iso: string): string {
   return new Date(iso).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
@@ -74,17 +84,17 @@ export default function MiniStationChart() {
         <div className="mt-5 grid grid-cols-3 gap-4">
           <div className="rounded-2xl border border-orange-100 bg-orange-50 p-4 text-center">
             <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-orange-700">Temperatura</p>
-            <p className="mt-1 text-3xl font-black text-orange-900">{station.temperatureC?.toFixed(1) ?? '—'}°C</p>
+            <p className="mt-1 text-2xl font-black text-orange-900 sm:text-3xl">{station.temperatureC?.toFixed(1) ?? '—'}°C</p>
             <p className="mt-0.5 text-[11px] text-orange-600">{station.time ? fmtHour(station.time) : '—'}</p>
           </div>
           <div className="rounded-2xl border border-sky-100 bg-sky-50 p-4 text-center">
             <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-sky-700">Humedad</p>
-            <p className="mt-1 text-3xl font-black text-sky-900">{station.humidityPct?.toFixed(0) ?? '—'}%</p>
+            <p className="mt-1 text-2xl font-black text-sky-900 sm:text-3xl">{station.humidityPct?.toFixed(0) ?? '—'}%</p>
             <p className="mt-0.5 text-[11px] text-sky-800">HR</p>
           </div>
           <div className="rounded-2xl border border-purple-100 bg-purple-50 p-4 text-center">
             <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-purple-700">Presión</p>
-            <p className="mt-1 text-3xl font-black text-purple-900">{station.pressureHPa?.toFixed(0) ?? '—'}</p>
+            <p className="mt-1 text-2xl font-black text-purple-900 sm:text-3xl">{station.pressureHPa?.toFixed(0) ?? '—'}</p>
             <p className="mt-0.5 text-[11px] text-purple-600">hPa</p>
           </div>
         </div>
@@ -94,7 +104,7 @@ export default function MiniStationChart() {
         <div className="mt-6 space-y-6">
           <div>
             <p className="mb-2 text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Temperatura — últimas {readings.length} lecturas</p>
-            <ChartBox height={200}>
+            <ChartBox heightClass="h-44 sm:h-52">
               <Line
                 data={{
                   labels,
@@ -113,11 +123,12 @@ export default function MiniStationChart() {
                 options={{
                   responsive: true,
                   maintainAspectRatio: false,
-                  resizeDelay: 0,
+                  resizeDelay: 150,
+                  devicePixelRatio: perf.devicePixelRatio,
                   interaction: { mode: 'index', intersect: false },
                   plugins: { legend: { display: false } },
                   scales: {
-                    x: { ticks: { maxTicksLimit: 8, font: { size: 9 } }, grid: { display: false } },
+                    x: { ticks: miniTicks, grid: { display: false } },
                     y: { ticks: { font: { size: 9 } }, grid: { color: 'rgba(0,0,0,0.04)' } },
                   },
                 }}
@@ -128,7 +139,7 @@ export default function MiniStationChart() {
           <div className="grid gap-6 lg:grid-cols-2">
             <div>
               <p className="mb-2 text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Humedad relativa (%)</p>
-              <ChartBox height={180}>
+              <ChartBox heightClass="h-40 sm:h-44">
                 <Line
                   data={{
                     labels,
@@ -147,11 +158,12 @@ export default function MiniStationChart() {
                   options={{
                     responsive: true,
                     maintainAspectRatio: false,
-                    resizeDelay: 0,
+                    resizeDelay: 150,
+                    devicePixelRatio: perf.devicePixelRatio,
                     interaction: { mode: 'index', intersect: false },
                     plugins: { legend: { display: false } },
                     scales: {
-                      x: { ticks: { maxTicksLimit: 6, font: { size: 9 } }, grid: { display: false } },
+                      x: { ticks: { ...miniTicks, maxTicksLimit: perf.isMobile ? 3 : 6 }, grid: { display: false } },
                       y: { min: 0, max: 100, ticks: { font: { size: 9 } }, grid: { color: 'rgba(0,0,0,0.04)' } },
                     },
                   }}
@@ -162,7 +174,7 @@ export default function MiniStationChart() {
             {hasPressure && (
               <div>
                 <p className="mb-2 text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Presión atmosférica (hPa)</p>
-                <ChartBox height={180}>
+                <ChartBox heightClass="h-40 sm:h-44">
                   <Line
                     data={{
                       labels,
@@ -181,11 +193,12 @@ export default function MiniStationChart() {
                     options={{
                       responsive: true,
                       maintainAspectRatio: false,
-                      resizeDelay: 0,
+                      resizeDelay: 150,
+                      devicePixelRatio: perf.devicePixelRatio,
                       interaction: { mode: 'index', intersect: false },
                       plugins: { legend: { display: false } },
                       scales: {
-                        x: { ticks: { maxTicksLimit: 6, font: { size: 9 } }, grid: { display: false } },
+                        x: { ticks: { ...miniTicks, maxTicksLimit: perf.isMobile ? 3 : 6 }, grid: { display: false } },
                         y: { ticks: { font: { size: 9 } }, grid: { color: 'rgba(0,0,0,0.04)' } },
                       },
                     }}

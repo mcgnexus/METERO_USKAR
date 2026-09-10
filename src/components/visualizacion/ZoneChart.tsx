@@ -2,12 +2,16 @@
 
 import { Bar } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Tooltip, Legend } from 'chart.js';
+import { chartPerf } from '@/components/visualizacion/chart-perf';
+
+const perf = chartPerf();
+
 import type { ZoneEstimation } from '@/types/weather';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, Legend);
 
-function ChartBox({ height, children }: { height: number; children: React.ReactNode }) {
-  return <div className="relative overflow-hidden" style={{ height }}>{children}</div>;
+function ChartBox({ heightClass, children }: { heightClass: string; children: React.ReactNode }) {
+  return <div className={`relative overflow-hidden ${heightClass}`}>{children}</div>;
 }
 
 const ZONE_COLORS: Record<ZoneEstimation['type'], string> = {
@@ -62,7 +66,7 @@ export default function ZoneChart({ zones }: { zones: ZoneEstimation[] }) {
       <div className="mt-6 grid gap-6 lg:grid-cols-3">
         <div>
           <p className="mb-2 text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Temperatura (C)</p>
-          <ChartBox height={224}>
+          <ChartBox heightClass="h-52 sm:h-56">
             <Bar
               data={{
                 labels: names,
@@ -78,11 +82,12 @@ export default function ZoneChart({ zones }: { zones: ZoneEstimation[] }) {
               options={{
                 responsive: true,
                 maintainAspectRatio: false,
-                resizeDelay: 0,
+                resizeDelay: 150,
+                  devicePixelRatio: perf.devicePixelRatio,
                 indexAxis: 'y',
                 plugins: { legend: { display: false } },
                 scales: {
-                  x: { ticks: { font: { size: 10 } }, grid: { color: 'rgba(0,0,0,0.04)' } },
+                  x: { ticks: perf.xTicks, grid: { color: 'rgba(0,0,0,0.04)' } },
                   y: { ticks: { font: { size: 9 } }, grid: { display: false } },
                 },
               }}
@@ -92,7 +97,7 @@ export default function ZoneChart({ zones }: { zones: ZoneEstimation[] }) {
 
         <div>
           <p className="mb-2 text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Humedad relativa (%)</p>
-          <ChartBox height={224}>
+          <ChartBox heightClass="h-52 sm:h-56">
             <Bar
               data={{
                 labels: names,
@@ -108,7 +113,8 @@ export default function ZoneChart({ zones }: { zones: ZoneEstimation[] }) {
               options={{
                 responsive: true,
                 maintainAspectRatio: false,
-                resizeDelay: 0,
+                resizeDelay: 150,
+                  devicePixelRatio: perf.devicePixelRatio,
                 indexAxis: 'y',
                 plugins: { legend: { display: false } },
                 scales: {
@@ -122,7 +128,7 @@ export default function ZoneChart({ zones }: { zones: ZoneEstimation[] }) {
 
         <div>
           <p className="mb-2 text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Viento (km/h)</p>
-          <ChartBox height={224}>
+          <ChartBox heightClass="h-52 sm:h-56">
             <Bar
               data={{
                 labels: names,
@@ -138,7 +144,8 @@ export default function ZoneChart({ zones }: { zones: ZoneEstimation[] }) {
               options={{
                 responsive: true,
                 maintainAspectRatio: false,
-                resizeDelay: 0,
+                resizeDelay: 150,
+                  devicePixelRatio: perf.devicePixelRatio,
                 indexAxis: 'y',
                 plugins: { legend: { display: false } },
                 scales: {

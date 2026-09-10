@@ -4,15 +4,18 @@ import { Bar, Line } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, PointElement, LineElement, Tooltip, Legend, Filler } from 'chart.js';
 import type { WeatherPayload } from '@/types/weather';
 import { fmtHourMadrid } from '@/lib/timezone';
+import { chartPerf } from '@/components/visualizacion/chart-perf';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, PointElement, LineElement, Tooltip, Legend, Filler);
+
+const perf = chartPerf();
 
 function fmtDay(iso: string): string {
   return new Date(iso).toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric' });
 }
 
-function ChartBox({ height, children }: { height: number; children: React.ReactNode }) {
-  return <div className="relative overflow-hidden" style={{ height }}>{children}</div>;
+function ChartBox({ heightClass, children }: { heightClass: string; children: React.ReactNode }) {
+  return <div className={`relative overflow-hidden ${heightClass}`}>{children}</div>;
 }
 
 export default function WaterChart({ currentData }: { currentData: WeatherPayload | null | undefined }) {
@@ -43,7 +46,7 @@ export default function WaterChart({ currentData }: { currentData: WeatherPayloa
         <div className="mt-5 grid gap-4 lg:grid-cols-2">
           <div>
             <p className="mb-2 text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Precipitacion (mm)</p>
-            <ChartBox height={224}>
+            <ChartBox heightClass="h-52 sm:h-56">
               <Bar
                 data={{
                   labels,
@@ -59,10 +62,11 @@ export default function WaterChart({ currentData }: { currentData: WeatherPayloa
                 options={{
                   responsive: true,
                   maintainAspectRatio: false,
-                  resizeDelay: 0,
+                  resizeDelay: 150,
+                devicePixelRatio: perf.devicePixelRatio,
                   plugins: { legend: { display: false } },
                   scales: {
-                    x: { ticks: { font: { size: 10 } }, grid: { display: false } },
+                    x: { ticks: perf.xTicks, grid: { display: false } },
                     y: { beginAtZero: true, ticks: { font: { size: 10 } }, grid: { color: 'rgba(0,0,0,0.04)' } },
                   },
                 }}
@@ -71,7 +75,7 @@ export default function WaterChart({ currentData }: { currentData: WeatherPayloa
           </div>
           <div>
             <p className="mb-2 text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Probabilidad de lluvia (%)</p>
-            <ChartBox height={224}>
+            <ChartBox heightClass="h-52 sm:h-56">
               <Line
                 data={{
                   labels,
@@ -90,10 +94,11 @@ export default function WaterChart({ currentData }: { currentData: WeatherPayloa
                 options={{
                   responsive: true,
                   maintainAspectRatio: false,
-                  resizeDelay: 0,
+                  resizeDelay: 150,
+                devicePixelRatio: perf.devicePixelRatio,
                   plugins: { legend: { display: false } },
                   scales: {
-                    x: { ticks: { font: { size: 10 } }, grid: { display: false } },
+                    x: { ticks: perf.xTicks, grid: { display: false } },
                     y: { min: 0, max: 100, ticks: { font: { size: 10 } }, grid: { color: 'rgba(0,0,0,0.04)' } },
                   },
                 }}
@@ -106,7 +111,7 @@ export default function WaterChart({ currentData }: { currentData: WeatherPayloa
       {hasHum && (
         <div className="mt-6">
           <p className="mb-2 text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Humedad relativa (%) â€” 72 horas</p>
-          <ChartBox height={224}>
+          <ChartBox heightClass="h-52 sm:h-56">
             <Line
               data={{
                 labels: hourLabels,
@@ -125,11 +130,12 @@ export default function WaterChart({ currentData }: { currentData: WeatherPayloa
               options={{
                 responsive: true,
                 maintainAspectRatio: false,
-                resizeDelay: 0,
+                resizeDelay: 150,
+                devicePixelRatio: perf.devicePixelRatio,
                 interaction: { mode: 'index', intersect: false },
                 plugins: { legend: { display: false } },
                 scales: {
-                  x: { ticks: { maxTicksLimit: 12, font: { size: 10 } }, grid: { display: false } },
+                  x: { ticks: perf.xTicks, grid: { display: false } },
                   y: { min: 0, max: 100, ticks: { font: { size: 10 } }, grid: { color: 'rgba(0,0,0,0.04)' } },
                 },
               }}
