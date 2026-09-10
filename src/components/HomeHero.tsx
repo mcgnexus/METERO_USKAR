@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useTrackEvent } from '@/hooks/useTrackEvent';
 
 const WHATSAPP_URL =
@@ -20,13 +21,13 @@ export function HomeHero() {
       </p>
 
       <div className="mt-5 flex flex-col gap-2 sm:flex-row sm:items-center">
-        <a
+        <Link
           href="/huescar/contacto"
-          onClick={() => track('cta_clicked', { context: 'home-hero', cta: 'Recibir avisos personalizados para mi finca', destination: '/huescar/contacto' })}
+          onClick={() => track('cta_clicked', { context: 'home-hero', cta: 'Recibir avisos para mi finca', destination: '/huescar/contacto' })}
           className="inline-flex min-h-[48px] items-center justify-center rounded-full bg-white px-6 text-sm font-black text-emerald-800 shadow-sm transition hover:bg-emerald-50 active:scale-95"
         >
-          Recibir avisos personalizados para mi finca
-        </a>
+          Recibir avisos para mi finca
+        </Link>
         <a
           href={WHATSAPP_URL}
           target="_blank"
@@ -37,6 +38,10 @@ export function HomeHero() {
           <span aria-hidden="true">💬</span> Hablar por WhatsApp
         </a>
       </div>
+
+      <p className="mt-3 text-xs font-semibold text-emerald-100">
+        Gratis para empezar · respuesta personal en menos de 24 h
+      </p>
     </section>
   );
 }
