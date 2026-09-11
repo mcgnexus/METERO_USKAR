@@ -13,6 +13,8 @@ import { AgriculturalLeadForm } from '@/components/AgriculturalLeadForm';
 import { LocalAlarmNotifier } from '@/components/LocalAlarmNotifier';
 import PwaRegister from '@/components/PwaRegister';
 import { DataLegend } from '@/components/common/DataLegend';
+import { AlertOnboarding } from '@/components/alerts/AlertOnboarding';
+import { AlertStatusPanel } from '@/components/alerts/AlertStatusPanel';
 import type { ClimateCalibrationPayload } from '@/types/climate';
 import type { WeatherPayload } from '@/types/weather';
 import type { ForecastPayload } from '@/types/forecast';
@@ -90,6 +92,10 @@ export default function LlanoPulseDashboard({
         {(activeTab === 'hoy') && (
           <div className="mb-3 min-h-[92px]">
             <NotificationPermission />
+            <AlertOnboarding />
+            <div className="mt-3">
+              <AlertStatusPanel />
+            </div>
           </div>
         )}
 

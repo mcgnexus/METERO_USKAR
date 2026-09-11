@@ -42,8 +42,25 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
     const criticalAlarms = alarms.filter(a => a.level === 'critico');
 
+    // Idempotencia/dedup: una misma condición (clave + día) no genera avisos
+    // push repetidos aunque el cron se ejecute varias veces seguidas.
+    const dayBucket = new Date().toISOString().slice(0, 10);
     const alarmPushResults = await Promise.all(
-      criticalAlarms.map(a => dispatchAlarmNotification(a).catch(() => ({ sent: 0, skipped: true })))
+      criticalAlarms.map(async (a) => {
+        const conditionKey = `push:alarm:${a.title}:${a.audience}:${a.level}:${dayBucket}`;
+        try {
+          if (await hasNotificationBeenSent(conditionKey, 120)) {
+            return { sent: 0, skipped: true };
+          }
+        } catch {
+          // Si la comprobación falla, se envía (no se pierde un aviso crítico).
+        }
+        const result = await dispatchAlarmNotification(a).catch(() => ({ sent: 0, skipped: true }));
+        if ((result.sent ?? 0) > 0) {
+          await logNotificationSent(conditionKey, null).catch(() => undefined);
+        }
+        return result;
+      })
     );
 
     const alarmPushes = alarmPushResults.reduce(
