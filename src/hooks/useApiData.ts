@@ -5,6 +5,8 @@ import { useCallback, useEffect, useState } from 'react';
 const CACHE_TTL_MS = 120_000;
 const PERSIST_TTL_MS = 86_400_000; // 24h: datos offline sirven hasta 24h
 const REFRESH_INTERVAL_MS = 180_000;
+const MAX_RETRY_ATTEMPTS = 2;
+const RETRY_BASE_DELAY_MS = 2_000;
 
 export interface UseApiDataResult<T> {
   data: T | null;
@@ -12,6 +14,8 @@ export interface UseApiDataResult<T> {
   loading: boolean;
   isStale: boolean;
   cachedAt: number | null;
+  /** intentos automáticos consumidos en el último ciclo de error */
+  attempts: number;
   refresh: () => void;
 }
 
@@ -64,11 +68,13 @@ function getInitialState<T>(cacheKey?: string, initialData?: T | null): ApiState
 export function useApiData<T>(url: string, cacheKey?: string, initialData?: T | null): UseApiDataResult<T> {
   const [state, setState] = useState<ApiState<T>>(() => getInitialState(cacheKey, initialData));
   const [error, setError] = useState<Error | null>(null);
-  const [isOnline, setIsOnline] = useState(true);
+  const [attempts, setAttempts] = useState(0);
+  const [isOnline, setIsOnline] = useState(() => (typeof navigator !== 'undefined' ? navigator.onLine : true));
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    setIsOnline(navigator.onLine);
+    const sync = () => setIsOnline(navigator.onLine);
+    sync();
     const goOnline = () => setIsOnline(true);
     const goOffline = () => setIsOnline(false);
     window.addEventListener('online', goOnline);
@@ -82,15 +88,19 @@ export function useApiData<T>(url: string, cacheKey?: string, initialData?: T | 
   // After hydration, try to restore from browser cache if we don't have data yet.
   useEffect(() => {
     if (state.data !== null || !cacheKey) return;
-    const session = readSessionCache<T>(cacheKey);
-    if (session) {
-      setState({ data: session.data, loading: false, isStale: false, cachedAt: session.timestamp });
-      return;
-    }
-    const persisted = readPersistedCache<T>(cacheKey);
-    if (persisted) {
-      setState({ data: persisted.data, loading: false, isStale: true, cachedAt: persisted.timestamp });
-    }
+    const restore = () => {
+      const session = readSessionCache<T>(cacheKey);
+      if (session) {
+        setState({ data: session.data, loading: false, isStale: false, cachedAt: session.timestamp });
+        return;
+      }
+      const persisted = readPersistedCache<T>(cacheKey);
+      if (persisted) {
+        setState({ data: persisted.data, loading: false, isStale: true, cachedAt: persisted.timestamp });
+      }
+    };
+    const timer = setTimeout(restore, 0);
+    return () => clearTimeout(timer);
   }, [cacheKey, state.data]);
 
   const loadData = useCallback(async (): Promise<T> => {
@@ -100,24 +110,34 @@ export function useApiData<T>(url: string, cacheKey?: string, initialData?: T | 
   }, [url]);
 
   const fetchData = useCallback(async () => {
-    try {
-      const json = await loadData();
-      setState({ data: json, loading: false, isStale: false, cachedAt: Date.now() });
-      setError(null);
-    } catch (err) {
-      const e = err instanceof Error ? err : new Error(String(err));
-      setError(e);
-      setState((current) => {
-        if (current.data !== null) {
-          return { ...current, loading: false, isStale: true };
+    let lastError: Error | null = null;
+    for (let attempt = 1; attempt <= MAX_RETRY_ATTEMPTS + 1; attempt++) {
+      try {
+        setAttempts(attempt - 1);
+        const json = await loadData();
+        setState({ data: json, loading: false, isStale: false, cachedAt: Date.now() });
+        setError(null);
+        setAttempts(0);
+        return;
+      } catch (err) {
+        lastError = err instanceof Error ? err : new Error(String(err));
+        setError(lastError);
+        if (attempt <= MAX_RETRY_ATTEMPTS) {
+          await new Promise((resolve) => setTimeout(resolve, RETRY_BASE_DELAY_MS * attempt));
         }
-        const persisted = readPersistedCache<T>(cacheKey);
-        if (persisted) {
-          return { data: persisted.data, loading: false, isStale: true, cachedAt: persisted.timestamp };
-        }
-        return { ...current, loading: false };
-      });
+      }
     }
+    setAttempts(MAX_RETRY_ATTEMPTS);
+    setState((current) => {
+      if (current.data !== null) {
+        return { ...current, loading: false, isStale: true };
+      }
+      const persisted = readPersistedCache<T>(cacheKey);
+      if (persisted) {
+        return { data: persisted.data, loading: false, isStale: true, cachedAt: persisted.timestamp };
+      }
+      return { ...current, loading: false };
+    });
   }, [loadData, cacheKey]);
 
   useEffect(() => {
@@ -161,7 +181,8 @@ export function useApiData<T>(url: string, cacheKey?: string, initialData?: T | 
 
   useEffect(() => {
     if (isOnline && state.isStale) {
-      void fetchData();
+      const t = setTimeout(() => { void fetchData(); }, 0);
+      return () => clearTimeout(t);
     }
   }, [isOnline, state.isStale, fetchData]);
 
@@ -171,6 +192,7 @@ export function useApiData<T>(url: string, cacheKey?: string, initialData?: T | 
     loading: state.loading,
     isStale: state.isStale,
     cachedAt: state.cachedAt,
+    attempts,
     refresh: () => { void fetchData(); },
   };
 }

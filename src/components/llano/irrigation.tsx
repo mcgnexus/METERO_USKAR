@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { fmtN } from '@/components/llano/atoms';
 import { IndicatorHelp, LabelWithHelp } from '@/components/llano/indicator-help';
+import { buildIrrigationRecommendation, type ConfidenceLevel } from '@/lib/irrigation-recommendation';
 
 export type IrrigationNeed = 'muy_bajo' | 'bajo' | 'medio' | 'alto' | 'muy_alto';
 
@@ -178,6 +179,31 @@ export function IrrigationCard({
   const total = amount !== null ? formatAreaWater(areaM2, amount) : null;
   const cropPhraseText = cropPhrase ?? cropIrrigationPhrase(cropName, amount, level.key);
   const maxBar = Math.max(et0Mm ?? 0, amount ?? 0, range?.max ?? 0, 1);
+
+  const [confirmCrop, setConfirmCrop] = useState(cropName ?? '');
+  const [confirmSystem, setConfirmSystem] = useState('');
+  const [confirmThreshold, setConfirmThreshold] = useState('25');
+  const [confirmArea, setConfirmArea] = useState(areaInput);
+  const contextual = useMemo(
+    () =>
+      buildIrrigationRecommendation({
+        crop: confirmCrop || null,
+        kc: kc ?? null,
+        irrigationSystem: confirmSystem || null,
+        soilMoistureThresholdPct: Number(confirmThreshold) > 0 ? Number(confirmThreshold) : undefined,
+        areaM2: Number(confirmArea) > 0 ? Number(confirmArea) : null,
+        et0Mm: et0Mm ?? null,
+        effectiveRainMm: precipitationMm ?? null,
+        forecastRainMm: precipitationMm ?? null,
+        horizonDays: 7,
+      }),
+    [confirmCrop, confirmSystem, confirmThreshold, confirmArea, kc, et0Mm, precipitationMm]
+  );
+  const confidenceTone: Record<ConfidenceLevel, string> = {
+    alta: 'bg-emerald-100 text-emerald-800',
+    media: 'bg-amber-100 text-amber-800',
+    baja: 'bg-rose-100 text-rose-800',
+  };
   const recommendation = cropPhraseText
     ?? (showNoNeed
       ? 'No hace falta riego extra salvo plantas jóvenes, macetas o suelos muy secos.'
@@ -299,6 +325,115 @@ export function IrrigationCard({
           )}
         </div>
       </details>
+
+      <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-4">
+        <div className="flex items-start justify-between gap-3">
+          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-700">Recomendación contextualizada</p>
+          <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-[11px] font-bold ${confidenceTone[contextual.confidence]}`}>
+            Confianza {contextual.confidence}
+          </span>
+        </div>
+        <p className="mt-1 text-xs font-semibold text-slate-500">{contextual.natureLabel}</p>
+
+        <dl className="mt-3 space-y-2 text-sm">
+          <div>
+            <dt className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500">Acción</dt>
+            <dd className="font-semibold text-slate-900">{contextual.action}</dd>
+          </div>
+          <div>
+            <dt className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500">Cuánto</dt>
+            <dd className="text-slate-800">
+              {contextual.amount.mm !== null && contextual.amount.mm > 0
+                ? `${fmtN(contextual.amount.rangeMm?.min ?? 0, 1)}–${fmtN(contextual.amount.rangeMm?.max ?? 0, 1)} mm = ${fmtN(contextual.amount.rangeLitersPerM2?.min ?? 0, 1)}–${fmtN(contextual.amount.rangeLitersPerM2?.max ?? 0, 1)} L/m²` + (contextual.amount.totalVolume ? ` · ${fmtN(contextual.amount.totalVolume.liters, 0)} L (${fmtN(contextual.amount.totalVolume.cubicMeters, 2)} m³) en ${fmtN(Number(confirmArea) || 0, 0)} m²` : '')
+                : 'Sin aporte necesario según el balance actual.'}
+            </dd>
+          </div>
+          <div>
+            <dt className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500">Cuándo</dt>
+            <dd className="text-slate-800">{contextual.when}</dd>
+          </div>
+          <div>
+            <dt className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500">Condición</dt>
+            <dd className="text-slate-800">{contextual.condition}</dd>
+          </div>
+          <div>
+            <dt className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500">Por qué</dt>
+            <dd className="text-slate-800">{contextual.why}</dd>
+          </div>
+          <div>
+            <dt className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500">Datos usados</dt>
+            <dd>
+              <ul className="mt-1 grid gap-1 sm:grid-cols-2">
+                {contextual.dataUsed.map((p) => (
+                  <li key={p.label} className={`rounded-lg px-2 py-1 text-xs ${p.status === 'no_disponible' ? 'bg-rose-50 text-rose-700' : p.status === 'estimado' ? 'bg-amber-50 text-amber-800' : 'bg-slate-50 text-slate-700'}`}>
+                    {p.label}: <span className="font-semibold">{p.value}</span>{p.status === 'no_disponible' ? ' (no disponible)' : p.status === 'estimado' ? ' (estimado)' : ''}
+                  </li>
+                ))}
+              </ul>
+            </dd>
+          </div>
+        </dl>
+
+        {contextual.confidenceReasons.length > 0 && (
+          <ul className="mt-3 list-disc space-y-1 pl-4 text-xs text-amber-800">
+            {contextual.confidenceReasons.map((r) => <li key={r}>{r}</li>)}
+          </ul>
+        )}
+
+        <p className="mt-3 rounded-xl bg-amber-50 px-3 py-2 text-xs font-semibold leading-5 text-amber-900">
+          ⚠️ {contextual.warning}
+        </p>
+
+        <details className="mt-3 rounded-xl bg-slate-50 p-3">
+          <summary className="cursor-pointer text-xs font-bold text-slate-700">Confirmar datos de mi parcela</summary>
+          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+            <label className="block text-xs font-semibold text-slate-700">
+              Cultivo
+              <input
+                type="text"
+                value={confirmCrop}
+                onChange={(e) => setConfirmCrop(e.target.value)}
+                placeholder="olivo, tomate…"
+                className="mt-1 w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm outline-none focus:border-sky-400"
+              />
+            </label>
+            <label className="block text-xs font-semibold text-slate-700">
+              Sistema de riego
+              <select
+                value={confirmSystem}
+                onChange={(e) => setConfirmSystem(e.target.value)}
+                className="mt-1 w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm outline-none focus:border-sky-400"
+              >
+                <option value="">Sin especificar</option>
+                <option value="goteo">Goteo</option>
+                <option value="aspersion">Aspersión</option>
+                <option value="surco">Surco / gravedad</option>
+              </select>
+            </label>
+            <label className="block text-xs font-semibold text-slate-700">
+              Superficie (m²)
+              <input
+                type="number"
+                min="0"
+                value={confirmArea}
+                onChange={(e) => { setConfirmArea(e.target.value); }}
+                className="mt-1 w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm outline-none focus:border-sky-400"
+              />
+            </label>
+            <label className="block text-xs font-semibold text-slate-700">
+              Umbral de humedad (%)
+              <input
+                type="number"
+                min="0"
+                max="100"
+                value={confirmThreshold}
+                onChange={(e) => setConfirmThreshold(e.target.value)}
+                className="mt-1 w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm outline-none focus:border-sky-400"
+              />
+            </label>
+          </div>
+        </details>
+      </div>
 
       <p className="mt-4 text-xs leading-5 text-slate-700">
         Ajustar según {adjustments.slice(0, 5).join(', ')}.
